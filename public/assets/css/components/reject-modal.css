@@ -1,0 +1,91 @@
+/* =========================================================================
+   L'ÉCOLE — REJECT MODAL COMPONENT STYLES
+   Used on the Approvals & Verifications page for rejection with feedback.
+   ========================================================================= */
+/* Uses universal modal layer base from global.css */
+
+.c-reject-modal__intro {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(15, 65, 74, 0.12);
+}
+
+.c-modal__icon-badge {
+  display: flex;
+  height: 3rem;
+  width: 3rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  margin-bottom: 1rem;
+}
+
+.c-modal__icon-badge--maroon {
+  background: rgba(127, 3, 3, 0.1);
+  color: var(--maroon, #7F0303);
+}
+
+.c-reject-modal__title {
+  margin: 0 0 0.25rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+}
+
+.c-reject-modal__description {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgba(15, 65, 74, 0.7);
+}
+
+.c-reject-modal__item-name {
+  font-weight: 600;
+  color: var(--midnight, #0F414A);
+}
+
+.c-reject-modal__body {
+  padding: 1.5rem;
+  background: rgba(239, 232, 223, 0.1);
+}
+
+/* Base .c-field-label and .c-field-input inherit from global.css */
+.c-reject-modal .c-field-input:focus {
+  border-color: var(--maroon, #7F0303);
+  box-shadow: 0 0 0 3px rgba(127, 3, 3, 0.15);
+}
+
+.c-field-input--textarea { resize: none; min-height: 5.5rem; }
+
+.c-reject-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-top: 1px solid rgba(15, 65, 74, 0.12);
+  background: rgba(239, 232, 223, 0.3);
+  padding: 1.25rem;
+}
+
+.c-btn--ghost {
+  background: transparent;
+  color: rgba(15, 65, 74, 0.65);
+  font-size: 0.875rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-lg, 0.5rem);
+}
+
+.c-btn--ghost:hover {
+  background: var(--alabaster, #EFE8DF);
+  color: var(--midnight, #0F414A);
+}
+
+.c-btn--solid-maroon {
+  background: var(--maroon, #7F0303);
+  color: #ffffff;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  border-radius: var(--radius-lg, 0.5rem);
+}
+
+.c-btn--solid-maroon:hover:not(:disabled) { background: rgba(127, 3, 3, 0.9); }
+
+.c-btn:disabled { opacity: 0.5; cursor: not-allowed; }

@@ -1,0 +1,633 @@
+/* =========================================================================
+   L'ÉCOLE — GLOBAL STYLES & DESIGN TOKENS
+   Master design system tokens, typography, resets, and utilities.
+   ========================================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* ---- Brand Palette ---- */
+  --alabaster: #EFE8DF;
+  --cream: #F7F3EC;
+  --sand: #E4CBA9;
+  --tan: #D8BA98;
+  --deepsea: #092F33;
+  --deep-sea: #092F33;
+  --midnight: #0F414A;
+  --lightblue: #96C0CE;
+  --light-blue: #96C0CE;
+  --skyblue: #7FC7CC;
+  --sky-blue: #7FC7CC;
+  --terracotta: #AF5031;
+  --redwine: #980204;
+  --red-wine: #980204;
+  --maroon: #7F0303;
+  --sunshine: #EA8913;
+  --brightorange: #F5821F;
+  --bright-orange: #F5821F;
+  --flameorange: #F47A20;
+  --flame-orange: #F47A20;
+  --moss: #4B5B34;
+  --cherry: #FDABA5;
+
+  /* ---- Student Profile Card Mineral Palette (Ceramic & Archival Tones) ---- */
+  --card-slate: #3E5B65;
+  --card-steel: #606E77;
+  --card-taupe: #8D8377;
+  --card-sand: #B8AD9B;
+  --card-seafoam: #72AB9C;
+  --card-sage: #73AA96;
+
+  /* ---- Semantic Tokens ---- */
+  --color-bg-app: var(--cream);
+  --color-surface: #ffffff;
+  --color-border: var(--alabaster);
+  --color-text: var(--midnight);
+  --color-text-muted: rgba(15, 65, 74, 0.6);
+
+  /* ---- Feature / Role Color Coding ---- */
+  --theme-student: var(--skyblue);
+  --theme-student-bg: rgba(127, 199, 204, 0.15);
+  --theme-teacher: var(--sunshine);
+  --theme-teacher-bg: rgba(234, 137, 19, 0.15);
+  --theme-parent: var(--terracotta);
+  --theme-parent-bg: rgba(232, 92, 53, 0.15);
+  --theme-management: var(--maroon);
+  --theme-management-bg: rgba(127, 3, 3, 0.15);
+  --theme-system: var(--midnight);
+  --theme-system-bg: var(--moss);
+
+  /* ---- Radii ---- */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.75rem;
+  --radius-full: 9999px;
+
+  /* ---- Shadows ---- */
+  --shadow-sm: 0 1px 2px rgba(15, 65, 74, 0.06);
+  --shadow-md: 0 4px 10px -2px rgba(15, 65, 74, 0.12);
+  --shadow-lg: 0 10px 30px rgba(9, 47, 51, 0.15);
+  --shadow-xl: 0 20px 45px rgba(9, 47, 51, 0.2);
+  --shadow-2xl: 0 25px 50px rgba(9, 47, 51, 0.25);
+
+  /* ---- Animation Timings ---- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* =========================================================================
+     SECTION 1 — COLOR ALIASES
+     Canonical --color-* prefix aliases for every brand palette token.
+     Fixes all components that referenced --color-midnight, --color-skyblue,
+     etc. without those names ever being declared (browser was silently
+     falling back to hardcoded hex). Now both names resolve to the same value.
+     ========================================================================= */
+
+  /* Neutrals */
+  --white:             #ffffff;
+  --color-white:       #ffffff;
+  --color-cream:       var(--cream);
+  --color-alabaster:   var(--alabaster);
+  --color-sand:        var(--sand);
+
+  /* Brand */
+  --color-midnight:    var(--midnight);
+  --color-deepsea:     var(--deepsea);
+  --color-skyblue:     var(--skyblue);
+  --color-lightblue:   var(--lightblue);
+  --color-terracotta:  var(--terracotta);
+  --color-maroon:      var(--maroon);
+  --color-sunshine:    var(--sunshine);
+  --color-moss:        var(--moss);
+  --color-cherry:      var(--cherry);
+  --color-flameorange: var(--flameorange);
+  --color-redwine:     var(--redwine);
+
+  /* =========================================================================
+     SECTION 2 — SEMANTIC ACTION TOKENS
+     Named intent for every recurring button / action color.
+     Use these instead of raw brand tokens or hex in new code:
+       var(--action-confirm)   → Accept, Approve, Save, Submit
+       var(--action-danger)    → Delete, Reject, Remove, Dismiss
+       var(--action-warn)      → Add, Edit, Caution, Teacher-role actions
+       var(--action-secondary) → Parent-role actions, View Profile
+       var(--action-back)      → Cancel, Back, Neutral dismiss
+     ========================================================================= */
+  --action-confirm:   var(--skyblue);
+  --action-danger:    var(--maroon);
+  --action-warn:      var(--sunshine);
+  --action-secondary: var(--terracotta);
+  --action-back:      var(--alabaster);
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: 'Poppins', system-ui, sans-serif;
+  background-color: var(--cream);
+  color: var(--midnight);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button, input, textarea, select {
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-size: inherit;
+  color: inherit;
+}
+button { cursor: pointer; }
+.font-display,
+.c-font-display {
+  font-family: 'Poppins', system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(9, 47, 51, 0.2); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(9, 47, 51, 0.35); }
+
+/* Common Helper Classes */
+.wrap { max-width: 80rem; margin: 0 auto; padding-left: 1.25rem; padding-right: 1.25rem; }
+.icon { display: inline-block; vertical-align: -3px; }
+.visually-hidden,
+.c-visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+/* Page Layout Utilities */
+.c-page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+
+/* Scroll reveal utility */
+[data-reveal] { opacity: 0; transform: translateY(20px); transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out); }
+[data-reveal].is-visible { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] { opacity: 1; transform: none; transition: none; }
+}
+
+/* -------------------------------------------------------------------------
+   UNIVERSAL BACK NAVIGATION LINKS (.c-back-link, .c-back-link-btn, .c-form-back)
+   Standardized to 'Back' with Poppins typography, no uppercase transform.
+   ------------------------------------------------------------------------- */
+.c-back-link,
+.c-back-link-btn,
+.c-form-back,
+[class*="back-link"],
+[class*="back-to"] {
+  font-family: 'Poppins', system-ui, sans-serif !important;
+  text-transform: none !important;
+  font-variant: normal !important;
+  letter-spacing: normal !important;
+}
+
+/* -------------------------------------------------------------------------
+   SHARED BUTTON BASE (.c-btn)
+   Variants live in their respective component CSS files.
+   ------------------------------------------------------------------------- */
+.c-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: none;
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1.25;
+  box-sizing: border-box;
+  text-decoration: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background-color 150ms ease, opacity 150ms ease, box-shadow 150ms ease;
+}
+
+.c-btn .c-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.c-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* -------------------------------------------------------------------------
+   SHARED ICON UTILITY (.c-icon)
+   Inline SVG sizing used across all components.
+   ------------------------------------------------------------------------- */
+.c-icon {
+  display: inline-block;
+  vertical-align: middle;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* -------------------------------------------------------------------------
+   SHARED BUTTON VARIANTS
+   Color variants used across pages; base .c-btn is above.
+   ------------------------------------------------------------------------- */
+.c-btn--sky {
+  background: var(--sky-blue, #7FC7CC);
+  color: var(--midnight, #0F414A);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 65, 74, 0.06));
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.c-btn--sky:hover {
+  background: rgba(127, 199, 204, 0.85);
+  color: var(--midnight, #0F414A);
+}
+
+.c-btn--maroon {
+  background: var(--maroon, #7F0303);
+  color: #ffffff;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 65, 74, 0.06));
+}
+.c-btn--maroon:hover { background: rgba(127, 3, 3, 0.9); }
+
+.c-btn--sunshine {
+  background: var(--sunshine, #EA8913);
+  color: #ffffff;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 65, 74, 0.06));
+}
+.c-btn--sunshine:hover { background: rgba(234, 137, 19, 0.85); }
+
+.c-btn--link {
+  background: transparent;
+  color: rgba(15, 65, 74, 0.55);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.c-btn--link:hover { color: var(--midnight, #0F414A); }
+
+/* -------------------------------------------------------------------------
+   SOLID TONE BUTTONS (.c-btn-solid-tone)
+   Single canonical definition for action buttons across form cards and profile cards.
+   ------------------------------------------------------------------------- */
+.c-btn-solid-tone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  padding: 0.5rem 1.25rem;
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #ffffff;
+  border: none;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 65, 74, 0.08));
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background-color 150ms ease, opacity 150ms ease, transform 150ms ease;
+}
+
+.c-btn-solid-tone .c-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.c-btn-solid-tone:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Tone Variants */
+.c-btn-solid-tone.c-tone-sunshine {
+  background: var(--sunshine, #EA8913);
+  color: #ffffff;
+}
+.c-btn-solid-tone.c-tone-sunshine:hover {
+  background: rgba(234, 137, 19, 0.9);
+}
+
+.c-btn-solid-tone.c-tone-terracotta {
+  background: var(--terracotta, #AF5031);
+  color: #ffffff;
+}
+.c-btn-solid-tone.c-tone-terracotta:hover {
+  background: rgba(175, 80, 49, 0.9);
+}
+
+.c-btn-solid-tone.c-tone-maroon {
+  background: var(--maroon, #7F0303);
+  color: #ffffff;
+}
+.c-btn-solid-tone.c-tone-maroon:hover {
+  background: rgba(127, 3, 3, 0.9);
+}
+
+.c-btn-solid-tone.c-tone-sky {
+  background: var(--skyblue, #7FC7CC);
+  color: var(--midnight, #0F414A);
+}
+.c-btn-solid-tone.c-tone-sky:hover {
+  background: var(--lightblue, #96C0CE);
+  color: var(--midnight, #0F414A);
+}
+
+/* -------------------------------------------------------------------------
+   SHARED SEARCH FIELD (.c-search-field)
+   Used on notice pages, audit page, and wherever quick search is needed.
+   Exact pill styling matching original design.
+   ------------------------------------------------------------------------- */
+.c-search-field {
+  position: relative;
+  display: block;
+  flex: 1 1 auto;
+  max-width: 28rem;
+}
+
+.c-search-field__icon {
+  position: absolute;
+  top: 50%;
+  left: 1rem;
+  transform: translateY(-50%);
+  color: rgba(15, 65, 74, 0.4);
+  pointer-events: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.c-search-field__input {
+  height: 2.625rem;
+  width: 100%;
+  border-radius: var(--radius-full, 9999px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  padding-left: 2.75rem;
+  padding-right: 1.25rem;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--midnight, #0F414A);
+  outline: none;
+  box-sizing: border-box;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 65, 74, 0.06));
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.c-search-field__input::placeholder {
+  color: rgba(15, 65, 74, 0.4);
+}
+
+.c-search-field__input:focus {
+  border-color: var(--sky-blue, #7FC7CC);
+  box-shadow: 0 0 0 2px rgba(127, 199, 204, 0.3);
+}
+
+/* =========================================================================
+   UNIVERSAL ROLE IDENTITY BUTTON & BADGE TOKENS
+   ========================================================================= */
+.c-tone-sky {
+  background: var(--skyblue, #7FC7CC) !important;
+  color: var(--midnight, #0F414A) !important;
+}
+.c-tone-sunshine {
+  background: var(--sunshine, #EA8913) !important;
+  color: #ffffff !important;
+}
+.c-tone-terracotta {
+  background: var(--terracotta, #AF5031) !important;
+  color: #ffffff !important;
+}
+.c-tone-maroon {
+  background: var(--maroon, #7F0303) !important;
+  color: #ffffff !important;
+}
+
+/* Background Tints (Toolbar / Headers / Accents) */
+.c-tint-sky {
+  background: rgba(127, 199, 204, 0.15) !important;
+}
+.c-tint-sunshine {
+  background: rgba(234, 137, 19, 0.15) !important;
+}
+.c-tint-terracotta {
+  background: rgba(175, 80, 49, 0.10) !important;
+}
+.c-tint-maroon {
+  background: rgba(127, 3, 3, 0.08) !important;
+}
+
+/* =========================================================================
+   FADED SOFT TINTS FOR ACTIVITIES & INFORMATIONAL PILLS
+   ========================================================================= */
+.c-tag--debating { background: #F4EBE1 !important; color: var(--midnight, #0F414A) !important; }
+.c-tag--choir    { background: rgba(127, 199, 204, 0.22) !important; color: var(--midnight, #0F414A) !important; }
+.c-tag--robotics { background: rgba(234, 137, 19, 0.20) !important; color: var(--midnight, #0F414A) !important; }
+.c-tag--swimming { background: rgba(150, 192, 206, 0.30) !important; color: var(--midnight, #0F414A) !important; }
+.c-tag--science  { background: rgba(164, 171, 152, 0.30) !important; color: var(--moss, #4B5B34) !important; }
+.c-tag--football { background: rgba(175, 80, 49, 0.18) !important; color: var(--terracotta, #AF5031) !important; }
+
+/* =========================================================================
+   PROFILE CARD MINERAL BACKGROUNDS
+   ========================================================================= */
+.c-bg-card-slate   { background-color: var(--card-slate) !important; color: #ffffff !important; }
+.c-bg-card-steel   { background-color: var(--card-steel) !important; color: #ffffff !important; }
+.c-bg-card-taupe   { background-color: var(--card-taupe) !important; color: #ffffff !important; }
+.c-bg-card-sand    { background-color: var(--card-sand) !important; color: #ffffff !important; }
+.c-bg-card-seafoam { background-color: var(--card-seafoam) !important; color: #ffffff !important; }
+.c-bg-card-sage    { background-color: var(--card-sage) !important; color: #ffffff !important; }
+
+/* =========================================================================
+   DASHBOARD WELCOME HEADER
+   Shared heading style for the top of all role dashboard pages.
+   Not a full page-header component — dashboards have a greeting, not a
+   subtitle or action button, so they use this lighter utility.
+   ========================================================================= */
+.c-dashboard-header {
+  margin-bottom: 2rem;
+}
+.c-dashboard-title {
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--midnight);
+  margin: 0 0 0.5rem 0;
+}
+.c-dashboard-subtitle {
+  color: var(--midnight);
+  opacity: 0.7;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* =========================================================================
+   UNIVERSAL FORM FIELD & INPUT UTILITIES (.c-field-label, .c-field-input)
+   Shared single source of truth for inputs, textareas, and labels.
+   ========================================================================= */
+.c-field-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(15, 65, 74, 0.65);
+  margin-bottom: 0.375rem;
+}
+
+.c-field-input,
+.c-form-input {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid var(--color-border, #E2E8F0);
+  background: #ffffff;
+  padding: 0.625rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--midnight, #0F414A);
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.c-field-input::placeholder,
+.c-form-input::placeholder {
+  color: rgba(15, 65, 74, 0.35);
+}
+
+.c-field-input:focus,
+.c-form-input:focus {
+  border-color: var(--skyblue, #7FC7CC);
+  box-shadow: 0 0 0 3px rgba(127, 199, 204, 0.25);
+}
+
+.c-field-input--textarea,
+.c-form-textarea {
+  min-height: 5.5rem;
+  resize: vertical;
+}
+
+/* =========================================================================
+   UNIVERSAL MODAL OVERLAY BASE
+   Single source of truth for all modal layers, backdrops, and containers.
+   ========================================================================= */
+
+@keyframes c-modal-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes c-modal-pop-in {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.c-modal-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.c-modal-layer.c-is-open {
+  display: flex;
+}
+
+.c-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  border: none;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(15, 65, 74, 0.4);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 180ms ease;
+}
+
+.c-modal-layer.c-is-open .c-modal-backdrop {
+  opacity: 1;
+  animation: c-modal-backdrop-in 180ms ease forwards;
+}
+
+.c-modal {
+  position: relative;
+  z-index: 2001;
+  width: 100%;
+  max-width: 28rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-2xl, 1rem);
+  background: #ffffff;
+  box-shadow: 0 20px 25px -5px rgba(15, 65, 74, 0.1), 0 8px 10px -6px rgba(15, 65, 74, 0.1);
+  border: 1px solid rgba(15, 65, 74, 0.08);
+  opacity: 0;
+  transform: scale(0.95) translateY(10px);
+}
+
+.c-modal-layer.c-is-open .c-modal {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  animation: c-modal-pop-in 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* =========================================================================
+   CANONICAL GLOBAL ANIMATIONS
+   ========================================================================= */
+
+/* Downward entrance (alerts, toasts, dropdowns) */
+@keyframes c-fade-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Backward-compatibility alias for older toast callers */
+@keyframes fadeInToast {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Upward entrance (cards, grids, panels) */
+@keyframes c-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+
+

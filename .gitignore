@@ -1,0 +1,22 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Storage & Logs
+storage/logs/*.log
+*.log
+
+# Compressed files & backups
+*.zip
+*.tar.gz
+*.rar
+
+# IDE & Editor folders
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files
+.env

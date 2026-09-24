@@ -1,0 +1,375 @@
+/* =====================================================================
+   L'ÉCOLE — SHARED SIDEBAR STYLES
+   ===================================================================== */
+
+.c-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 30;
+  display: flex;
+  height: 100vh;
+  width: 16rem;
+  flex-direction: column;
+  background-color: var(--midnight, #0F414A);
+  color: #fff;
+  box-shadow: 0 20px 40px -12px rgba(15, 65, 74, 0.30);
+  transition: width 300ms ease;
+}
+
+.c-sidebar.c-is-collapsed {
+  width: 5rem;
+}
+
+.c-sidebar__brand {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 1.25rem 0.75rem;
+  height: 5rem;
+  box-sizing: border-box;
+}
+
+.c-sidebar__brand-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  min-width: 0;
+  width: 100%;
+}
+
+.c-sidebar__brand-mark {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  width: 3.5rem;
+  height: 2.5rem;
+  color: var(--sand, #E4CBA9);
+}
+
+.c-sidebar__brand-text {
+  min-width: 0;
+  margin-left: 0.75rem;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.c-sidebar__brand-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  color: var(--alabaster, #EFE8DF);
+  white-space: nowrap;
+}
+
+.c-sidebar__brand-subtitle {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.c-sidebar__collapse-btn {
+  position: absolute;
+  right: -0.75rem;
+  top: 1.75rem;
+  display: flex;
+  height: 1.5rem;
+  width: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full, 9999px);
+  border: 1px solid var(--midnight, #0F414A);
+  background: var(--sand, #E4CBA9);
+  color: var(--midnight, #0F414A);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 300ms ease, background 150ms ease;
+  z-index: 35;
+}
+
+.c-sidebar__collapse-btn:hover {
+  background: var(--alabaster, #EFE8DF);
+}
+
+.c-sidebar.c-is-collapsed .c-sidebar__collapse-btn {
+  right: -0.75rem;
+}
+
+.c-sidebar.c-is-collapsed .c-sidebar__collapse-btn svg {
+  transform: rotate(180deg);
+}
+
+/* Collapsed text handling: hide text without collapsing section height */
+.c-sidebar.c-is-collapsed .c-sidebar__brand-text,
+.c-sidebar.c-is-collapsed .c-nav-item__label,
+.c-sidebar.c-is-collapsed .c-profile-btn__meta,
+.c-sidebar.c-is-collapsed .c-profile-btn__status-dot,
+.c-sidebar.c-is-collapsed .j-collapsible-text {
+  display: none !important;
+}
+
+.c-sidebar__nav {
+  flex: 1 1 0%;
+  overflow-y: auto;
+  padding: 0 0.75rem;
+}
+
+.c-sidebar__nav-label {
+  margin: 1.25rem 0 0.5rem 0.75rem;
+  height: 1rem;
+  line-height: 1rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+  transition: opacity 150ms ease;
+}
+
+/* Keep vertical space for nav label so icons never jump vertically */
+.c-sidebar.c-is-collapsed .c-sidebar__nav-label {
+  opacity: 0;
+  visibility: hidden;
+  display: block !important;
+}
+
+.c-sidebar__nav-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.c-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 2.5rem;
+  width: 100%;
+  border-radius: var(--radius-lg, 0.625rem);
+  padding: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  transition: background 150ms ease, color 150ms ease;
+  overflow: hidden;
+}
+
+.c-nav-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.c-nav-item.c-is-selected {
+  color: #fff;
+  font-weight: 600;
+}
+
+.c-nav-item__pill {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.625rem;
+  background: var(--flameorange, #F47A20);
+  box-shadow: 0 1px 2px 0 rgba(15, 65, 74, 0.06);
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.c-nav-item.c-is-selected .c-nav-item__pill {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.c-nav-item__icon {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 2.5rem;
+}
+
+.c-nav-item__icon svg,
+.c-nav-item .c-icon {
+  width: 1rem;
+  height: 1rem;
+  stroke-width: 2;
+}
+
+.c-nav-item[data-nav-name="Extracurricular"] .c-nav-item__icon svg,
+.c-nav-item[data-nav-name="Extracurricular"] .c-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.c-nav-item__label {
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 0.75rem;
+}
+
+.c-sidebar__profile-wrap {
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.c-profile-btn {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 0.625rem;
+  text-decoration: none;
+  color: #fff;
+  transition: background-color 200ms ease, border-color 200ms ease;
+  box-sizing: border-box;
+}
+
+.c-profile-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.c-profile-btn.c-is-selected {
+  border-color: rgba(127, 199, 204, 0.5);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.c-logout-btn,
+.logout-link {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--radius-lg, 0.625rem);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 150ms ease, color 150ms ease;
+  box-sizing: border-box;
+}
+
+.c-logout-btn:hover,
+.logout-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.c-logout-btn__icon,
+.logout-link .c-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.c-logout-btn__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.c-sidebar.c-is-collapsed .c-profile-btn,
+.c-sidebar.c-is-collapsed .c-logout-btn,
+.c-sidebar.c-is-collapsed .logout-link {
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0 auto;
+  padding: 0;
+  justify-content: center;
+  border-radius: 0.625rem;
+}
+
+.c-sidebar.c-is-collapsed .c-logout-btn .c-logout-btn__label,
+.c-sidebar.c-is-collapsed .logout-link .c-logout-btn__label {
+  display: none !important;
+}
+
+.c-profile-btn__avatar {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-full, 9999px);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  object-fit: cover;
+}
+
+.c-profile-btn__meta {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.c-profile-btn__name {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.c-profile-btn__status-dot {
+  flex-shrink: 0;
+  height: 0.5rem;
+  width: 0.5rem;
+  border-radius: 9999px;
+  background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
+  margin-left: auto;
+}
+
+/* =====================================================================
+   MAIN CONTENT LAYOUT SHIFT (Synchronized with sidebar)
+   ===================================================================== */
+.c-main {
+  margin-left: 16rem;
+  transition: margin-left 300ms ease;
+  min-height: 100vh;
+  padding: 2rem;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: calc(100vw - 16rem);
+  overflow-x: hidden;
+}
+
+.c-sidebar.c-is-collapsed~.c-main,
+body.c-is-sidebar-collapsed .c-main,
+#j-app-root.c-is-sidebar-collapsed .c-main {
+  margin-left: 5rem !important;
+  max-width: calc(100vw - 5rem);
+}
