@@ -1,0 +1,1114 @@
+/* =========================================================================
+   L'ÉCOLE — MASTER PERSON PROFILE MODAL STYLESHEET
+   =========================================================================
+   Clean, standardized component styles copied directly from:
+     admin_final_trying_to reduce js/Admin/people/styles.css (lines 445-570 & 725-830)
+   
+   Guarantees:
+     - Exact 1:1 box spacing (.c-info-card)
+     - Uniform control heights in Edit Mode (32px)
+     - Standard 4-column / 3-column / 2-column grid gaps (0.75rem / 12px)
+     - Cohesive typography and theme tones (Poppins, sky, sunshine, terracotta, maroon)
+   ========================================================================= */
+
+@import './export-pdf-button.css';
+
+/* -------------------------------------------------------------------------
+   1. MODAL DIALOG CONTAINER & SCRIM
+   ------------------------------------------------------------------------- */
+.c-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 0.75rem;
+  animation: c-modal-fade-in 160ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+@media (min-width: 640px) {
+  .c-modal-overlay {
+    padding: 1.25rem;
+  }
+}
+
+.c-modal-scrim {
+  position: fixed;
+  inset: 0;
+  border: none;
+  background: rgba(15, 65, 74, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+
+.c-modal-card {
+  margin: auto;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  max-height: calc(100dvh - 1.5rem);
+  width: 100%;
+  max-width: 56rem;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-2xl, 1.25rem);
+  background: var(--color-white, #FFFFFF);
+  box-shadow: var(--shadow-xl, 0 20px 45px -10px rgba(15, 65, 74, 0.35));
+  animation: c-modal-scale-in 180ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+@media (min-width: 640px) {
+  .c-modal-card {
+    max-height: calc(100dvh - 2.5rem);
+  }
+}
+
+@keyframes c-modal-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes c-modal-scale-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* -------------------------------------------------------------------------
+   2. MODAL HERO HEADER & ROLE THEMES
+   ------------------------------------------------------------------------- */
+.c-modal-header {
+  border-bottom: 1px solid var(--alabaster, #EFE8DF);
+  padding: 1.25rem;
+  transition: background-color 200ms ease;
+}
+
+@media (min-width: 640px) {
+  .c-modal-header {
+    padding: 1.25rem 1.75rem;
+  }
+}
+
+.c-modal-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.c-modal-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.c-modal-avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  font-size: 0.875rem;
+  font-weight: 700;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.c-modal-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: rgba(15, 65, 74, 0.55);
+  margin: 0;
+}
+
+.c-modal-name {
+  margin: 0.25rem 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+}
+
+@media (min-width: 640px) {
+  .c-modal-name {
+    font-size: 1.5rem;
+  }
+}
+
+.c-modal-name-input {
+  margin-top: 0.25rem;
+  width: 100%;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid rgba(15, 65, 74, 0.15);
+  background: rgba(255, 255, 255, 0.8);
+  padding: 0.25rem 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-family: 'Poppins', system-ui, sans-serif;
+  color: var(--midnight, #0F414A);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.c-modal-name-input:focus {
+  box-shadow: 0 0 0 2px rgba(127, 199, 204, 0.45);
+}
+
+.c-modal-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(15, 65, 74, 0.65);
+}
+
+.c-modal-close {
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-lg, 0.5rem);
+  padding: 0.375rem;
+  color: rgba(15, 65, 74, 0.6);
+  cursor: pointer;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+
+.c-modal-close:hover {
+  background: var(--color-white, #FFFFFF);
+  color: var(--midnight, #0F414A);
+}
+
+/* ── Header Theme Tints (authentic soft panel tints matching independent admin app) ── */
+.c-modal-header.c-header-sky {
+  background: rgba(127, 199, 204, 0.35);
+}
+
+.c-modal-header.c-header-sunshine {
+  background: rgba(234, 137, 19, 0.12);
+}
+
+.c-modal-header.c-header-terracotta {
+  background: rgba(175, 80, 49, 0.1);
+}
+
+.c-modal-header.c-header-maroon {
+  background: rgba(127, 3, 3, 0.1);
+}
+
+/* ── Pill styling in modal header ── */
+.c-modal-header .c-id-pill {
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.c-modal-header .c-status-pill {
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.c-status-active {
+  background: rgba(75, 91, 52, 0.15);
+  color: var(--moss, #4B5B34);
+}
+
+.c-status-inactive {
+  background: rgba(127, 3, 3, 0.1);
+  color: var(--maroon, #7F0303);
+}
+
+.c-status-unknown-pill {
+  background: var(--alabaster, #EFE8DF);
+  color: rgba(15, 65, 74, 0.55);
+}
+
+.c-record-alert {
+  border-radius: var(--radius-xl, 0.75rem);
+  border: 1px solid var(--sand, #D7C4B7);
+  background: var(--cream, #FFFDF8);
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: rgba(15, 65, 74, 0.7);
+}
+
+/* Meta Pills */
+.c-modal-meta-row {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.c-id-pill,
+.c-status-pill {
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: inline-flex;
+  align-items: center;
+}
+
+
+/* -------------------------------------------------------------------------
+   3. MODAL BODY & FOOTER
+   ------------------------------------------------------------------------- */
+.c-modal-body {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .c-modal-body {
+    padding: 1.75rem;
+  }
+}
+
+.c-modal-body > * + * {
+  margin-top: 1.25rem;
+}
+
+.j-profile-role-section > section + section,
+.c-subtab-panel > section + section {
+  margin-top: 1.25rem;
+}
+
+.c-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-top: 1px solid var(--alabaster, #EFE8DF);
+  background: var(--color-white, #FFFFFF);
+  padding: 1rem 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .c-modal-footer {
+    padding: 1rem 1.75rem;
+  }
+}
+
+.c-btn-ghost {
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-lg, 0.5rem);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: 'Poppins', system-ui, sans-serif;
+  color: rgba(15, 65, 74, 0.65);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.c-btn-ghost:hover {
+  background: var(--alabaster, #EFE8DF);
+}
+
+.c-btn-dark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: var(--radius-lg, 0.5rem);
+  background: var(--midnight, #0F414A);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: 'Poppins', system-ui, sans-serif;
+  color: #FFFFFF;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 65, 74, 0.06));
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.c-btn-dark:hover {
+  background: var(--deepsea, #092F33);
+}
+
+.c-btn-accent {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: var(--radius-lg, 0.5rem);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: 'Poppins', system-ui, sans-serif;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.c-btn-accent.c-tone-sky {
+  background: var(--skyblue, #7FC7CC);
+  color: var(--midnight, #0F414A);
+}
+
+.c-btn-accent.c-tone-sunshine {
+  background: var(--sunshine, #EA8913);
+}
+
+.c-btn-accent.c-tone-terracotta {
+  background: var(--terracotta, #AF5031);
+}
+
+/* -------------------------------------------------------------------------
+   4. SECTION TITLES & INFO GRIDS (1:1 with Admin/people/styles.css)
+   ------------------------------------------------------------------------- */
+.c-section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--midnight, #0F414A);
+  margin-bottom: 0;
+}
+
+.c-section-title-row .c-icon-accent {
+  color: var(--terracotta, #AF5031);
+  display: inline-flex;
+}
+
+.c-section-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--midnight, #0F414A);
+}
+
+.c-info-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .c-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .c-info-grid.c-cols-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .c-info-grid.c-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .c-info-grid.c-cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .c-info-grid.c-cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* -------------------------------------------------------------------------
+   5. STANDARDIZED INFO CARD BOX (.c-info-card)
+   ------------------------------------------------------------------------- */
+.c-info-card {
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 1px solid var(--alabaster, #EFE8DF);
+  background: var(--color-white, #FFFFFF);
+  padding: 0.75rem 0.875rem;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 65, 74, 0.06));
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.c-info-card-label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(15, 65, 74, 0.5);
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  justify-content: flex-start;
+  line-height: 1;
+}
+
+.c-info-card-label svg {
+  width: 14px;
+  height: 14px;
+  color: rgba(15, 65, 74, 0.45);
+  flex-shrink: 0;
+}
+
+.c-info-card-value {
+  margin-top: 0.375rem;
+  margin-bottom: 0;
+  word-break: break-word;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--midnight, #0F414A);
+  text-align: left;
+}
+
+.c-info-card-input {
+  margin-top: 0.375rem;
+  width: 100%;
+  height: 32px;
+  border-radius: 0.375rem;
+  border: 1px solid rgba(127, 199, 204, 0.35);
+  background: rgba(127, 199, 204, 0.05);
+  padding: 0.375rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: 'Poppins', system-ui, sans-serif;
+  color: var(--midnight, #0F414A);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.c-info-card-input:focus {
+  border-color: var(--skyblue, #7FC7CC);
+  box-shadow: 0 0 0 2px rgba(127, 199, 204, 0.35);
+}
+
+textarea.c-info-card-input {
+  height: auto;
+  resize: vertical;
+}
+
+/* Tinted Container Sections */
+.c-tinted-section {
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 1px solid;
+  padding: 1rem;
+}
+
+.c-tint-sky {
+  background: rgba(127, 199, 204, 0.1);
+  border-color: rgba(127, 199, 204, 0.45);
+}
+
+.c-tint-sunshine {
+  background: rgba(234, 137, 19, 0.1);
+  border-color: rgba(234, 137, 19, 0.5);
+}
+
+.c-tint-terracotta {
+  background: rgba(175, 80, 49, 0.1);
+  border-color: rgba(175, 80, 49, 0.45);
+}
+
+.c-tint-maroon {
+  background: rgba(127, 3, 3, 0.08);
+  border-color: rgba(127, 3, 3, 0.4);
+}
+
+/* -------------------------------------------------------------------------
+   6. SUBTABS CAPSULE (Student: Information / Academics / Extra / Achievements)
+   ------------------------------------------------------------------------- */
+.c-subtab-list {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 1px solid var(--alabaster, #EFE8DF);
+  background: rgba(239, 232, 223, 0.35);
+  padding: 0.375rem;
+}
+
+.c-subtab-btn {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: none;
+  background: transparent;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: 'Poppins', system-ui, sans-serif;
+  color: rgba(15, 65, 74, 0.6);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.c-subtab-btn:hover {
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--midnight, #0F414A);
+}
+
+.c-subtab-btn.is-active-subtab {
+  background: var(--color-white, #FFFFFF);
+  color: var(--midnight, #0F414A);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 65, 74, 0.06));
+}
+
+.c-subtab-panel {
+  margin-top: 1.25rem;
+  animation: c-tabpanel-in 160ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.c-subtab-panel > * + * {
+  margin-top: 1.25rem;
+}
+
+@keyframes c-tabpanel-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* -------------------------------------------------------------------------
+   7. CONNECTED PARENT / GUARDIAN CARD (.c-guardian-card-wrap)
+   ------------------------------------------------------------------------- */
+.c-guardian-card-wrap {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid #FFFFFF;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 1rem;
+}
+
+@media (min-width: 640px) {
+  .c-guardian-card-wrap {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.c-guardian-empty {
+  margin-top: 0.75rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px dashed rgba(15, 65, 74, 0.15);
+  background: rgba(255, 255, 255, 0.7);
+  padding: 1rem;
+}
+
+.c-contact-line {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: rgba(15, 65, 74, 0.8);
+}
+
+.c-contact-line svg,
+.c-contact-line .c-icon-muted {
+  color: rgba(15, 65, 74, 0.4);
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+}
+
+/* .c-btn-solid-tone is defined canonically in global.css */
+
+/* -------------------------------------------------------------------------
+   8. TEACHING ASSIGNMENTS & WORKLOAD (Teacher Profile)
+   ------------------------------------------------------------------------- */
+.c-assignment-grid {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .c-assignment-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.c-assignment-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid #FFFFFF;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 0.625rem 0.75rem;
+}
+
+.c-assignment-subject {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+}
+
+.c-assignment-pill {
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Role-toned pill variants — used by JS for teacher assignments and linked children */
+.c-assignment-pill--sunshine {
+  background: rgba(234, 137, 19, 0.2);
+  color: var(--midnight, #0F414A);
+}
+
+.c-assignment-pill--terracotta {
+  background: rgba(175, 80, 49, 0.2);
+  color: var(--terracotta, #AF5031);
+}
+
+.c-workload-note {
+  margin-top: 1rem;
+  border-top: 1px solid rgba(15, 65, 74, 0.1);
+  padding-top: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(15, 65, 74, 0.75);
+}
+
+/* -------------------------------------------------------------------------
+   9. LINKED STUDENT ACCOUNTS (Parent Profile)
+   ------------------------------------------------------------------------- */
+.c-linked-grid {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .c-linked-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.c-linked-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid #FFFFFF;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 0.75rem 0.875rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms ease, transform 150ms ease;
+  width: 100%;
+}
+
+.c-linked-btn:hover {
+  background: #FFFFFF;
+  transform: translateY(-1px);
+}
+
+.c-linked-left {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* .c-btn-solid-tone tone variants are defined canonically in global.css */
+
+.c-assignment-edit-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid rgba(234, 137, 19, 0.3);
+}
+
+.c-qual-edit-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 90px auto;
+  gap: 0.5rem;
+  align-items: center;
+  background: var(--alabaster, #EFE8DF);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid rgba(15, 65, 74, 0.1);
+}
+
+.c-linked-edit-row {
+  display: grid;
+  grid-template-columns: 1fr 140px auto;
+  gap: 0.5rem;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid rgba(175, 80, 49, 0.3);
+}
+
+.c-linked-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+}
+
+/* -------------------------------------------------------------------------
+   10. EXTRACURRICULAR & ACHIEVEMENT CARDS
+   ------------------------------------------------------------------------- */
+.c-extra-grid {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .c-extra-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.c-extra-card {
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 1px solid;
+  padding: 0.75rem 1rem;
+}
+
+.c-extra-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+}
+
+.c-extra-meta {
+  margin-top: 0.25rem;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(15, 65, 74, 0.55);
+}
+
+.c-achievement-grid {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .c-achievement-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.c-achievement-card {
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 1px solid rgba(234, 137, 19, 0.4);
+  background: rgba(234, 137, 19, 0.1);
+  padding: 1rem;
+}
+
+.c-achievement-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.c-achievement-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  background: #FFFFFF;
+  color: var(--terracotta, #AF5031);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 65, 74, 0.06));
+}
+
+.c-achievement-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--midnight, #0F414A);
+}
+
+.c-achievement-meta {
+  margin-top: 0.25rem;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(15, 65, 74, 0.55);
+}
+
+/* -------------------------------------------------------------------------
+   11. DIGITAL RECORD BOOK (Academic Tab)
+   ------------------------------------------------------------------------- */
+.record-book-panel {
+  background: #FFFFFF;
+  border: 1px solid var(--alabaster, #EFE8DF);
+  border-radius: var(--radius-xl, 0.875rem);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 65, 74, 0.06));
+  margin-bottom: 1rem;
+}
+
+.record-book-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.record-book-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.record-book-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--cream, #F7F3EC);
+  color: var(--maroon, #7F0303);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  flex-shrink: 0;
+}
+
+.record-book-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.record-book-title h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+}
+
+.record-book-dropdowns {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--alabaster, #EFE8DF);
+}
+
+.dropdown-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+}
+
+.dropdown-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(15, 65, 74, 0.6);
+}
+
+.record-book-select {
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid var(--alabaster, #EFE8DF);
+  background: var(--color-white, #FFFFFF);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: 'Poppins', system-ui, sans-serif;
+  color: var(--midnight, #0F414A);
+  outline: none;
+  cursor: pointer;
+}
+
+.record-book-select:focus {
+  border-color: var(--skyblue, #7FC7CC);
+  box-shadow: 0 0 0 2px rgba(127, 199, 204, 0.35);
+}
+
+/* Maroon Marks Table */
+.marks-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.marks-table thead th {
+  background: var(--maroon, #7F0303);
+  color: #FFFFFF;
+  text-align: left;
+  padding: 9px 14px;
+  font-weight: 600;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+}
+
+.marks-table thead th:first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.marks-table thead th:last-child {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  text-align: center;
+}
+
+.marks-table thead th:nth-child(2) {
+  text-align: center;
+}
+
+.marks-table tbody tr {
+  border-bottom: 1px solid var(--alabaster, #EFE8DF);
+  transition: background-color 120ms ease;
+}
+
+.marks-table tbody tr:hover {
+  background: rgba(239, 232, 223, 0.25);
+}
+
+.marks-table tbody td {
+  padding: 10px 14px;
+  color: var(--midnight, #0F414A);
+  font-weight: 600;
+}
+
+.marks-table tbody td:first-child {
+  font-weight: 700;
+}
+
+.marks-table tbody td:nth-child(2) {
+  text-align: center;
+  color: var(--maroon, #7F0303);
+  font-weight: 700;
+}
+
+.marks-table tbody td:nth-child(3) {
+  text-align: center;
+  color: rgba(15, 65, 74, 0.7);
+}
+
+/* Teacher Feedback */
+.teacher-feedback-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--alabaster, #EFE8DF);
+}
+
+.teacher-feedback-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.teacher-feedback-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--cream, #F7F3EC);
+  color: var(--midnight, #0F414A);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  flex-shrink: 0;
+}
+
+.teacher-feedback-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.teacher-feedback-header h4 {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+}
+
+.teacher-feedback-card {
+  display: flex;
+  gap: 12px;
+  background: var(--cream, #F7F3EC);
+  border: 1px solid var(--alabaster, #EFE8DF);
+  border-radius: var(--radius-lg, 0.5rem);
+  padding: 14px 16px;
+}
+
+.teacher-feedback-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--midnight, #0F414A);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px;
+  flex-shrink: 0;
+}
+
+.teacher-feedback-body {
+  min-width: 0;
+}
+
+.teacher-feedback-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.teacher-feedback-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+}
+
+.teacher-feedback-date {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(15, 65, 74, 0.5);
+}
+
+.teacher-feedback-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(15, 65, 74, 0.7);
+}

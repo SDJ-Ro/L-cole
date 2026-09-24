@@ -1,0 +1,262 @@
+/* =========================================================================
+   L'ÉCOLE — NOTICE CARD COMPONENT STYLES
+   =========================================================================
+   Exact 1:1 port from Admin Notice styles.
+   - Category-colored 6px left border.
+   - Category tag pills.
+   - Pin badge indicator.
+   - Clamp-3 body snippet.
+   - Category-tinted footer with author avatar & action buttons.
+   ========================================================================= */
+
+.c-notice-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .c-notice-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.c-notice-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-left: 6px solid var(--skyblue, #7FC7CC);
+  background: #ffffff !important;
+  padding: 1.25rem 1.25rem 0 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: box-shadow 150ms ease, transform 150ms ease;
+}
+
+.c-notice-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.c-notice-card:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(127, 199, 204, 0.5);
+}
+
+/* Category Accent -> Left Border Colour */
+.c-notice-card[data-category="Academic"] {
+  border-left-color: var(--skyblue, #7FC7CC) !important;
+}
+
+.c-notice-card[data-category="Extracurricular"] {
+  border-left-color: var(--sunshine, #EA8913) !important;
+}
+
+.c-notice-card[data-category="General"] {
+  border-left-color: #D5C3A5 !important;
+}
+
+.c-notice-card[data-category="Administrative"] {
+  border-left-color: var(--maroon, #7F0303) !important;
+}
+
+.c-notice-card[data-category="Urgent"] {
+  border-left-color: var(--redwine, #980204) !important;
+}
+
+/* Pin Indicator */
+.c-notice-card__pin {
+  position: absolute;
+  right: 1.25rem;
+  top: 1.25rem;
+  color: var(--skyblue, #7FC7CC);
+  display: flex;
+}
+
+/* Tags */
+.c-notice-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-right: 2rem;
+}
+
+.c-tag {
+  border-radius: 4px;
+  padding: 0.2rem 0.55rem;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #EBEAE5 !important;
+  color: rgba(15, 65, 74, 0.75) !important;
+}
+
+.c-tag--category {
+  background: #EBEAE5 !important;
+}
+
+.c-tag--audience {
+  background: rgba(15, 65, 74, 0.06);
+  color: rgba(15, 65, 74, 0.75);
+}
+.c-tag--audience[data-role="students"] {
+  background: rgba(127, 199, 204, 0.22) !important;
+  color: var(--midnight, #0F414A) !important;
+}
+.c-tag--audience[data-role="teachers"] {
+  background: rgba(234, 137, 19, 0.20) !important;
+  color: var(--midnight, #0F414A) !important;
+}
+.c-tag--audience[data-role="parents"] {
+  background: rgba(175, 80, 49, 0.16) !important;
+  color: var(--terracotta, #AF5031) !important;
+}
+.c-tag--audience[data-role="management"] {
+  background: rgba(127, 3, 3, 0.12) !important;
+  color: var(--maroon, #7F0303) !important;
+}
+
+/* Title & Body */
+.c-notice-card__title {
+  margin: 0 0 0.5rem;
+  padding-right: 1.75rem;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--midnight, #0F414A);
+}
+
+.c-notice-card__body {
+  margin: 0 0 1.25rem;
+  flex: 1 1 auto;
+  padding-right: 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: rgba(15, 65, 74, 0.7);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Footer & Category Tinted Background */
+.c-notice-card__footer {
+  margin: 0 -1.25rem 0 -1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 0 0 0.9375rem 0.9375rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(127, 199, 204, 0.12);
+}
+
+.c-notice-card[data-category="Academic"] .c-notice-card__footer {
+  border-top-color: rgba(127, 199, 204, 0.2);
+  background: rgba(127, 199, 204, 0.12);
+}
+
+.c-notice-card[data-category="Extracurricular"] .c-notice-card__footer {
+  border-top-color: rgba(234, 137, 19, 0.2);
+  background: rgba(234, 137, 19, 0.12);
+}
+
+.c-notice-card[data-category="General"] .c-notice-card__footer {
+  border-top-color: rgba(185, 140, 85, 0.35);
+  background: rgba(213, 170, 115, 0.32);
+}
+
+.c-notice-card[data-category="Administrative"] .c-notice-card__footer {
+  border-top-color: rgba(127, 3, 3, 0.12);
+  background: rgba(127, 3, 3, 0.06);
+}
+
+.c-notice-card[data-category="Urgent"] .c-notice-card__footer {
+  border-top-color: rgba(152, 2, 4, 0.18);
+  background: rgba(152, 2, 4, 0.08);
+}
+
+/* Author Info */
+.c-notice-card__author {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.c-avatar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.1rem;
+  width: 2.1rem;
+  border-radius: 9999px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--midnight, #0F414A);
+}
+
+.c-notice-card__author-name {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--midnight, #0F414A);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.c-notice-card__date {
+  margin: 0.0625rem 0 0;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(15, 65, 74, 0.5);
+}
+
+/* Action Icon Buttons */
+.c-notice-card__actions {
+  display: flex;
+  gap: 0.375rem;
+  color: rgba(15, 65, 74, 0.45);
+  flex-shrink: 0;
+}
+
+.c-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  border: 0;
+  background: transparent;
+  padding: 0.25rem;
+  color: inherit;
+  cursor: pointer;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.c-icon-btn:hover {
+  color: var(--midnight, #0F414A);
+  background-color: rgba(15, 65, 74, 0.08);
+}
+
+.c-icon-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(127, 199, 204, 0.35);
+}
+
+.c-icon-btn--danger:hover {
+  color: var(--maroon, #7F0303);
+  background-color: rgba(127, 3, 3, 0.1);
+}
