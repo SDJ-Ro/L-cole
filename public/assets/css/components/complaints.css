@@ -1,0 +1,549 @@
+/**
+ * =========================================================================
+ * L'ÉCOLE — COMPLAINTS & INQUIRIES STYLING
+ * =========================================================================
+ * Stylesheet for Complaints and Inquiries (Parent & Management portals).
+ * Uses pure L'École design tokens, BEM methodology, and verified color codes.
+ * =========================================================================
+ */
+
+:root {
+  --complaints-flame: #F47A20;
+  --complaints-emerald-text: #0E9F6E;
+  --complaints-emerald-bg: #D3F6E7;
+  --complaints-emerald-border: #0E9F6E;
+}
+
+/* -------------------------------------------------------------------------
+   Container & Page Shell
+   ------------------------------------------------------------------------- */
+.c-complaints-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* -------------------------------------------------------------------------
+   Filter Toolbar / Controls Row (Exact Notice Board Layout)
+   ------------------------------------------------------------------------- */
+.c-filter-bar--complaints {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .c-filter-bar--complaints {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+}
+
+.c-filter-bar--complaints .c-search-field {
+  flex: 1 1 20rem;
+  max-width: 28rem;
+  min-width: 14rem;
+}
+
+.c-filter-bar--complaints .c-filter-bar__selects {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+}
+
+.c-filter-bar--complaints .c-filter-bar__selects .c-select,
+.c-filter-bar--complaints .c-filter-bar__selects .c-dropdown {
+  min-width: 12.5rem;
+  flex: 1 1 auto;
+  max-width: 18rem;
+}
+
+@media (max-width: 640px) {
+  .c-filter-bar--complaints .c-filter-bar__selects {
+    width: 100%;
+    flex-direction: column;
+  }
+  .c-filter-bar--complaints .c-filter-bar__selects .c-select,
+  .c-filter-bar--complaints .c-filter-bar__selects .c-dropdown {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Complaints List Grid
+   ------------------------------------------------------------------------- */
+.c-complaints-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+/* -------------------------------------------------------------------------
+   Unified Complaint Card
+   ------------------------------------------------------------------------- */
+.c-complaint-card {
+  background: #ffffff;
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 1px solid var(--color-border, #EFE8DF);
+  border-left: 6px solid #D5C3A5;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(15, 65, 74, 0.05));
+  overflow: hidden;
+  transition: box-shadow 180ms ease, transform 180ms ease;
+  animation: complaintFadeIn 220ms ease;
+}
+
+@keyframes complaintFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.c-complaint-card:hover {
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(15, 65, 74, 0.08));
+}
+
+/* Category Accent -> Left Border Colour (Exact Notice Board Color Tokens) */
+.c-complaint-card[data-category="Academic"],
+.c-complaint-card--cat-academic {
+  border-left-color: var(--skyblue, #7FC7CC) !important;
+}
+
+.c-complaint-card[data-category="Extracurricular"],
+.c-complaint-card--cat-extracurricular {
+  border-left-color: var(--sunshine, #EA8913) !important;
+}
+
+.c-complaint-card[data-category="Administration"],
+.c-complaint-card[data-category="Administrative"],
+.c-complaint-card--cat-administration,
+.c-complaint-card--cat-administrative {
+  border-left-color: var(--maroon, #7F0303) !important;
+}
+
+.c-complaint-card[data-category="Facilities"],
+.c-complaint-card--cat-facilities {
+  border-left-color: var(--flameorange, #F47A20) !important;
+}
+
+.c-complaint-card[data-category="Transport"],
+.c-complaint-card--cat-transport {
+  border-left-color: var(--terracotta, #AF5031) !important;
+}
+
+.c-complaint-card[data-category="General"],
+.c-complaint-card--cat-general {
+  border-left-color: #D5C3A5 !important;
+}
+
+.c-complaint-card[data-category="Urgent"],
+.c-complaint-card--cat-urgent {
+  border-left-color: var(--redwine, #980204) !important;
+}
+
+/* Category specific footer and resolve-bar backgrounds */
+.c-complaint-card--cat-academic .c-complaint-card__resolution-footer,
+.c-complaint-card--cat-academic .c-complaint-card__resolve-bar {
+  border-color: rgba(127, 199, 204, 0.3);
+  background: rgba(127, 199, 204, 0.1);
+}
+.c-complaint-card--cat-facilities .c-complaint-card__resolution-footer,
+.c-complaint-card--cat-facilities .c-complaint-card__resolve-bar {
+  border-color: rgba(244, 122, 32, 0.25);
+  background: rgba(244, 122, 32, 0.08);
+}
+.c-complaint-card--cat-extracurricular .c-complaint-card__resolution-footer,
+.c-complaint-card--cat-extracurricular .c-complaint-card__resolve-bar {
+  border-color: rgba(234, 137, 19, 0.25);
+  background: rgba(234, 137, 19, 0.08);
+}
+.c-complaint-card--cat-transport .c-complaint-card__resolution-footer,
+.c-complaint-card--cat-transport .c-complaint-card__resolve-bar {
+  border-color: rgba(175, 80, 49, 0.25);
+  background: rgba(175, 80, 49, 0.08);
+}
+.c-complaint-card--cat-administration .c-complaint-card__resolution-footer,
+.c-complaint-card--cat-administration .c-complaint-card__resolve-bar,
+.c-complaint-card--cat-general .c-complaint-card__resolution-footer,
+.c-complaint-card--cat-general .c-complaint-card__resolve-bar {
+  border-color: rgba(228, 203, 169, 0.3);
+  background: rgba(247, 243, 236, 0.7);
+}
+
+/* Card Body Layout */
+.c-complaint-card__body {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.c-complaint-card__main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Meta Badges Row */
+.c-complaint-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.c-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.c-status-badge--inprogress {
+  color: var(--complaints-flame);
+  background: rgba(244, 122, 32, 0.12);
+}
+
+.c-status-badge--resolved {
+  color: var(--complaints-emerald-text);
+  background: var(--complaints-emerald-bg);
+}
+
+.c-category-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  background: var(--alabaster, #EFE8DF);
+  color: var(--midnight, #0F414A);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.c-dot-sep {
+  color: rgba(15, 65, 74, 0.25);
+  font-size: 12px;
+}
+
+.c-complaint-card__date {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(15, 65, 74, 0.55);
+}
+
+/* Typography */
+.c-complaint-card__subject {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+  margin: 0 0 0.35rem;
+  line-height: 1.35;
+}
+
+.c-complaint-card__message {
+  font-size: 0.875rem;
+  color: rgba(15, 65, 74, 0.72);
+  line-height: 1.55;
+  margin: 0 0 0.75rem;
+}
+
+.c-complaint-card__context {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.775rem;
+  color: rgba(15, 65, 74, 0.65);
+}
+
+.c-complaint-card__context strong {
+  color: var(--midnight, #0F414A);
+  font-weight: 600;
+}
+
+/* Management Action Button */
+.c-complaint-card__resolve-btn {
+  flex-shrink: 0;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid var(--color-border, #EFE8DF);
+  background: #ffffff;
+  padding: 0.5rem 1.1rem;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--midnight, #0F414A);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 65, 74, 0.04));
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.c-complaint-card__resolve-btn:hover {
+  background: var(--cream, #F7F3EC);
+  border-color: rgba(15, 65, 74, 0.2);
+  color: var(--deepsea, #092F33);
+}
+
+/* Resolution Footer (Response view) */
+.c-complaint-card__resolution-footer {
+  border-top: 1px solid rgba(14, 159, 110, 0.2);
+  background: rgba(211, 246, 231, 0.35);
+  padding: 0.875rem 1.5rem;
+}
+
+.c-complaint-card__resolution-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #047857;
+  margin: 0 0 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.c-complaint-card__resolution-text {
+  font-size: 0.875rem;
+  color: rgba(15, 65, 74, 0.85);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Inline Resolve Bar (Management only) */
+.c-complaint-card__resolve-bar {
+  border-top: 1px solid var(--color-border, #EFE8DF);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--cream, #F7F3EC);
+}
+
+.c-complaint-card__resolve-input {
+  flex: 1;
+  border: 1px solid var(--color-border, #EFE8DF);
+  background: #ffffff;
+  border-radius: var(--radius-md, 0.375rem);
+  padding: 0.55rem 0.85rem;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  color: var(--midnight, #0F414A);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.c-complaint-card__resolve-input:focus {
+  border-color: var(--skyblue, #7FC7CC);
+}
+
+.c-complaint-card__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-md, 0.375rem);
+  border: 1px solid var(--color-border, #EFE8DF);
+  background: #ffffff;
+  color: rgba(15, 65, 74, 0.65);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.c-complaint-card__icon-btn:hover {
+  color: #c0392b;
+  border-color: #c0392b;
+}
+
+.c-complaint-card__send-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: var(--radius-md, 0.375rem);
+  background: #0E9F6E;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 3px rgba(14, 159, 110, 0.3);
+  transition: all 150ms ease;
+}
+
+.c-complaint-card__send-btn:hover:not(:disabled) {
+  background: #059669;
+}
+
+.c-complaint-card__send-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* -------------------------------------------------------------------------
+   Empty State
+   ------------------------------------------------------------------------- */
+.c-complaints-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3.5rem 1.5rem;
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 1px dashed var(--color-border, #EFE8DF);
+  background: rgba(239, 232, 223, 0.35);
+  text-align: center;
+}
+
+.c-complaints-empty__icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  color: rgba(15, 65, 74, 0.35);
+}
+
+.c-complaints-empty__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+}
+
+.c-complaints-empty__desc {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: rgba(15, 65, 74, 0.6);
+}
+
+/* -------------------------------------------------------------------------
+   New Inquiry Modal Layer (Overrides .c-modal sizing; layer inherits from global.css)
+   ------------------------------------------------------------------------- */
+.c-modal {
+  max-width: 32rem;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.c-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem 1.125rem;
+  border-bottom: 1px solid var(--color-border, #E2E8F0);
+  background: var(--cream, #F7F3EC);
+  border-top-left-radius: var(--radius-2xl, 1.25rem);
+  border-top-right-radius: var(--radius-2xl, 1.25rem);
+}
+
+.c-modal__heading-group {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.c-modal__icon-badge {
+  flex-shrink: 0;
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xl, 0.875rem);
+  color: var(--midnight, #0F414A);
+}
+
+.c-modal__icon-badge--sky {
+  background: rgba(127, 199, 204, 0.25);
+}
+
+.c-modal__eyebrow {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(15, 65, 74, 0.55);
+}
+
+.c-modal__title {
+  margin: 0.25rem 0 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+}
+
+.c-modal__description {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: rgba(15, 65, 74, 0.65);
+}
+
+.c-modal__close-btn {
+  flex-shrink: 0;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: none;
+  background: transparent;
+  padding: 0.375rem;
+  color: rgba(15, 65, 74, 0.6);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.c-modal__close-btn:hover {
+  background: #F7F3EC;
+  color: var(--midnight, #0F414A);
+}
+
+/* Modal Form Styles matching Calendar & Notice */
+.c-inquiry-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+}
+
+/* Form fields (.c-field-label, .c-field-input) inherit from global.css */
+
+.c-inquiry-modal-form__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-top: 1px solid var(--color-border, #E2E8F0);
+  padding-top: 1.25rem;
+  margin-top: 0.25rem;
+}
+
+.c-btn--ghost {
+  background: transparent;
+  color: rgba(15, 65, 74, 0.65);
+}
+
+.c-btn--ghost:hover {
+  background: var(--alabaster, #F4EFEB);
+}
+
+.c-btn--solid {
+  background: var(--midnight, #0F414A);
+  color: #fff;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.08));
+}
+
+.c-btn--solid:hover {
+  background: var(--deepsea, #0A2F35);
+}
