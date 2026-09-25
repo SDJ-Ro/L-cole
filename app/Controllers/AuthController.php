@@ -382,19 +382,49 @@ class AuthController extends Controller {
 
         $identifier  = trim($data['email'] ?? $data['identifier'] ?? '');
         $code        = trim($data['code'] ?? '');
-        $newPassword = trim((string)($data['newPassword'] ?? $data['password'] ?? ''));
+        $password    = trim((string)($data['password'] ?? $data['newPassword'] ?? ''));
+        $isReset     = !empty($data['is_reset']);
 
         if (empty($identifier) || empty($code)) {
             echo json_encode(['success' => false, 'error' => 'Please provide both your account identifier and 6-digit code.']);
             return;
         }
 
+        if (empty($password)) {
+            echo json_encode([
+                'success' => false,
+                'error'   => $isReset ? 'Please enter your new password.' : 'Please enter your password to sign in.'
+            ]);
+            return;
+        }
+
         require_once __DIR__ . '/../Models/UserModel.php';
         $userModel = new UserModel();
-        // If newPassword is provided, verify and reset password. If omitted, verify and just unlock!
-        $res = $userModel->unlockWithOtp($identifier, $code, $newPassword ?: null);
 
-        echo json_encode($res);
+        $res = $userModel->authenticateOrResetWithOtp($identifier, $code, $password, $isReset);
+
+        if (!$res['success']) {
+            echo json_encode($res);
+            return;
+        }
+
+        // Authentication Success: Establish session and redirect to dashboard
+        session_regenerate_id(true);
+        $_SESSION['user']          = $res['account'];
+        $_SESSION['profile']       = $res['profile'];
+        $_SESSION['last_activity'] = time();
+
+        $actualRole = strtolower($res['account']['role'] ?? 'teacher');
+        $redirectUrl = '/' . $actualRole;
+        if ($actualRole === 'management') {
+            $redirectUrl = '/management';
+        }
+
+        echo json_encode([
+            'success'  => true,
+            'redirect' => $redirectUrl,
+            'message'  => $res['message'] ?? 'Signed in successfully! Redirecting to your dashboard…'
+        ]);
     }
 
     /**

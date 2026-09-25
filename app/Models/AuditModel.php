@@ -75,9 +75,9 @@ class AuditModel extends Model {
     /**
      * Retrieve the most recent audit records.
      */
-    public function getRecentLogs(int $limit = 50, ?string $action = null): array {
+    public function getRecentLogs(int $limit = 350, ?string $action = null): array {
         try {
-            $limit = max(1, min(500, $limit));
+            $limit = max(1, min(1000, $limit));
             if ($action) {
                 $stmt = $this->db->prepare("
                     SELECT a.*, u.role, u.activation_status 
@@ -109,9 +109,9 @@ class AuditModel extends Model {
     /**
      * Retrieve audit history for a specific account ID.
      */
-    public function getLogsByAccount(int $accountId, int $limit = 25): array {
+    public function getLogsByAccount(int $accountId, int $limit = 50): array {
         try {
-            $limit = max(1, min(100, $limit));
+            $limit = max(1, min(250, $limit));
             $stmt = $this->db->prepare("
                 SELECT * FROM activity_logs 
                 WHERE account_id = :aid
@@ -129,13 +129,29 @@ class AuditModel extends Model {
     /**
      * Retrieve formatted logs for the Admin Audit UI view.
      */
-    public static function getAll(int $limit = 100): array {
+    public static function getAll(int $limit = 350): array {
         try {
             $instance = new self();
             $raw = $instance->getRecentLogs($limit);
             $formatted = [];
             foreach ($raw as $r) {
-                $role = !empty($r['role']) ? ucfirst($r['role']) : 'System';
+                $role = !empty($r['role']) ? ucfirst(strtolower($r['role'])) : null;
+                if (!$role) {
+                    $ident = strtolower($r['identifier'] ?? '');
+                    if (str_contains($ident, 'admin')) {
+                        $role = 'Admin';
+                    } elseif (str_contains($ident, 'stu') || str_contains($ident, 'student')) {
+                        $role = 'Student';
+                    } elseif (str_contains($ident, 'teacher') || str_contains($ident, 'staff')) {
+                        $role = 'Teacher';
+                    } elseif (str_contains($ident, 'parent') || str_contains($ident, 'guard')) {
+                        $role = 'Parent';
+                    } elseif (str_contains($ident, 'management') || str_contains($ident, 'mgmt')) {
+                        $role = 'Management';
+                    } else {
+                        $role = 'System';
+                    }
+                }
                 $actor = $r['identifier'] ?: 'System / Automated';
                 $cleanActor = preg_replace('/[^a-zA-Z0-9]/', '', explode('@', $actor)[0]);
                 $initials = strtoupper(substr($cleanActor ?: 'SY', 0, 2));
@@ -164,20 +180,29 @@ class AuditModel extends Model {
 
     /**
      * Filter options for activity dropdown in Admin Audit view.
+     * Queries live distinct actions from database so all modules are represented.
      */
     public static function getActivityOptions(): array {
+        try {
+            $instance = new self();
+            $stmt = $instance->db->query("SELECT DISTINCT action FROM activity_logs WHERE action IS NOT NULL AND action != '' ORDER BY action ASC");
+            $dbActions = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            if (!empty($dbActions)) {
+                return array_merge(['All activities'], $dbActions);
+            }
+        } catch (\Throwable $e) {
+            error_log("[AuditModel Error] getActivityOptions: " . $e->getMessage());
+        }
+
         return [
             'All activities',
             'LOGIN_SUCCESS',
             'LOGIN_FAILED',
             'ACCOUNT_LOCKED',
             'ACCOUNT_UNLOCKED_OTP',
-            'PASSWORD_RESET_REQUESTED',
+            'ACCOUNT_UNLOCKED_LOGIN',
             'PASSWORD_RESET_COMPLETED',
-            'ACCOUNT_ACTIVATED',
-            'ACCOUNT_REGISTERED',
-            'SESSION_EXPIRED',
-            'LOGOUT'
+            'SESSION_EXPIRED'
         ];
     }
 

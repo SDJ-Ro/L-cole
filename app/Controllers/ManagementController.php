@@ -6,9 +6,10 @@ require_once __DIR__ . '/../Models/ExtracurricularModel.php';
 require_once __DIR__ . '/../Models/PeopleModel.php';
 require_once __DIR__ . '/../Models/ComplaintModel.php';
 require_once __DIR__ . '/../Models/CertificateModel.php';
-
+require_once __DIR__ . '/AcademicCrudTrait.php';
 
 class ManagementController extends Controller {
+    use AcademicCrudTrait;
 
     public function __construct() {
         parent::__construct();
@@ -23,16 +24,18 @@ class ManagementController extends Controller {
         $type = $_GET['type'] ?? 'All';
         $search = $_GET['q'] ?? '';
         $clubs = ExtracurricularModel::getAll($type, $search);
+        $staffAssignments = AcademicModel::getStaffAssignments();
 
         $this->view('management/extracurricular', [
-            'currentRole'  => 'management',
-            'currentRoute' => '/management/extracurricular',
-            'clubs'        => $clubs,
-            'canModerate'  => true,
-            'canCreate'    => true,
-            'canDelete'    => false,
-            'selectedType' => $type,
-            'searchQuery'  => $search,
+            'currentRole'      => 'management',
+            'currentRoute'     => '/management/extracurricular',
+            'clubs'            => $clubs,
+            'staffAssignments' => $staffAssignments,
+            'canModerate'      => true,
+            'canCreate'        => true,
+            'canDelete'        => false,
+            'selectedType'     => $type,
+            'searchQuery'      => $search,
         ]);
     }
 
@@ -251,6 +254,7 @@ class ManagementController extends Controller {
         $classTeachers    = AcademicModel::getClassTeachers();
         $classEnrollments = AcademicModel::getClassEnrollments();
         $staffAssignments = AcademicModel::getStaffAssignments();
+        $subjectTeachers  = AcademicModel::getSubjectTeachers();
 
         $this->view('management/academic', [
             'currentRole'      => 'management',
@@ -265,6 +269,7 @@ class ManagementController extends Controller {
             'classTeachers'    => $classTeachers,
             'classEnrollments' => $classEnrollments,
             'staffAssignments' => $staffAssignments,
+            'subjectTeachers'  => $subjectTeachers,
         ]);
     }
 

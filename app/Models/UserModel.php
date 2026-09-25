@@ -87,8 +87,55 @@ class UserModel extends Model {
         ");
         $stmt->execute([':id1' => $identifier, ':id2' => $norm]);
         $account = $stmt->fetch();
+        if ($account) {
+            return $account;
+        }
 
-        return $account ?: null;
+        // 4. Match against teachers table by personal_email, institutional_email, or staff_id
+        $stmt = $this->db->prepare("
+            SELECT ua.* FROM user_accounts ua
+            JOIN teachers t ON t.account_id = ua.id
+            WHERE LOWER(t.personal_email) = LOWER(?) 
+               OR LOWER(t.institutional_email) = LOWER(?)
+               OR LOWER(t.staff_id) = LOWER(?)
+            LIMIT 1
+        ");
+        $stmt->execute([$identifier, $identifier, $identifier]);
+        $account = $stmt->fetch();
+        if ($account) {
+            return $account;
+        }
+
+        // 5. Match against management_profiles by personal_email, institutional_email, or staff_id
+        $stmt = $this->db->prepare("
+            SELECT ua.* FROM user_accounts ua
+            JOIN management_profiles m ON m.account_id = ua.id
+            WHERE LOWER(m.personal_email) = LOWER(?) 
+               OR LOWER(m.institutional_email) = LOWER(?)
+               OR LOWER(m.staff_id) = LOWER(?)
+            LIMIT 1
+        ");
+        $stmt->execute([$identifier, $identifier, $identifier]);
+        $account = $stmt->fetch();
+        if ($account) {
+            return $account;
+        }
+
+        // 6. Match against parents table by personal_email or parent_id
+        $stmt = $this->db->prepare("
+            SELECT ua.* FROM user_accounts ua
+            JOIN parents p ON p.account_id = ua.id
+            WHERE LOWER(p.personal_email) = LOWER(?) 
+               OR LOWER(p.parent_id) = LOWER(?)
+            LIMIT 1
+        ");
+        $stmt->execute([$identifier, $identifier]);
+        $account = $stmt->fetch();
+        if ($account) {
+            return $account;
+        }
+
+        return null;
     }
 
     /**
@@ -602,7 +649,10 @@ class UserModel extends Model {
                 return [
                     'success'       => true,
                     'unlocked_only' => false,
-                    'message'       => 'Account unlocked and password reset successfully! You may now sign in with your new password.'
+                    'message'       => 'Password reset and account unlocked! Please return to the sign-in page and enter your new password.',
+                    'role'          => $account['role'],
+                    'identifier'    => $account['identifier'],
+                    'signin_url'    => '/auth/' . strtolower($account['role'] ?: 'student')
                 ];
             } else {
                 // Just unlock! Keep current password intact
@@ -622,7 +672,10 @@ class UserModel extends Model {
                 return [
                     'success'       => true,
                     'unlocked_only' => true,
-                    'message'       => 'Account unlocked successfully! You may now sign in with your current password.'
+                    'message'       => 'Account unlocked successfully! Please return to the sign-in page and enter your password.',
+                    'role'          => $account['role'],
+                    'identifier'    => $account['identifier'],
+                    'signin_url'    => '/auth/' . strtolower($account['role'] ?: 'student')
                 ];
             }
         } catch (\Throwable $e) {
@@ -631,6 +684,179 @@ class UserModel extends Model {
                 'success' => false,
                 'error'   => 'An unexpected error occurred while unlocking your account.'
             ];
+        }
+    }
+
+    /**
+     * Single-Step Authenticated Verification:
+     * Validates 6-digit OTP and verifies password (or sets new password),
+     * clears lockout, logs user in, and returns full account/profile data.
+     *
+     * @param string $identifier Account email or student index
+     * @param string $otp        6-digit numeric OTP code
+     * @param string $password   Existing password (if keeping) or new password (if resetting)
+     * @param bool   $isReset    True if user chose to set a new password
+     * @return array Result array with status, user data, or error message
+     */
+    public function authenticateOrResetWithOtp(string $identifier, string $otp, string $password, bool $isReset = false): array {
+        $identifier = trim($identifier);
+        $otp        = trim($otp);
+        $password   = trim($password);
+
+        if (empty($identifier) || empty($otp) || empty($password)) {
+            return [
+                'success' => false,
+                'error'   => 'Please provide both your verification code and password.'
+            ];
+        }
+
+        // 1. Find account using canonical unified finder
+        $account = $this->findAccountByIdentifier($identifier);
+
+        if (!$account) {
+            return [
+                'success' => false,
+                'error'   => 'Invalid or expired verification code.'
+            ];
+        }
+
+        if (!empty($account['locked_at'])) {
+            return [
+                'success' => false,
+                'error'   => 'This account has been administratively locked for security. Please contact admin@lecole.edu directly.'
+            ];
+        }
+
+        // 2. Find active unexpired OTP
+        $otpStmt = $this->db->prepare("
+            SELECT * FROM password_reset_otps 
+            WHERE account_id = :account_id 
+              AND used_at IS NULL 
+              AND expires_at > NOW() 
+            ORDER BY id DESC LIMIT 1
+        ");
+        $otpStmt->execute([':account_id' => $account['id']]);
+        $activeOtp = $otpStmt->fetch();
+
+        if (!$activeOtp || $activeOtp['attempts_left'] <= 0) {
+            return [
+                'success' => false,
+                'error'   => 'Verification code has expired or maximum attempts exceeded. Please request a new one.'
+            ];
+        }
+
+        // 3. Verify OTP code
+        if (!password_verify($otp, $activeOtp['otp_hash'])) {
+            $decrement = $this->db->prepare("
+                UPDATE password_reset_otps 
+                SET attempts_left = attempts_left - 1 
+                WHERE id = :id
+            ");
+            $decrement->execute([':id' => $activeOtp['id']]);
+
+            return [
+                'success' => false,
+                'error'   => 'Invalid verification code.'
+            ];
+        }
+
+        // 4. OTP is verified! Handle Reset vs Existing Password
+        if ($isReset) {
+            $policyCheck = self::validatePasswordPolicy($password);
+            if (!$policyCheck['valid']) {
+                return [
+                    'success' => false,
+                    'error'   => $policyCheck['message']
+                ];
+            }
+
+            $newHash = password_hash($password, PASSWORD_BCRYPT);
+            $this->beginTransaction();
+            try {
+                $markUsed = $this->db->prepare("UPDATE password_reset_otps SET used_at = NOW() WHERE id = :id");
+                $markUsed->execute([':id' => $activeOtp['id']]);
+
+                $updatePass = $this->db->prepare("
+                    UPDATE user_accounts 
+                    SET password_hash = :hash,
+                        activation_status = IF(activation_status = 'PENDING', 'ACTIVE', activation_status),
+                        first_login_required = 0,
+                        failed_login_count = 0,
+                        lock_expires_at = NULL,
+                        updated_at = NOW()
+                    WHERE id = :id AND locked_at IS NULL
+                ");
+                $updatePass->execute([
+                    ':hash' => $newHash,
+                    ':id'   => $account['id']
+                ]);
+
+                $this->commit();
+
+                AuditModel::record((int)$account['id'], $account['identifier'], 'PASSWORD_RESET_COMPLETED', 'Password reset & account unlocked with verified 6-digit OTP.');
+                $this->handleSuccessfulLogin((int)$account['id'], $account['identifier'], $account['role']);
+                $profile = $this->getProfileByAccountId((int)$account['id'], $account['role']);
+
+                return [
+                    'success' => true,
+                    'account' => [
+                        'id'                   => (int)$account['id'],
+                        'identifier'           => $account['identifier'],
+                        'role'                 => $account['role'],
+                        'first_login_required' => false
+                    ],
+                    'profile' => $profile,
+                    'message' => 'Password reset and signed in successfully! Redirecting to your dashboard…'
+                ];
+            } catch (\Throwable $e) {
+                $this->rollBack();
+                return ['success' => false, 'error' => 'An unexpected error occurred while resetting your password.'];
+            }
+        } else {
+            // Verify existing password
+            if (empty($account['password_hash']) || !password_verify($password, $account['password_hash'])) {
+                return [
+                    'success' => false,
+                    'error'   => 'Verification code accepted, but password was incorrect. If you forgot your password, please check "I forgot my password — set a new one".'
+                ];
+            }
+
+            // Existing password matches! Mark OTP as used and clear lock
+            $this->beginTransaction();
+            try {
+                $markUsed = $this->db->prepare("UPDATE password_reset_otps SET used_at = NOW() WHERE id = :id");
+                $markUsed->execute([':id' => $activeOtp['id']]);
+
+                $clearLock = $this->db->prepare("
+                    UPDATE user_accounts 
+                    SET failed_login_count = 0,
+                        lock_expires_at = NULL,
+                        updated_at = NOW()
+                    WHERE id = :id AND locked_at IS NULL
+                ");
+                $clearLock->execute([':id' => $account['id']]);
+
+                $this->commit();
+
+                AuditModel::record((int)$account['id'], $account['identifier'], 'ACCOUNT_UNLOCKED_LOGIN', 'Account unlocked and signed in with verified 6-digit OTP & password.');
+                $this->handleSuccessfulLogin((int)$account['id'], $account['identifier'], $account['role']);
+                $profile = $this->getProfileByAccountId((int)$account['id'], $account['role']);
+
+                return [
+                    'success' => true,
+                    'account' => [
+                        'id'                   => (int)$account['id'],
+                        'identifier'           => $account['identifier'],
+                        'role'                 => $account['role'],
+                        'first_login_required' => (bool)$account['first_login_required']
+                    ],
+                    'profile' => $profile,
+                    'message' => 'Account unlocked and signed in successfully! Redirecting to your dashboard…'
+                ];
+            } catch (\Throwable $e) {
+                $this->rollBack();
+                return ['success' => false, 'error' => 'An unexpected error occurred while unlocking your account.'];
+            }
         }
     }
 
@@ -718,7 +944,8 @@ class UserModel extends Model {
                 $account['role'],
                 $fullName,
                 self::LOCKOUT_MINUTES,
-                $ipAddress
+                $ipAddress,
+                $account['identifier']
             );
 
             AuditModel::record(

@@ -35,7 +35,7 @@
 
         const matchesQuery = query === '' || searchCorpus.includes(query);
         const matchesActivity = activity === 'All activities' || cardAction === activity;
-        const matchesActor = actor === 'All actors' || cardRole === actor;
+        const matchesActor = actor === 'All actors' || cardRole.toLowerCase() === actor.toLowerCase();
 
         const isVisible = matchesQuery && matchesActivity && matchesActor;
 

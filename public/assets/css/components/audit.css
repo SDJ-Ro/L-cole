@@ -87,6 +87,26 @@
 }
 
 /* Role Themes */
+.c-theme-admin {
+  --theme-border: var(--moss, #4B5B34);
+  --theme-tint: rgba(75, 91, 52, 0.04);
+  --theme-pill-bg: rgba(75, 91, 52, 0.12);
+  --theme-avatar-bg: rgba(75, 91, 52, 0.2);
+  --theme-icon: var(--moss, #4B5B34);
+  --theme-accent: rgba(75, 91, 52, 0.15);
+  --theme-focus: rgba(75, 91, 52, 0.35);
+}
+
+.c-theme-student {
+  --theme-border: var(--skyblue, #7FC7CC);
+  --theme-tint: rgba(127, 199, 204, 0.05);
+  --theme-pill-bg: rgba(127, 199, 204, 0.18);
+  --theme-avatar-bg: rgba(127, 199, 204, 0.28);
+  --theme-icon: #207C82;
+  --theme-accent: rgba(127, 199, 204, 0.2);
+  --theme-focus: rgba(127, 199, 204, 0.4);
+}
+
 .c-theme-management {
   --theme-border: var(--maroon, #7F0303);
   --theme-tint: rgba(127, 3, 3, 0.04);
@@ -142,10 +162,41 @@
   border-top: 1px solid rgba(15, 65, 74, 0.12);
   border-right: 1px solid rgba(15, 65, 74, 0.12);
   border-bottom: 1px solid rgba(15, 65, 74, 0.12);
-  border-left: 6px solid var(--theme-border);
+  border-left: 6px solid var(--theme-border, #b48d61);
   background: #ffffff;
   box-shadow: 0 1px 2px 0 rgba(15, 65, 74, 0.05);
   transition: box-shadow 200ms ease;
+}
+
+/* Explicit left color bar overrides */
+.c-log-card.c-theme-admin,
+.c-log-card[data-role="Admin" i] {
+  border-left-color: var(--moss, #4B5B34) !important;
+}
+
+.c-log-card.c-theme-student,
+.c-log-card[data-role="Student" i] {
+  border-left-color: var(--skyblue, #7FC7CC) !important;
+}
+
+.c-log-card.c-theme-management,
+.c-log-card[data-role="Management" i] {
+  border-left-color: var(--maroon, #7F0303) !important;
+}
+
+.c-log-card.c-theme-teacher,
+.c-log-card[data-role="Teacher" i] {
+  border-left-color: var(--sunshine, #EA8913) !important;
+}
+
+.c-log-card.c-theme-parent,
+.c-log-card[data-role="Parent" i] {
+  border-left-color: var(--terracotta, #AF5031) !important;
+}
+
+.c-log-card.c-theme-system,
+.c-log-card[data-role="System" i] {
+  border-left-color: #b48d61 !important;
 }
 
 .c-log-card:hover {

@@ -100,6 +100,14 @@ $isTeacherMode = ($dirContext === 'teacher');
               <?= htmlspecialchars($cls) ?>
             </button>
           <?php endforeach; ?>
+          <?php
+            $unassignedCount = count(array_filter($studentList ?? [], function($s) {
+                return empty($s['className']) || $s['className'] === 'Unassigned' || empty($s['grade']) || $s['grade'] === 'Unassigned';
+            }));
+          ?>
+          <button type="button" class="c-class-chip c-class-chip--unassigned j-class-chip <?= $activeClass === 'Unassigned' ? 'is-active-chip' : '' ?>" data-class="Unassigned" style="margin-left: 0.5rem; border-color: rgba(127, 3, 3, 0.3); color: var(--maroon, #7F0303);">
+            Unassigned <span class="c-badge-pill j-unassigned-badge" style="margin-left: 0.25rem; background: var(--maroon, #7F0303); color: #fff; padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: 700;"><?= $unassignedCount ?></span>
+          </button>
         </div>
       </div>
 
@@ -372,4 +380,8 @@ $isTeacherMode = ($dirContext === 'teacher');
   <?php endif; ?>
 <?php endif; // !$isTeacherMode ?>
 
+  <!-- Teacher Handover & Inactivation Modal -->
+  <?php require __DIR__ . '/_teacher_handover_modal.php'; ?>
+
 </section>
+

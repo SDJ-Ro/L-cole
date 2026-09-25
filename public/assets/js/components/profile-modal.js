@@ -1038,7 +1038,9 @@
       if (hidden) hidden.value = classInCharge;
     }
 
-    setFieldVal('teacher-tic', person.tic || 'Debating Society');
+    const ticAssignment = person.tic || (Array.isArray(person.extracurriculars) && person.extracurriculars[0]) || 'None';
+    setFieldVal('teacher-tic', ticAssignment);
+    setFieldVal('teacher-tic-role', (ticAssignment === 'None' || !ticAssignment) ? 'None' : (person.ticRole || 'Teacher in Charge & Faculty Mentor'));
     setFieldVal('teacher-subject', person.subject || 'Mathematics');
 
     // Workload
@@ -1392,7 +1394,7 @@
     } else if (activeRole === 'teacher') {
       const tFields = [
         'teacher-email', 'teacher-pemail', 'teacher-phone', 'teacher-classincharge',
-        'teacher-subject', 'teacher-tic', 'teacher-nic', 'teacher-dob',
+        'teacher-subject', 'teacher-tic', 'teacher-tic-role', 'teacher-nic', 'teacher-dob',
         'teacher-pemail2', 'teacher-exp', 'teacher-joindate',
         'teacher-emname', 'teacher-emphone'
       ];
@@ -1407,6 +1409,7 @@
       currentPerson.personalEmail = getFieldVal('teacher-pemail') || getFieldVal('teacher-pemail2') || currentPerson.personalEmail;
       currentPerson.classTeacherOf = (getFieldVal('teacher-classincharge') || '').replace(/^Class\s*/i, '') || currentPerson.classTeacherOf;
       currentPerson.tic = getFieldVal('teacher-tic') || currentPerson.tic;
+      currentPerson.ticRole = getFieldVal('teacher-tic-role') || currentPerson.ticRole;
       currentPerson.subject = getFieldVal('teacher-subject') || currentPerson.subject;
       currentPerson.nic = getFieldVal('teacher-nic') || currentPerson.nic;
       currentPerson.dateOfBirth = getFieldVal('teacher-dob') || currentPerson.dateOfBirth;

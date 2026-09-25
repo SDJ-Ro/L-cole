@@ -45,6 +45,12 @@ $createdAt = $clubData['createdAt'] ?? '15 Jan 2024';
     <article class="j-ex-37">
       <div class="j-ex-38">
         <h3 class="c-staff-card__role j-ex-39">Teacher in Charge</h3>
+        <?php if ($isEditable): ?>
+          <button type="button" class="c-btn c-btn--ghost c-btn--sm j-ex-40" id="j-edit-tic-btn" title="Edit Teacher in Charge">
+            <svg class="c-icon" width="12" height="12" viewBox="0 0 24 24"><use href="#icon-edit"/></svg>
+            <span>Edit</span>
+          </button>
+        <?php endif; ?>
       </div>
       <div class="c-staff-card__person j-ex-41">
         <img id="j-detail-tic-avatar" src="<?= htmlspecialchars($ticAvatar) ?>" alt="<?= htmlspecialchars($ticName) ?>" />
@@ -205,18 +211,28 @@ $createdAt = $clubData['createdAt'] ?? '15 Jan 2024';
 
     if (!modal || !form) return;
 
-    // ---- Modal open/close --------------------------------------------------
+    // ---- Modal open/close (Standardized via dialogs-and-popups.js) ---------
     function openModal() {
-      document.body.style.overflow = 'hidden';
-      modal.classList.add('c-is-open');
+      if (typeof window.openModal === 'function') {
+        window.openModal(modal);
+      } else {
+        document.body.style.overflow = 'hidden';
+        modal.style.display = 'flex';
+        modal.classList.add('c-is-open');
+      }
       requestAnimationFrame(() => {
         const first = form.querySelector('input, textarea, select');
         if (first) { first.focus(); first.select && first.select(); }
       });
     }
     function closeModal() {
-      document.body.style.overflow = '';
-      modal.classList.remove('c-is-open');
+      if (typeof window.closeModal === 'function') {
+        window.closeModal(modal);
+      } else {
+        document.body.style.overflow = '';
+        modal.classList.remove('c-is-open');
+        modal.style.display = 'none';
+      }
       if (fieldsWrap) fieldsWrap.innerHTML = '';
       form.onsubmit = null;
     }
@@ -236,6 +252,104 @@ $createdAt = $clubData['createdAt'] ?? '15 Jan 2024';
           <input class="c-text-input" id="${id}" type="${type}" value="${value.replace(/"/g, '&quot;')}" placeholder="${placeholder}" />
         </div>`;
     }
+
+    // -----------------------------------------------------------------------
+    // 0. Teacher in Charge (TIC)
+    // -----------------------------------------------------------------------
+    document.getElementById('j-edit-tic-btn')?.addEventListener('click', () => {
+      const name  = document.getElementById('j-detail-tic-name')?.textContent.trim() || '';
+      const spec  = document.getElementById('j-detail-tic-specialty')?.textContent.trim() || 'Teacher in Charge';
+      const email = document.getElementById('j-detail-tic-email')?.textContent.trim() || '';
+      const phone = document.getElementById('j-detail-tic-phone')?.textContent.trim() || '';
+
+      // Faculty Directory Single Source of Truth from DB-backed window.LECOLE_STAFF_DIRECTORY
+      const rawFaculty = Array.isArray(window.LECOLE_STAFF_DIRECTORY) && window.LECOLE_STAFF_DIRECTORY.length > 0
+        ? window.LECOLE_STAFF_DIRECTORY.map(t => t.name)
+        : [
+            'James Wilson', 'Sarah Peiris', 'Rohan Dias', 'Madhavi Fernando',
+            'Alex Benjamin', 'Priya De Silva', 'Sofia Fernando', 'Shanthi Silva',
+            'Mr. Weerasinghe', 'Anura Wijesinghe', 'David Peris', 'Ruwan Silva'
+          ];
+      const facultyList = [...new Set(rawFaculty.filter(Boolean))];
+
+      if (title) title.textContent = 'Edit Teacher in Charge';
+      if (desc)  desc.textContent  = 'Assign or update the faculty coordinator for this programme.';
+      fieldsWrap.innerHTML = `
+        <div class="c-form-field c-form-field--span-2">
+          <label class="c-form-field__label">Quick Select Faculty Member <span style="font-weight:400;color:rgba(15,65,74,0.55);">(Hover name for 3-level workload details)</span></label>
+          <div class="c-tic-pills" style="display:flex;flex-wrap:wrap;gap:0.35rem;padding:0.45rem;background:var(--sand-light,#FAF7F2);border-radius:var(--radius-lg,0.625rem);border:1px solid var(--color-border,#EFE8DF);">
+            ${facultyList.map(fn => `
+              <button type="button" class="c-btn-plain j-tic-pill-btn" data-teacher="${fn}" style="font-size:0.75rem;padding:0.25rem 0.55rem;border-radius:999px;border:1px solid ${fn === name ? 'var(--deepsea,#0F414A)' : 'rgba(15,65,74,0.15)'};background:${fn === name ? 'var(--deepsea,#0F414A)' : '#fff'};color:${fn === name ? '#fff' : 'var(--deepsea,#0F414A)'};font-weight:600;cursor:pointer;">
+                ${fn}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+        ${field('j-m-tic-name',  'Teacher in Charge Name', name,  'text',  'e.g. Mr. Weerasinghe or James Wilson', false)}
+        ${field('j-m-tic-spec',  'Role / Department',      spec,  'text',  'e.g. Science / Faculty Mentor', false)}
+        ${field('j-m-tic-email', 'Institutional Email',    email, 'email', 'e.g. faculty@lecole.edu', false)}
+        ${field('j-m-tic-phone', 'Contact Number',         phone, 'tel',   'e.g. +94 77 123 4567', false)}
+      `;
+
+      // Wire hover preview and quick fill to each pill
+      fieldsWrap.querySelectorAll('.j-tic-pill-btn').forEach(btn => {
+        const tName = btn.dataset.teacher;
+        if (typeof window.attachTeacherHoverPreview === 'function') {
+          window.attachTeacherHoverPreview(btn, tName);
+        }
+        btn.addEventListener('click', () => {
+          const inp = document.getElementById('j-m-tic-name');
+          if (inp) inp.value = tName;
+          const tData = (typeof window.findTeacherData === 'function') ? window.findTeacherData(tName) : null;
+          if (tData) {
+            const specInp = document.getElementById('j-m-tic-spec');
+            if (specInp && (tData.qualification || tData.subject)) {
+              specInp.value = tData.qualification || tData.subject;
+            }
+          }
+          fieldsWrap.querySelectorAll('.j-tic-pill-btn').forEach(b => {
+            const isMatch = b.dataset.teacher === tName;
+            b.style.borderColor = isMatch ? 'var(--deepsea,#0F414A)' : 'rgba(15,65,74,0.15)';
+            b.style.background = isMatch ? 'var(--deepsea,#0F414A)' : '#fff';
+            b.style.color = isMatch ? '#fff' : 'var(--deepsea,#0F414A)';
+          });
+        });
+      });
+
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        const newName  = document.getElementById('j-m-tic-name')?.value.trim()  || name;
+        const newSpec  = document.getElementById('j-m-tic-spec')?.value.trim()  || spec;
+        const newEmail = document.getElementById('j-m-tic-email')?.value.trim() || '';
+        const newPhone = document.getElementById('j-m-tic-phone')?.value.trim() || '';
+
+        const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        setTxt('j-detail-tic-name',      newName);
+        setTxt('j-detail-tic-specialty', newSpec);
+        setTxt('j-detail-tic-email',     newEmail);
+        setTxt('j-detail-tic-phone',     newPhone);
+
+        if (window.currentExtracurricularClub) {
+          const t = window.currentExtracurricularClub;
+          if (!t.tic) t.tic = {};
+          t.tic.name    = newName;
+          t.tic.subject = newSpec;
+          t.tic.email   = newEmail;
+          t.tic.phone   = newPhone;
+
+          // Update corresponding card on grid if present
+          const card = document.querySelector(`.j-club-card[data-club-id="${t.id}"]`);
+          if (card) {
+            const cardTicName = card.querySelector('.j-card-tic-name');
+            if (cardTicName) cardTicName.textContent = newName;
+            const btn = card.querySelector('.j-edit-card-tic-btn');
+            if (btn) btn.dataset.currentTic = newName;
+          }
+        }
+        closeModal();
+      };
+      openModal();
+    });
 
     // -----------------------------------------------------------------------
     // 1. Coach / Instructor

@@ -6,8 +6,10 @@ require_once __DIR__ . '/../Models/AuditModel.php';
 require_once __DIR__ . '/../Models/AcademicModel.php';
 require_once __DIR__ . '/../Models/ExtracurricularModel.php';
 require_once __DIR__ . '/../Models/PeopleModel.php';
+require_once __DIR__ . '/AcademicCrudTrait.php';
 
 class AdminController extends Controller {
+    use AcademicCrudTrait;
 
     public function __construct() {
         parent::__construct();
@@ -271,6 +273,7 @@ class AdminController extends Controller {
         $classTeachers    = AcademicModel::getClassTeachers();
         $classEnrollments = AcademicModel::getClassEnrollments();
         $staffAssignments = AcademicModel::getStaffAssignments();
+        $subjectTeachers  = AcademicModel::getSubjectTeachers();
 
         $this->view('admin/academic', [
             'currentRole'      => 'admin',
@@ -285,6 +288,7 @@ class AdminController extends Controller {
             'classTeachers'    => $classTeachers,
             'classEnrollments' => $classEnrollments,
             'staffAssignments' => $staffAssignments,
+            'subjectTeachers'  => $subjectTeachers,
         ]);
     }
 
@@ -292,15 +296,17 @@ class AdminController extends Controller {
         $type = $_GET['type'] ?? 'All';
         $search = $_GET['q'] ?? '';
         $clubs = ExtracurricularModel::getAll($type, $search);
+        $staffAssignments = AcademicModel::getStaffAssignments();
 
         $this->view('admin/extracurricular', [
-            'currentRole'  => 'admin',
-            'currentRoute' => '/admin/extracurricular',
-            'clubs'        => $clubs,
-            'canModerate'  => true,
-            'canCreate'    => true,
-            'selectedType' => $type,
-            'searchQuery'  => $search,
+            'currentRole'      => 'admin',
+            'currentRoute'     => '/admin/extracurricular',
+            'clubs'            => $clubs,
+            'staffAssignments' => $staffAssignments,
+            'canModerate'      => true,
+            'canCreate'        => true,
+            'selectedType'     => $type,
+            'searchQuery'      => $search,
         ]);
     }
 

@@ -156,6 +156,36 @@ ob_start();
     </div>
   </div>
 
+  <!-- Teacher in Charge Section -->
+  <section class="c-form-section" style="margin-top: 1.25rem;">
+    <div class="c-form-section__head">
+      <div>
+        <h3 class="c-form-section__title">Teacher in Charge (TIC)</h3>
+        <p class="c-form-section__hint">Assign or update the faculty coordinator for this programme.</p>
+      </div>
+    </div>
+    <div class="c-form-row c-form-row--two-col" style="margin-top: 0.75rem;">
+      <div>
+        <label class="c-field-label" for="j-pi-tic-name">Faculty Name</label>
+        <input type="text" class="c-field-input" id="j-pi-tic-name" name="tic_name" placeholder="e.g. Mr. Weerasinghe or James Wilson" />
+      </div>
+      <div>
+        <label class="c-field-label" for="j-pi-tic-specialty">Department / Role</label>
+        <input type="text" class="c-field-input" id="j-pi-tic-specialty" name="tic_specialty" placeholder="e.g. Physical Education / Science" />
+      </div>
+    </div>
+    <div class="c-form-row c-form-row--two-col" style="margin-top: 0.75rem;">
+      <div>
+        <label class="c-field-label" for="j-pi-tic-email">Institutional Email</label>
+        <input type="email" class="c-field-input" id="j-pi-tic-email" name="tic_email" placeholder="e.g. faculty@lecole.edu" />
+      </div>
+      <div>
+        <label class="c-field-label" for="j-pi-tic-phone">Phone</label>
+        <input type="tel" class="c-field-input" id="j-pi-tic-phone" name="tic_phone" placeholder="e.g. +94 77 123 4567" />
+      </div>
+    </div>
+  </section>
+
   <!-- Coach / Instructor Section -->
   <section class="c-form-section" style="margin-top: 1.25rem;">
     <div class="c-form-section__head">
