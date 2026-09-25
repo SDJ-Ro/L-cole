@@ -1,0 +1,482 @@
+/* =========================================================================
+   L'ÉCOLE — PROFILE PAGE STYLES
+   =========================================================================
+   Full-page profile for all 5 portals (Admin, Teacher, Management,
+   Parent, Student). Standardized full-width layout with prominent
+   role-colored hero banner and distinctly spaced, elevated sections.
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   1. PAGE LAYOUT (Full width, well-spaced vertical flow)
+   ------------------------------------------------------------------------- */
+.c-profile-page {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.375rem;
+}
+
+/* -------------------------------------------------------------------------
+   2. HERO BANNER (Big, prominent, role-colored)
+   ------------------------------------------------------------------------- */
+.c-profile-hero {
+  position: relative;
+  border-radius: var(--radius-xl, 0.875rem);
+  overflow: hidden;
+  padding: 2rem 2.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: var(--midnight, #0F414A);
+  min-height: 8.5rem;
+  box-sizing: border-box;
+}
+
+/* Role-based hero header colors:
+   - Admin: Dark Green (var(--midnight, #0F414A))
+   - Student: Blue (var(--skyblue, #7FC7CC) / Sky Blue)
+   - Parent: Orange-Red (var(--terracotta, #AF5031) / Terracotta)
+   - Management: Maroon (var(--maroon, #7F0303))
+   - Teacher: Orange (var(--sunshine, #EA8913) / Sunshine) */
+.c-profile-hero[data-role="admin"] {
+  background: linear-gradient(135deg, var(--midnight, #0F414A) 0%, #08282E 100%);
+  box-shadow: 0 4px 20px rgba(15, 65, 74, 0.28);
+}
+
+.c-profile-hero[data-role="student"] {
+  background: linear-gradient(135deg, #4FA8AF 0%, #246D74 100%);
+  box-shadow: 0 4px 20px rgba(79, 168, 175, 0.32);
+}
+
+.c-profile-hero[data-role="parent"] {
+  background: linear-gradient(135deg, var(--terracotta, #AF5031) 0%, #87361D 100%);
+  box-shadow: 0 4px 20px rgba(175, 80, 49, 0.3);
+}
+
+.c-profile-hero[data-role="management"] {
+  background: linear-gradient(135deg, var(--maroon, #7F0303) 0%, #560101 100%);
+  box-shadow: 0 4px 20px rgba(127, 3, 3, 0.3);
+}
+
+.c-profile-hero[data-role="teacher"] {
+  background: linear-gradient(135deg, var(--sunshine, #EA8913) 0%, #CE7106 100%);
+  box-shadow: 0 4px 20px rgba(234, 137, 19, 0.3);
+}
+
+/* Subtle luminous corner sheen overlay per role */
+.c-profile-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--profile-hero-grad, radial-gradient(ellipse at top right, rgba(255, 255, 255, 0.18) 0%, transparent 62%));
+  pointer-events: none;
+}
+
+.c-profile-hero[data-role="admin"]      { --profile-hero-grad: radial-gradient(ellipse at top right, rgba(127, 199, 204, 0.32) 0%, transparent 62%); }
+.c-profile-hero[data-role="teacher"]    { --profile-hero-grad: radial-gradient(ellipse at top right, rgba(255, 255, 255, 0.24) 0%, transparent 62%); }
+.c-profile-hero[data-role="management"] { --profile-hero-grad: radial-gradient(ellipse at top right, rgba(255, 255, 255, 0.22) 0%, transparent 62%); }
+.c-profile-hero[data-role="parent"]     { --profile-hero-grad: radial-gradient(ellipse at top right, rgba(255, 255, 255, 0.22) 0%, transparent 62%); }
+.c-profile-hero[data-role="student"]    { --profile-hero-grad: radial-gradient(ellipse at top right, rgba(255, 255, 255, 0.2) 0%, transparent 62%); }
+
+.c-profile-hero__avatar {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  width: 5.25rem;
+  height: 5.25rem;
+  border-radius: 50%;
+  border: 3.5px solid rgba(255, 255, 255, 0.4);
+  object-fit: cover;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.c-profile-hero__avatar--initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sand, #E4CBA9);
+  color: var(--midnight, #0F414A);
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.c-profile-hero__body {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  flex: 1;
+}
+
+.c-profile-hero__eyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.2;
+}
+
+.c-profile-hero__name {
+  margin: 0;
+  font-size: 1.625rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.c-profile-hero__sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.35;
+}
+
+.c-profile-hero__badges {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.c-profile-badge {
+  border-radius: 0.375rem;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+}
+
+.c-profile-badge--id {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.c-profile-badge--active {
+  background: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+}
+
+.c-profile-hero[data-role="admin"] .c-profile-badge--active {
+  background: rgba(34, 197, 94, 0.26);
+  color: #bbf7d0;
+  border: 1px solid rgba(34, 197, 94, 0.45);
+}
+
+.c-profile-hero__edit-btn {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.c-profile-hero__edit-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.c-profile-hero__edit-btn[data-editing="true"] {
+  background: rgba(127, 199, 204, 0.35);
+  border-color: rgba(127, 199, 204, 0.6);
+}
+
+/* -------------------------------------------------------------------------
+   3. SECTION CARD (Prominent, cleanly bordered & elevated)
+   ------------------------------------------------------------------------- */
+.c-profile-section {
+  background: #fff;
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 1px solid rgba(15, 65, 74, 0.09);
+  box-shadow: 0 2px 8px rgba(15, 65, 74, 0.05);
+  padding: 1.375rem 1.625rem;
+  box-sizing: border-box;
+}
+
+.c-profile-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.125rem;
+}
+
+.c-profile-section__title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.c-profile-section__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--alabaster, #EFE8DF);
+  color: var(--midnight, #0F414A);
+  flex-shrink: 0;
+  border: 1px solid rgba(15, 65, 74, 0.06);
+}
+
+.c-profile-section__icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.c-profile-section__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+  letter-spacing: 0.02em;
+}
+
+/* -------------------------------------------------------------------------
+   4. INFO GRID INSIDE SECTIONS
+   ------------------------------------------------------------------------- */
+.c-profile-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .c-profile-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .c-profile-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .c-profile-grid.c-cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Distinct Info Card Box */
+.c-info-card {
+  border-radius: var(--radius-md, 0.5rem);
+  border: 1px solid rgba(15, 65, 74, 0.09);
+  background: var(--color-white, #FFFFFF);
+  padding: 0.75rem 0.95rem;
+  box-shadow: 0 1px 3px rgba(15, 65, 74, 0.04);
+  text-align: left;
+  box-sizing: border-box;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.c-info-card:hover {
+  border-color: rgba(15, 65, 74, 0.22);
+  box-shadow: 0 3px 8px rgba(15, 65, 74, 0.07);
+}
+
+.c-info-card-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(15, 65, 74, 0.55);
+  margin: 0;
+  padding: 0;
+  line-height: 1.2;
+}
+
+.c-info-card-label svg {
+  width: 14px;
+  height: 14px;
+  color: rgba(15, 65, 74, 0.5);
+  flex-shrink: 0;
+}
+
+.c-info-card-value {
+  margin-top: 0.35rem;
+  margin-bottom: 0;
+  word-break: break-word;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--midnight, #0F414A);
+  text-align: left;
+}
+
+.c-info-card-input {
+  margin-top: 0.35rem;
+  width: 100%;
+  height: 2.125rem;
+  border-radius: var(--radius-md, 0.375rem);
+  border: 1px solid rgba(127, 199, 204, 0.5);
+  background: rgba(127, 199, 204, 0.07);
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: 'Poppins', system-ui, sans-serif;
+  color: var(--midnight, #0F414A);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.c-info-card-input:focus {
+  border-color: var(--skyblue, #7FC7CC);
+  box-shadow: 0 0 0 2px rgba(127, 199, 204, 0.35);
+  background: #fff;
+}
+
+/* -------------------------------------------------------------------------
+   5. ROLE-SPECIFIC TINTED SECTION (Prominent featured block)
+   ------------------------------------------------------------------------- */
+.c-profile-tinted {
+  border-radius: var(--radius-lg, 0.625rem);
+  border: 1px solid;
+  padding: 1.125rem 1.25rem;
+  margin-top: 0;
+}
+
+.c-profile-tinted--sky        { background: rgba(127,199,204,0.11); border-color: rgba(127,199,204,0.38); }
+.c-profile-tinted--sunshine   { background: rgba(234,137,19,0.09);  border-color: rgba(234,137,19,0.35); }
+.c-profile-tinted--terracotta { background: rgba(175,80,49,0.09);   border-color: rgba(175,80,49,0.35); }
+.c-profile-tinted--moss       { background: rgba(75,91,52,0.09);    border-color: rgba(75,91,52,0.35); }
+.c-profile-tinted--maroon     { background: rgba(127,3,3,0.07);     border-color: rgba(127,3,3,0.3); }
+.c-profile-tinted--midnight   { background: rgba(15,65,74,0.08);    border-color: rgba(15,65,74,0.3); }
+
+.c-profile-tinted .c-info-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(4px);
+}
+
+/* -------------------------------------------------------------------------
+   6. PASSWORD CHANGE SECTION (toggled by JS)
+   ------------------------------------------------------------------------- */
+.c-profile-pwd {
+  display: none;
+  flex-direction: column;
+  gap: 0.875rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(15, 65, 74, 0.09);
+}
+
+.c-profile-pwd.c-is-open { display: flex; }
+
+.c-profile-pwd__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.c-profile-pwd__label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(15, 65, 74, 0.6);
+}
+
+.c-profile-pwd__input {
+  height: 2.125rem;
+  border-radius: var(--radius-md, 0.375rem);
+  border: 1px solid rgba(15, 65, 74, 0.16);
+  background: rgba(239, 232, 223, 0.3);
+  padding: 0 0.75rem;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  color: var(--midnight, #0F414A);
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.c-profile-pwd__input:focus {
+  border-color: var(--skyblue, #7FC7CC);
+  box-shadow: 0 0 0 2px rgba(127, 199, 204, 0.2);
+  background: #fff;
+}
+
+/* -------------------------------------------------------------------------
+   7. SAVE / CANCEL ACTION ROW
+   ------------------------------------------------------------------------- */
+.c-profile-actions {
+  display: none;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(15, 65, 74, 0.09);
+  margin-top: 0.25rem;
+}
+
+.c-profile-actions.c-is-open { display: flex; }
+
+.c-profile-actions .c-btn {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.8125rem;
+}
+
+/* -------------------------------------------------------------------------
+   8. VIEW / EDIT FIELD TOGGLE
+   ------------------------------------------------------------------------- */
+.c-info-card-input { display: none; }
+
+.c-profile-page--editing .c-info-card-value { display: none; }
+.c-profile-page--editing .c-info-card-input { display: block; }
+
+/* Read-only fields always show value, never input */
+.c-info-card--readonly .c-info-card-value  { display: block !important; }
+.c-info-card--readonly .c-info-card-input  { display: none  !important; }
+
+/* -------------------------------------------------------------------------
+   9. SAVE SUCCESS TOAST
+   ------------------------------------------------------------------------- */
+.c-profile-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  background: var(--midnight, #0F414A);
+  color: #fff;
+  border-radius: var(--radius-lg, 0.5rem);
+  padding: 0.75rem 1.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(15, 65, 74, 0.25);
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 250ms ease, transform 250ms ease;
+}
+
+.c-profile-toast.c-is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}

@@ -1,0 +1,279 @@
+/* =========================================================================
+   L'ÉCOLE — APPROVAL & VERIFICATION CARD COMPONENT STYLES
+   =========================================================================
+   Responsibility: Visual styles for .c-approval-grid, .c-approval-card,
+                   .c-status-badge, .c-feedback-note, and action triggers.
+   Ported 1:1 from Admin/verify/styles.css.
+   ========================================================================= */
+
+.c-approval-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .c-approval-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.c-approval-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border-radius: var(--radius-xl, 0.875rem);
+  background: #ffffff;
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px rgba(15, 65, 74, 0.06);
+  border-top: 1px solid rgba(15, 65, 74, 0.08);
+  border-right: 1px solid rgba(15, 65, 74, 0.08);
+  border-bottom: 1px solid rgba(15, 65, 74, 0.08);
+  border-left: 6px solid transparent;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: c-approval-card-fade 320ms ease forwards;
+}
+
+.c-approval-card--sky { border-left-color: var(--skyblue, #7FC7CC); }
+.c-approval-card--sunshine { border-left-color: var(--sunshine, #EA8913); }
+.c-approval-card--terracotta { border-left-color: var(--terracotta, #AF5031); }
+
+.c-approval-card[hidden] {
+  display: none !important;
+}
+
+@keyframes c-approval-card-fade {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.c-approval-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.c-approval-card__heading {
+  min-width: 0;
+}
+
+.c-approval-card__badges {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.c-approval-card__tag {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.c-approval-card__badges .c-approval-card__tag {
+  margin-bottom: 0;
+}
+
+.c-approval-card__tag--sky {
+  background: rgba(127, 199, 204, 0.12);
+  color: var(--skyblue, #7FC7CC);
+}
+
+.c-approval-card__tag--sunshine {
+  background: rgba(234, 137, 19, 0.12);
+  color: var(--sunshine, #EA8913);
+}
+
+.c-approval-card__tag--terracotta {
+  background: rgba(175, 80, 49, 0.12);
+  color: var(--terracotta, #AF5031);
+}
+
+.c-approval-card__tag--neutral {
+  background: var(--alabaster, #EFE8DF);
+  color: rgba(15, 65, 74, 0.7);
+}
+
+.c-approval-card__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+  line-height: 1.25;
+  margin: 0;
+}
+
+.c-approval-card__title--tight {
+  line-height: 1.2;
+}
+
+.c-approval-card__meta {
+  margin: 0.125rem 0 0;
+  font-size: 0.875rem;
+  color: rgba(15, 65, 74, 0.6);
+}
+
+.c-approval-card__description {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: rgba(15, 65, 74, 0.7);
+}
+
+.c-approval-card__description--clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.c-approval-card__info {
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 1px solid rgba(15, 65, 74, 0.08);
+  background: rgba(239, 232, 223, 0.35);
+  padding: 0.75rem;
+}
+
+.c-approval-card__info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.c-approval-card__info-text {
+  margin: 0;
+  font-size: 0.75rem;
+  color: rgba(15, 65, 74, 0.6);
+}
+
+.c-approval-card__info-strong {
+  font-weight: 600;
+  color: var(--midnight, #0F414A);
+}
+
+.c-approval-card__info-date {
+  margin: 0;
+  font-size: 0.75rem;
+  color: rgba(15, 65, 74, 0.5);
+}
+
+.c-approval-card__audience {
+  margin: 0.25rem 0 0;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(15, 65, 74, 0.5);
+}
+
+/* Status Badges */
+.c-status-badge {
+  flex-shrink: 0;
+  padding: 0.25rem 0.625rem;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.c-status-badge--pending {
+  background: rgba(228, 203, 169, 0.45);
+  color: rgba(15, 65, 74, 0.75);
+}
+
+.c-status-badge--approved {
+  background: rgba(75, 91, 52, 0.12);
+  color: var(--moss, #4B5B34);
+}
+
+.c-status-badge--rejected {
+  background: rgba(127, 3, 3, 0.12);
+  color: var(--maroon, #7F0303);
+}
+
+/* Feedback Note Block */
+.c-feedback-note {
+  display: flex;
+  gap: 0.625rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid rgba(127, 3, 3, 0.18);
+  background: rgba(127, 3, 3, 0.05);
+  padding: 0.75rem;
+}
+
+.c-feedback-note[hidden] {
+  display: none !important;
+}
+
+.c-feedback-note__icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--maroon, #7F0303);
+}
+
+.c-feedback-note__author {
+  margin: 0 0 0.125rem;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--maroon, #7F0303);
+}
+
+.c-feedback-note__text {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: rgba(15, 65, 74, 0.75);
+}
+
+/* Approval Card Actions */
+.c-approval-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.c-approval-card__actions[hidden] {
+  display: none !important;
+}
+
+
+/* Button variants for approval actions — base .c-btn is in global.css */
+/* Reject Button — Red with icon */
+.c-btn--reject {
+  flex: 1 1 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  background: var(--maroon, #7F0303);
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 65, 74, 0.06);
+}
+
+.c-btn--reject:hover {
+  background: rgba(127, 3, 3, 0.9);
+}
+
+/* Approve Button — Midnight with checkmark */
+.c-btn--approve {
+  flex: 1 1 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  background: var(--midnight, #0F414A);
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 65, 74, 0.06);
+}
+
+.c-btn--approve:hover {
+  background: rgba(15, 65, 74, 0.85);
+}

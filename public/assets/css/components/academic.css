@@ -1,0 +1,69 @@
+/* =========================================================================
+   L'ÉCOLE — ACADEMIC PAGE STYLES
+   Page-level only: performance chart filter bar, page spacing compactness.
+   Component styles live in: grade-card.css, curriculum-card.css
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   1. PERFORMANCE CARD FILTERS
+   ------------------------------------------------------------------------- */
+.c-performance-card__filters {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.c-performance-card__filters .c-dropdown,
+.c-performance-card__filters .c-select {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.c-performance-card__filters #j-select-perf-grade   { min-width: 6rem; }
+.c-performance-card__filters #j-select-perf-subject { min-width: 7.5rem; }
+.c-performance-card__filters #j-select-perf-term    { min-width: 5.5rem; }
+
+.c-performance-card__filters .c-select--cream .c-select__trigger {
+  background: var(--cream, #F7F3EC);
+  border: 1px solid var(--alabaster, #EFE8DF);
+  border-radius: var(--radius-lg, 0.625rem);
+  height: 2.25rem;
+  padding: 0 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--midnight, #0F414A);
+  box-shadow: 0 1px 2px rgba(15, 65, 74, 0.05);
+}
+
+.c-performance-card__filters .c-select--cream .c-select__trigger:hover {
+  background: #ffffff;
+  border-color: var(--skyblue, #7FC7CC);
+}
+
+.c-performance-card__filters #j-select-perf-term .c-select__menu {
+  left: auto;
+  right: 0;
+}
+
+@media (max-width: 768px) {
+  /* On mobile, allow header to wrap so filters stack below title */
+  .c-bar-chart-card__head,
+  .panel-header {
+    flex-wrap: wrap;
+  }
+  .c-performance-card__filters {
+    width: 100%;
+  }
+  .c-performance-card__filters .c-dropdown,
+  .c-performance-card__filters .c-select {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 0;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   2. PAGE LAYOUT
+   ------------------------------------------------------------------------- */
+.c-page-stack--academic { gap: 0.75rem; }
+.c-page-stack--academic .c-primary-grid { margin-bottom: 0; }

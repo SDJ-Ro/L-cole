@@ -1,0 +1,410 @@
+/* =========================================================================
+   L'ÉCOLE — SHARED BAR CHART COMPONENT STYLES
+   Exact port from admin_final_trying_to reduce js/Student:
+   - Panel min-height: 490px
+   - Chart area height: 390px (spacious Y-axis spacing)
+   - Axis titles: Rotated Y-axis title inside SVG + Uppercase X-axis title below
+   - Axis lines with arrowheads
+   - Horizontal smooth scrollbar (8px rounded thumb)
+   - Dual-series popup tooltips
+   - Header Extra Slot (Term Selector Dropdown)
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   1. PRIMARY GRID LAYOUT (Chart + Calendar 2:1 ratio)
+   ------------------------------------------------------------------------- */
+.c-primary-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .c-primary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .c-primary-grid__chart {
+    grid-column: span 2;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   2. CHART CARD PANEL WRAPPER (Matches Student .chart-panel)
+   ------------------------------------------------------------------------- */
+.c-panel,
+.chart-panel {
+  border-radius: var(--radius-2xl, 1.25rem);
+  border: 1px solid var(--color-border, #EFE8DF);
+  background: var(--color-surface, #ffffff);
+  padding: 1.125rem 1.5rem 1.25rem 1.5rem;
+  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(15, 65, 74, 0.06));
+  position: relative;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.c-bar-chart-card__head,
+.panel-header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.c-bar-chart-card__extra {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.c-panel__title,
+.panel-header h3 {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--midnight, #0F414A);
+}
+
+/* -------------------------------------------------------------------------
+   3. ROLE-SPECIFIC HEADER CONTROLS (Term Selection Dropdown)
+   ------------------------------------------------------------------------- */
+.term-dropdown,
+.c-select--cream {
+  position: relative;
+  min-width: 7.5rem;
+}
+
+.c-select--cream .c-select__trigger,
+.term-dropdown .nb-dropdown-btn,
+.j-term-dropdown-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: var(--cream, #F7F3EC);
+  color: var(--midnight, #0F414A);
+  border: 1px solid var(--alabaster, #EFE8DF);
+  border-radius: var(--radius-lg, 0.625rem);
+  padding: 0.45rem 0.75rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px 0 rgba(15, 65, 74, 0.05);
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.c-select--cream .c-select__trigger:hover,
+.term-dropdown .nb-dropdown-btn:hover,
+.j-term-dropdown-btn:hover {
+  background: var(--alabaster, #EFE8DF);
+  border-color: rgba(15, 65, 74, 0.2);
+}
+
+.c-select--cream .c-select__chevron,
+.term-dropdown .nb-dropdown-chevron {
+  height: 0.875rem;
+  width: 0.875rem;
+  flex-shrink: 0;
+  color: rgba(15, 65, 74, 0.6);
+  transition: transform 180ms ease;
+}
+
+.term-dropdown.is-open .c-select__chevron,
+.term-dropdown.c-is-open .c-select__chevron,
+.term-dropdown.c-is-open .nb-dropdown-chevron,
+.term-dropdown.is-open .nb-dropdown-chevron {
+  transform: rotate(180deg);
+}
+
+.term-dropdown .nb-dropdown-menu,
+.c-select--cream .c-select__menu,
+.j-term-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  left: auto;
+  transform: none;
+  z-index: 70;
+  min-width: 8rem;
+  overflow-y: auto;
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 1px solid var(--alabaster, #EFE8DF);
+  background: var(--cream, #F7F3EC);
+  box-shadow: 0 8px 24px rgba(15, 65, 74, 0.12);
+  padding: 0.375rem;
+}
+
+.term-dropdown .nb-dropdown-menu[hidden],
+.c-select--cream .c-select__menu[hidden],
+.j-term-dropdown-menu[hidden] {
+  display: none !important;
+}
+
+.term-dropdown.is-open .c-select__menu,
+.term-dropdown.c-is-open .c-select__menu,
+.c-select--cream.is-open .c-select__menu,
+.c-select--cream.c-is-open .c-select__menu {
+  display: block !important;
+}
+
+.term-dropdown .nb-dropdown-option,
+.c-select--cream .c-select__option,
+.j-term-option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: var(--radius-md, 0.5rem);
+  border: none;
+  background: transparent;
+  padding: 0.45rem 0.75rem;
+  text-align: left;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--midnight, #0F414A);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.term-dropdown .nb-dropdown-option:hover,
+.c-select--cream .c-select__option:hover,
+.j-term-option:hover {
+  background: rgba(216, 186, 152, 0.35);
+}
+
+/* Dark brown-cream selected state */
+.term-dropdown .nb-dropdown-option.is-selected,
+.term-dropdown .nb-dropdown-option.c-is-selected,
+.c-select--cream .c-select__option.c-is-selected,
+.j-term-option.c-is-selected,
+.j-term-option.is-selected {
+  background: var(--sand, #E4CBA9);
+  color: var(--midnight, #0F414A);
+  font-weight: 700;
+}
+
+/* -------------------------------------------------------------------------
+   4. HORIZONTALLY SCROLLABLE CHART AREA (Exact Student Portal: H=390px)
+   ------------------------------------------------------------------------- */
+.c-bar-chart__area,
+.chart-area {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 380px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin-top: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 65, 74, 0.35) rgba(15, 65, 74, 0.05);
+  -webkit-overflow-scrolling: touch;
+}
+
+.c-bar-chart__area svg,
+.chart-area svg {
+  display: block;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+/* Sleek custom scrollbar (8px rounded pill thumb) */
+.c-bar-chart__area::-webkit-scrollbar,
+.chart-area::-webkit-scrollbar {
+  height: 8px;
+}
+
+.c-bar-chart__area::-webkit-scrollbar-track,
+.chart-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.c-bar-chart__area::-webkit-scrollbar-thumb,
+.chart-area::-webkit-scrollbar-thumb {
+  background: var(--color-border, #EFE8DF);
+  border-radius: 999px;
+}
+
+.c-bar-chart__area::-webkit-scrollbar-thumb:hover,
+.chart-area::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 65, 74, 0.4);
+}
+
+.c-bar-chart__axis-x-title,
+.chart-axis-x-title {
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--moss, #4B5B34);
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+}
+
+/* -------------------------------------------------------------------------
+   5. SVG BAR STYLING & HOVER EFFECTS
+   ------------------------------------------------------------------------- */
+.j-chart-group {
+  cursor: pointer;
+}
+
+.j-chart-group:hover .c-bar-chart__bar,
+.j-chart-group:hover .chart-bar {
+  filter: brightness(1.08);
+  opacity: 0.9;
+}
+
+.c-bar-chart__bar,
+.chart-bar {
+  cursor: pointer;
+  transition: height 350ms cubic-bezier(0.16, 1, 0.3, 1),
+    y 350ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 160ms ease,
+    filter 160ms ease;
+}
+
+.c-bar-chart__bar:hover,
+.chart-bar:hover {
+  filter: brightness(1.15) !important;
+  opacity: 1 !important;
+}
+
+.c-bar-chart__axis-line {
+  stroke: #7b9698;
+  stroke-width: 1.5;
+}
+
+.c-bar-chart__tick-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  fill: #93a1a2;
+}
+
+.c-bar-chart__cat-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  fill: #5c6b6c;
+}
+
+.c-bar-chart__axis-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  fill: var(--moss, #4B5B34);
+  text-transform: uppercase;
+}
+
+/* -------------------------------------------------------------------------
+   6. INTERACTIVE FLOATING TOOLTIP (Exact Student Portal: White surface)
+   ------------------------------------------------------------------------- */
+.c-chart-tooltip,
+.chart-tooltip {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  border-radius: var(--radius-lg, 12px);
+  border: 1px solid rgba(127, 199, 204, 0.4);
+  background: #ffffff;
+  padding: 0.625rem 0.875rem;
+  box-shadow: 0 10px 24px -6px rgba(15, 65, 74, 0.18);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 150ms ease, transform 150ms ease;
+  white-space: nowrap;
+}
+
+.c-chart-tooltip.c-is-visible,
+.chart-tooltip.c-is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.c-chart-tooltip__title,
+.c-chart-tooltip__label {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+}
+
+.c-chart-tooltip__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  line-height: 1.5;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--midnight, #0F414A);
+  margin-top: 0.2rem;
+}
+
+.c-chart-tooltip__row strong {
+  font-weight: 700;
+}
+
+.c-chart-tooltip__color-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* -------------------------------------------------------------------------
+   7. CHART LEGEND (Matches Student .chart-legend)
+   ------------------------------------------------------------------------- */
+.c-bar-chart__legend,
+.chart-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  padding-top: 0;
+  margin-bottom: 0;
+  flex-wrap: wrap;
+}
+
+.c-bar-chart__legend-item,
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--midnight, #0F414A);
+}
+
+.c-bar-chart__legend-dot,
+.legend-dot {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: var(--radius-full, 9999px);
+  flex-shrink: 0;
+}

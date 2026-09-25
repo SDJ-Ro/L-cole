@@ -1,0 +1,271 @@
+/* =========================================================================
+   L'ÉCOLE — REUSABLE DATEPICKER COMPONENT STYLES
+   =========================================================================
+   Extracted 1:1 from L'École People Directory UI widget
+   Supports tones: sky | sunshine | terracotta | maroon
+   ========================================================================= */
+
+.c-datepicker {
+  position: relative;
+  width: 100%;
+}
+
+.c-datepicker-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid var(--color-border, #EFE8DF);
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--midnight, #0F414A);
+  background: #ffffff;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 65, 74, 0.05));
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.c-datepicker-trigger .c-dp-placeholder {
+  color: rgba(15, 65, 74, 0.45) !important;
+  font-size: 0.875rem !important;
+  font-weight: 400 !important;
+}
+
+.c-datepicker-trigger:disabled {
+  cursor: not-allowed;
+  border-color: var(--color-border, #EFE8DF);
+  background: rgba(239, 232, 223, 0.55);
+  color: rgba(15, 65, 74, 0.4);
+}
+
+/* Floating Calendar Dropdown */
+.c-dp-calendar {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  z-index: 99;
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 1px solid var(--color-border, #EFE8DF);
+  background: #ffffff;
+  padding: 0.75rem;
+  box-shadow: 0 12px 32px rgba(15, 65, 74, 0.16);
+  width: 20rem;
+  max-width: min(20rem, calc(100vw - 1.5rem));
+  overflow-x: hidden;
+  animation: c-menu-in 160ms ease-out;
+}
+
+@keyframes c-menu-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.c-dp-header {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr 2.5rem;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.c-dp-nav-btn {
+  justify-self: start;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: none;
+  background: transparent;
+  padding: 0.5rem;
+  color: rgba(15, 65, 74, 0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 150ms ease;
+}
+
+.c-dp-nav-btn.c-dp-next {
+  justify-self: end;
+}
+
+.c-dp-nav-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.c-dp-month-year {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+.c-dp-header-select {
+  position: relative;
+}
+
+.c-dp-header-trigger {
+  display: flex;
+  height: 2.25rem;
+  width: 6.85rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid var(--color-border, #EFE8DF);
+  background: #ffffff;
+  padding: 0 0.5rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--midnight, #0F414A);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 65, 74, 0.05));
+}
+
+.c-dp-header-trigger.c-dp-year {
+  width: 5.25rem;
+}
+
+.c-dp-header-menu {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  width: 100%;
+  min-width: 6.5rem;
+  overflow: hidden;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid var(--color-border, #EFE8DF);
+  padding: 0.25rem;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 65, 74, 0.14);
+}
+
+.c-dp-header-menu.c-dp-year-menu {
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.c-dp-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--midnight, #0F414A);
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.c-dp-menu-item:hover,
+.c-dp-menu-item.is-selected {
+  background: rgba(239, 232, 223, 0.5);
+  font-weight: 700;
+}
+
+.c-dp-weekdays {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+}
+
+.c-dp-weekday {
+  padding: 0.25rem 0;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(15, 65, 74, 0.45);
+}
+
+.c-dp-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.c-dp-day {
+  display: flex;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: none;
+  background: transparent;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--midnight, #0F414A);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.c-dp-day.c-dp-outside {
+  color: rgba(15, 65, 74, 0.3);
+}
+
+.c-dp-day.is-today-day {
+  box-shadow: inset 0 0 0 1px rgba(15, 65, 74, 0.3);
+}
+
+.c-dp-footer {
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--color-border, #EFE8DF);
+  padding-top: 0.625rem;
+}
+
+.c-dp-hint {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(15, 65, 74, 0.5);
+}
+
+.c-dp-today-btn {
+  border-radius: 0.375rem;
+  border: none;
+  background: transparent;
+  padding: 0.25rem 0.5rem;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(15, 65, 74, 0.7);
+  cursor: pointer;
+  transition: background-color 150ms;
+}
+
+.c-dp-today-btn:hover {
+  background: rgba(239, 232, 223, 0.5);
+}
+
+/* -------------------------------------------------------------------------
+   Tone Variants (sky | sunshine | terracotta | maroon)
+   ------------------------------------------------------------------------- */
+.c-dp-sky { border-color: rgba(127, 199, 204, 0.45); background: rgba(127, 199, 204, 0.08); }
+.c-dp-sky:hover { border-color: rgba(127, 199, 204, 0.75); background: rgba(127, 199, 204, 0.15); }
+.c-dp-hover-sky:hover { background: rgba(127, 199, 204, 0.18) !important; }
+.c-dp-selected-sky { background: var(--skyblue, #7FC7CC) !important; color: var(--midnight, #0F414A) !important; font-weight: 700; }
+
+.c-dp-sunshine { border-color: rgba(234, 137, 19, 0.45); background: rgba(234, 137, 19, 0.08); }
+.c-dp-sunshine:hover { border-color: rgba(234, 137, 19, 0.75); background: rgba(234, 137, 19, 0.15); }
+.c-dp-hover-sunshine:hover { background: rgba(234, 137, 19, 0.18) !important; }
+.c-dp-selected-sunshine { background: var(--sunshine, #EA8913) !important; color: #ffffff !important; font-weight: 700; }
+
+.c-dp-terracotta { border-color: rgba(175, 80, 49, 0.4); background: rgba(175, 80, 49, 0.08); }
+.c-dp-terracotta:hover { border-color: rgba(175, 80, 49, 0.7); background: rgba(175, 80, 49, 0.15); }
+.c-dp-hover-terracotta:hover { background: rgba(175, 80, 49, 0.15) !important; }
+.c-dp-selected-terracotta { background: var(--terracotta, #AF5031) !important; color: #ffffff !important; font-weight: 700; }
+
+.c-dp-maroon { border-color: rgba(127, 3, 3, 0.4); background: rgba(127, 3, 3, 0.05); }
+.c-dp-maroon:hover { border-color: rgba(127, 3, 3, 0.7); background: rgba(127, 3, 3, 0.1); }
+.c-dp-hover-maroon:hover { background: rgba(127, 3, 3, 0.12) !important; }
+.c-dp-selected-maroon { background: var(--maroon, #7F0303) !important; color: #ffffff !important; font-weight: 700; }
