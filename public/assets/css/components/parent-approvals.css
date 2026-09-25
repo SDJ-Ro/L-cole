@@ -1,0 +1,83 @@
+/* =========================================================================
+   L'ÉCOLE — PARENT APPROVALS MODULE STYLES
+   =========================================================================
+   Extends admin-verify.css with Moss (Approved) and Maroon (Rejected)
+   tab card variants specific to the parent approvals page.
+   All existing classes (c-tab-card, c-approval-grid, c-status-badge,
+   c-approval-card, etc.) are inherited from approval-card.css and
+   admin-verify.css — this file only adds missing palette variants.
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   STATUS TAB CARD — MOSS (APPROVED / ACTIVE STATE)
+   Used for the "Approved" metric card in parent approvals.
+   ------------------------------------------------------------------------- */
+.c-tab-card--moss.c-is-active {
+  background: var(--moss, #4B5B34);
+  color: #ffffff;
+  transform: scale(1.02);
+  border-color: transparent;
+}
+
+.c-tab-card--moss:not(.c-is-active):hover {
+  border-color: rgba(75, 91, 52, 0.4);
+}
+
+.c-tab-card--moss.c-is-active .c-tab-card__icon-wrap {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* -------------------------------------------------------------------------
+   STATUS TAB CARD — MAROON (REJECTED / ACTIVE STATE)
+   Used for the "Rejected" metric card in parent approvals.
+   ------------------------------------------------------------------------- */
+.c-tab-card--maroon.c-is-active {
+  background: var(--maroon, #7F0303);
+  color: #ffffff;
+  transform: scale(1.02);
+  border-color: transparent;
+}
+
+.c-tab-card--maroon:not(.c-is-active):hover {
+  border-color: rgba(127, 3, 3, 0.35);
+}
+
+.c-tab-card--maroon.c-is-active .c-tab-card__icon-wrap {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* -------------------------------------------------------------------------
+   APPROVAL CARD LEFT-BORDER VARIANTS — MOSS & MAROON
+   Extends the existing sky / sunshine / terracotta variants.
+   ------------------------------------------------------------------------- */
+.c-approval-card--moss    { border-left-color: var(--moss, #4B5B34); }
+.c-approval-card--maroon  { border-left-color: var(--maroon, #7F0303); }
+
+/* -------------------------------------------------------------------------
+   APPROVAL CARD TAG VARIANTS — TERRACOTTA (PARENT PORTAL COLOUR)
+   Already exists but reinforced here for clarity.
+   ------------------------------------------------------------------------- */
+.c-approval-card__tag--terracotta {
+  background: rgba(175, 80, 49, 0.1);
+  color: var(--terracotta, #AF5031);
+}
+
+/* -------------------------------------------------------------------------
+   PAGE-LEVEL LAYOUT HELPERS
+   Overrides c-page-stack gap for the status header row spacing.
+   ------------------------------------------------------------------------- */
+.c-parent-approvals .c-filter-row {
+  margin-top: 0.25rem;
+}
+
+/* Status summary eyebrow text above the grid */
+.c-parent-approvals__summary {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(15, 65, 74, 0.55);
+}
