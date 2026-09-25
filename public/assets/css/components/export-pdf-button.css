@@ -1,0 +1,140 @@
+/* =========================================================================
+   L'ÉCOLE — EXPORT PDF BUTTON COMPONENT STYLES
+   =========================================================================
+   Reusable Export PDF button styles matching the institutional design system.
+   Supports multiple tone variations and responsive button sizing.
+   ========================================================================= */
+
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--midnight, #0F414A);
+  background: rgba(127, 199, 204, 0.25);
+  border: 1px solid rgba(127, 199, 204, 0.6);
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+  text-decoration: none;
+  user-select: none;
+  outline: none;
+}
+
+.export-btn:hover {
+  background: rgba(127, 199, 204, 0.45);
+  border-color: var(--skyblue, #7FC7CC);
+  color: var(--midnight, #0F414A);
+}
+
+.export-btn:active {
+  transform: translateY(1px);
+}
+
+.export-btn:focus-visible {
+  box-shadow: 0 0 0 3px rgba(127, 199, 204, 0.45);
+}
+
+.export-btn[disabled],
+.export-btn.is-loading {
+  opacity: 0.7;
+  cursor: wait;
+  pointer-events: none;
+}
+
+/* Icon */
+.export-btn svg,
+.export-btn__icon {
+  width: 14px;
+  height: 14px;
+  color: currentColor;
+  flex-shrink: 0;
+  display: block;
+}
+
+.export-btn__text {
+  display: inline-block;
+}
+
+/* Tone Variants */
+.export-btn--sky {
+  background: rgba(127, 199, 204, 0.25);
+  border-color: rgba(127, 199, 204, 0.6);
+  color: var(--midnight, #0F414A);
+}
+
+.export-btn--sky:hover {
+  background: rgba(127, 199, 204, 0.42);
+  border-color: var(--skyblue, #7FC7CC);
+}
+
+.export-btn--maroon {
+  background: rgba(127, 3, 3, 0.08);
+  border-color: rgba(127, 3, 3, 0.25);
+  color: var(--maroon, #7F0303);
+}
+
+.export-btn--maroon:hover {
+  background: rgba(127, 3, 3, 0.15);
+  border-color: var(--maroon, #7F0303);
+  color: var(--maroon, #7F0303);
+}
+
+.export-btn--sunshine {
+  background: rgba(230, 180, 40, 0.18);
+  border-color: rgba(230, 180, 40, 0.45);
+  color: #7A5B04;
+}
+
+.export-btn--sunshine:hover {
+  background: rgba(230, 180, 40, 0.3);
+  border-color: #D4A318;
+}
+
+.export-btn--terracotta {
+  background: rgba(200, 90, 50, 0.12);
+  border-color: rgba(200, 90, 50, 0.35);
+  color: #9C3A1A;
+}
+
+.export-btn--terracotta:hover {
+  background: rgba(200, 90, 50, 0.22);
+  border-color: #B54A24;
+}
+
+.export-btn--moss {
+  background: rgba(75, 91, 52, 0.12);
+  border-color: rgba(75, 91, 52, 0.35);
+  color: var(--moss, #4B5B34);
+}
+
+.export-btn--moss:hover {
+  background: rgba(75, 91, 52, 0.22);
+  border-color: var(--moss, #4B5B34);
+}
+
+/* Compact size */
+.export-btn--compact {
+  padding: 5px 10px;
+  font-size: 11px;
+}
+
+.export-btn--compact svg,
+.export-btn--compact .export-btn__icon {
+  width: 12px;
+  height: 12px;
+}
+
+/* Hide on native print */
+@media print {
+  .export-btn,
+  .j-export-pdf-btn {
+    display: none !important;
+  }
+}
