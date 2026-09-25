@@ -1,0 +1,226 @@
+/**
+ * L'École — Student Character Certificate Component Stylesheet
+ * Integrates with character-certificate.css for A4 sheet and form-card.css for modal forms.
+ */
+
+/* =========================================================
+   2-COLUMN LAYOUT
+   ========================================================= */
+.cert-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  align-items: start;
+  margin-top: 24px;
+}
+
+.cert-pages {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* Pagination row matching design system */
+.cert-pagination-row {
+  margin: 16px auto 0;
+  max-width: 780px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cert-pagination-row > span,
+.cert-pagination-row #certPageLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(15, 65, 74, 0.75);
+}
+
+.cert-pagination-row .btn-dark,
+.cert-pagination-row #certPrevBtn,
+.cert-pagination-row #certNextBtn {
+  background: var(--midnight, #0F414A) !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  font-family: inherit !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 3px rgba(15, 65, 74, 0.12) !important;
+  transition: background 0.15s ease, opacity 0.15s ease, transform 0.15s ease !important;
+}
+
+.cert-pagination-row .btn-dark span,
+.cert-pagination-row #certPrevBtn span,
+.cert-pagination-row #certNextBtn span {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+}
+
+.cert-pagination-row .btn-dark svg,
+.cert-pagination-row #certPrevBtn svg,
+.cert-pagination-row #certNextBtn svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.cert-pagination-row .btn-dark:hover:not(:disabled),
+.cert-pagination-row #certPrevBtn:hover:not(:disabled),
+.cert-pagination-row #certNextBtn:hover:not(:disabled) {
+  background: var(--deepsea, #092F33) !important;
+  color: #ffffff !important;
+}
+
+.cert-pagination-row .btn-dark:disabled,
+.cert-pagination-row #certPrevBtn:disabled,
+.cert-pagination-row #certNextBtn:disabled {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
+}
+
+/* =========================================================
+   SIDE CARDS ("Something missing?")
+   ========================================================= */
+.cert-side-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cert-missing-card {
+  background: #ffffff;
+  border: 1px solid #E4CBA9;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(15, 65, 74, 0.05);
+}
+
+.cert-missing-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+  margin-bottom: 8px;
+}
+
+.cert-missing-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(15, 65, 74, 0.7);
+  margin: 0 0 18px;
+}
+
+.cert-missing-btn {
+  width: 100%;
+  background: var(--midnight, #0F414A);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 12px rgba(15, 65, 74, 0.15);
+}
+
+.cert-missing-btn:hover {
+  background: var(--deepsea, #092F33);
+  box-shadow: 0 6px 16px rgba(15, 65, 74, 0.25);
+  transform: translateY(-1px);
+}
+
+/* =========================================================
+   PREVIEW DRAFT DISCLAIMER BANNER
+   ========================================================= */
+.cert-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: #ffffff;
+  border: 1px solid #E4CBA9;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-top: 20px;
+}
+
+.cert-disclaimer-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--midnight, #0F414A);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.cert-disclaimer p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(15, 65, 74, 0.75);
+}
+
+.cert-disclaimer strong {
+  color: var(--midnight, #0F414A);
+  font-weight: 700;
+}
+
+/* =========================================================
+   CERTIFICATE PREVIEW MODAL (.c-modal-layer inherits from global.css)
+   ========================================================= */
+.c-modal {
+  width: min(38rem, 94vw);
+  max-width: 38rem;
+  max-height: 90vh;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 900px) {
+  .cert-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   PRINT STYLES
+   ========================================================= */
+@media print {
+  .c-sidebar,
+  .c-page-header,
+  .cert-side-cards,
+  .cert-disclaimer,
+  .cert-pagination-row,
+  .c-modal-layer {
+    display: none !important;
+  }
+
+  body, .c-app-shell, .c-main {
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .cert-layout {
+    display: block !important;
+    margin: 0 !important;
+  }
+
+  .certificate-a4-page {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 20mm !important;
+    max-width: 100% !important;
+    page-break-after: always;
+  }
+}
