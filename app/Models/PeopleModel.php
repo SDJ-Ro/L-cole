@@ -8,38 +8,25 @@
  * =========================================================================
  */
 
+require_once __DIR__ . '/AcademicModel.php';
+
 class PeopleModel {
 
     public static function getGrades(): array {
-        return [
-            ['id' => 'g6',  'name' => 'Grade 6',  'classes' => ['6-A', '6-B', '6-C', '6-D']],
-            ['id' => 'g7',  'name' => 'Grade 7',  'classes' => ['7-A', '7-B', '7-C']],
-            ['id' => 'g8',  'name' => 'Grade 8',  'classes' => ['8-A', '8-B', '8-C', '8-D']],
-            ['id' => 'g9',  'name' => 'Grade 9',  'classes' => ['9-A', '9-B', '9-C']],
-            ['id' => 'g10', 'name' => 'Grade 10', 'classes' => ['10-A', '10-B', '10-C', '10-D']],
-            ['id' => 'g11', 'name' => 'Grade 11', 'classes' => ['11-A', '11-B', '11-C']],
-        ];
+        return AcademicModel::getGrades();
     }
 
     public static function getClassContext(): array {
-        return [
-            '6-A' => ['classTeacher' => 'James Wilson'],
-            '6-B' => ['classTeacher' => 'Sarah Peiris'],
-            '7-B' => ['classTeacher' => 'Class teacher assignment pending'],
-            '8-C' => ['classTeacher' => 'Class teacher assignment pending'],
-            '9-A' => ['classTeacher' => 'Rohan Dias'],
-        ];
+        $teachers = AcademicModel::getClassTeachers();
+        $context = [];
+        foreach ($teachers as $class => $teacher) {
+            $context[$class] = ['classTeacher' => $teacher];
+        }
+        return $context;
     }
 
     public static function getClassEnrollments(): array {
-        return [
-            '6-A' => 30, '6-B' => 29, '6-C' => 31, '6-D' => 30,
-            '7-A' => 44, '7-B' => 43, '7-C' => 43,
-            '8-A' => 35, '8-B' => 34, '8-C' => 36, '8-D' => 35,
-            '9-A' => 50, '9-B' => 49, '9-C' => 51,
-            '10-A' => 40, '10-B' => 40, '10-C' => 40, '10-D' => 40,
-            '11-A' => 52, '11-B' => 51, '11-C' => 52
-        ];
+        return AcademicModel::getClassEnrollments();
     }
 
     public static function getStudents(): array {

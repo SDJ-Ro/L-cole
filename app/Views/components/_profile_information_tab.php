@@ -272,6 +272,7 @@ if (!function_exists('renderProfileDatepicker')) {
   </section>
 
   <!-- 2. Class teacher responsibility -->
+  <!-- 2. Academic Leadership (Class Teacher) -->
   <section>
     <div class="c-section-title-row">
       <span class="c-icon-accent"><svg class="c-icon" width="16" height="16" aria-hidden="true"><use href="#icon-bookOpen"/></svg></span>
@@ -285,13 +286,6 @@ if (!function_exists('renderProfileDatepicker')) {
           <?php renderProfileDropdown('j-select-teacher-classincharge', ['Class 6-A','Class 6-B','Class 7-A','Class 7-B','Class 8-A','Class 8-B','Class 9-A','Class 10-A','Class 11-A','None'], 'Class 6-A', 'Class Teacher (In charge of class)'); ?>
         </div>
       </div>
-      <div class="c-info-card">
-        <p class="c-info-card-label">TIC responsibility</p>
-        <p class="c-info-card-value j-view-only" id="j-card-teacher-tic">Senior Debating Society TIC</p>
-        <div class="j-edit-only" style="display: none; margin-top: 0.375rem;">
-          <?php renderProfileDropdown('j-select-teacher-tic', ['Science Society','Chess Club','Debating Society','Senior Debating Society','Junior Science Club','None'], 'Debating Society', 'TIC programme'); ?>
-        </div>
-      </div>
       <!-- Edit Mode: Subject Specialization -->
       <div class="c-info-card j-edit-only" style="display: none;">
         <p class="c-info-card-label">Subject</p>
@@ -303,6 +297,43 @@ if (!function_exists('renderProfileDatepicker')) {
       <div class="c-info-card j-edit-only" style="display: none;">
         <p class="c-info-card-label">Workload summary</p>
         <input type="text" class="c-info-card-input" id="j-input-teacher-workload" placeholder="e.g. Total weekly workload: 22 instructional periods." />
+      </div>
+    </div>
+  </section>
+
+  <!-- 2.5 Extracurricular Assignment (Teacher in Charge) -->
+  <section style="margin-top: 1.5rem;">
+    <div class="c-section-title-row">
+      <span class="c-icon-accent"><svg class="c-icon" width="16" height="16" aria-hidden="true"><use href="#icon-trophy"/></svg></span>
+      <h3 class="c-section-title">Extracurricular assignment (Teacher in Charge)</h3>
+    </div>
+    <div class="c-info-grid c-cols-2" style="margin-top: 0.75rem;">
+      <div class="c-info-card">
+        <p class="c-info-card-label">Assigned Programme (TIC)</p>
+        <p class="c-info-card-value j-view-only" id="j-card-teacher-tic">Debating Society</p>
+        <div class="j-edit-only" style="display: none; margin-top: 0.375rem;">
+          <?php renderProfileDropdown('j-select-teacher-tic', [
+            'Varsity Football Club',
+            'Digital Arts Collective',
+            'Cricket Club',
+            'Science Society',
+            'Chess Club',
+            'Debating Society',
+            'Art Circle',
+            'Eco Club',
+            'Robotics & AI Lab',
+            "L'École Philharmonic",
+            'Astronomy Society',
+            'None'
+          ], 'Debating Society', 'TIC programme'); ?>
+        </div>
+      </div>
+      <div class="c-info-card">
+        <p class="c-info-card-label">Leadership Designation</p>
+        <p class="c-info-card-value j-view-only" id="j-card-teacher-tic-role">Teacher in Charge &amp; Faculty Mentor</p>
+        <div class="j-edit-only" style="display: none; margin-top: 0.375rem;">
+          <?php renderProfileDropdown('j-select-teacher-tic-role', ['Teacher in Charge & Faculty Mentor', 'Assistant Coordinator', 'Staff Advisor', 'Head Coordinator', 'None'], 'Teacher in Charge & Faculty Mentor', 'Designation'); ?>
+        </div>
       </div>
     </div>
   </section>
