@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Academic Overview — L'École <?= ucfirst($currentRole ?? 'admin') ?></title>
+  <title>Academic Overview — L'École <?= ucfirst($currentRole ?? 'management') ?></title>
   <link rel="stylesheet" href="/assets/css/global.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/sidebar.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/page-header.css?v=<?= time() ?>" />
@@ -152,7 +152,7 @@
 <?php require_once __DIR__ . '/../components/_add_grade_modal.php'; ?>
 
 <script>
-  window.LECOLE_CURRENT_ROLE = <?= json_encode($currentRole ?? 'admin') ?>;
+  window.LECOLE_CURRENT_ROLE = <?= json_encode($currentRole ?? 'management') ?>;
   window.LECOLE_STAFF_DIRECTORY = <?= json_encode($staffAssignments ?? []) ?>;
   window.LECOLE_CSRF_TOKEN = <?= json_encode($csrf_token ?? '') ?>;
 </script>
