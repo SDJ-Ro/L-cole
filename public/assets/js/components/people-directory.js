@@ -461,21 +461,44 @@
     const targetGrade = gradesData.find(g => g.id === gradeId) || gradesData[0];
     const classes = targetGrade?.classes || [];
 
-    if (!classes.includes(activeClassName)) {
+    if (!classes.includes(activeClassName) && activeClassName !== 'Unassigned') {
       activeClassName = classes[0] || '';
     }
 
-    classChipsWrapEl.innerHTML = classes.map(cls => `
+    const unassignedCount = Array.from(document.querySelectorAll('#j-table-student .j-person-row')).filter(r => {
+      const c = r.getAttribute('data-class');
+      return !c || c === 'Unassigned';
+    }).length;
+
+    let chipsHtml = classes.map(cls => `
       <button type="button" class="c-class-chip j-class-chip ${cls === activeClassName ? 'is-active-chip' : ''}" data-class="${escapeHtml(cls)}">
         ${escapeHtml(cls)}
       </button>
     `).join('');
 
+    chipsHtml += `
+      <button type="button" class="c-class-chip c-class-chip--unassigned j-class-chip ${activeClassName === 'Unassigned' ? 'is-active-chip' : ''}" data-class="Unassigned" style="margin-left: 0.5rem; border-color: rgba(127, 3, 3, 0.3); color: var(--maroon, #7F0303);">
+        Unassigned <span class="c-badge-pill j-unassigned-badge" style="margin-left: 0.25rem; background: var(--maroon, #7F0303); color: #fff; padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: 700;">${unassignedCount}</span>
+      </button>
+    `;
+
+    classChipsWrapEl.innerHTML = chipsHtml;
     updateContextCard(activeClassName);
   }
 
   function updateContextCard(className) {
     if (!contextBarEl) return;
+    if (className === 'Unassigned') {
+      if (contextTitleEl) contextTitleEl.textContent = 'Unassigned Students';
+      const unassignedCount = Array.from(document.querySelectorAll('#j-table-student .j-person-row')).filter(r => {
+        const c = r.getAttribute('data-class');
+        return !c || c === 'Unassigned';
+      }).length;
+      if (contextEnrollmentEl) contextEnrollmentEl.textContent = `${unassignedCount} unassigned`;
+      if (contextTeacherEl) contextTeacherEl.textContent = 'Awaiting class placement';
+      return;
+    }
+
     if (contextTitleEl) {
       contextTitleEl.textContent = 'Class ' + className;
     }
@@ -527,12 +550,20 @@
         const rowClass = row.getAttribute('data-class');
         const rowActivities = (row.getAttribute('data-activities') || '').toLowerCase();
 
-        if (activeGradeId && rowGrade !== activeGradeId) {
-          isVisible = false;
+        if (activeClassName === 'Unassigned') {
+          // Match any unassigned student
+          if (rowClass && rowClass !== 'Unassigned') {
+            isVisible = false;
+          }
+        } else {
+          if (activeGradeId && rowGrade !== activeGradeId) {
+            isVisible = false;
+          }
+          if (isVisible && activeClassName && rowClass !== activeClassName) {
+            isVisible = false;
+          }
         }
-        if (isVisible && activeClassName && rowClass !== activeClassName) {
-          isVisible = false;
-        }
+
         if (isVisible && selectedActivity !== 'all' && !rowActivities.includes(selectedActivity)) {
           isVisible = false;
         }

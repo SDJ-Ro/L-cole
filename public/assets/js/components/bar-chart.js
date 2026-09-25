@@ -151,6 +151,9 @@ function initTermDropdowns() {
         menu.removeAttribute('hidden');
         menu.style.display = 'block';
         btn.setAttribute('aria-expanded', 'true');
+        if (typeof window.adjustDropdownPosition === 'function') {
+          window.adjustDropdownPosition(dropdown, btn);
+        }
       }
     };
 
@@ -197,6 +200,10 @@ function closeAllTermDropdowns() {
     if (menu) {
       menu.setAttribute('hidden', '');
       menu.style.display = 'none';
+      menu.style.left = '';
+      menu.style.right = '';
+      menu.style.top = '';
+      menu.style.bottom = '';
     }
     if (btn) btn.setAttribute('aria-expanded', 'false');
   });
