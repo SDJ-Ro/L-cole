@@ -1,0 +1,366 @@
+/* =========================================================================
+   L'ÉCOLE — UNIVERSAL FEEDBACK COMPONENT STYLES
+   =========================================================================
+   - Exact Notice Board / Complaints toolbar layout (tight spacing, dropdown aligned right)
+   - Universal Card with Solid Highlight Badges (Original Moss, Sunshine, Maroon)
+   - Faded tinted footer sections
+   - ZERO top border horizontal line
+   - Pop-up expands as the exact same card layout with Universal Moss Back Button
+   ========================================================================= */
+
+/* Filter Toolbar (Aligned with Notice Board & Complaints pages) */
+.c-filter-bar--feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0 !important;
+  margin-bottom: 1.5rem !important;
+}
+
+@media (min-width: 640px) {
+  .c-filter-bar--feedback {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.c-filter-bar--feedback .c-search-field {
+  position: relative;
+  display: block;
+  flex: 1 1 auto;
+  max-width: 28rem;
+}
+
+.c-filter-bar--feedback .c-search-field__icon {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(15, 65, 74, 0.4);
+  pointer-events: none;
+}
+
+.c-filter-bar--feedback .c-search-field__input {
+  width: 100%;
+  padding: 0.625rem 1rem 0.625rem 2.4rem;
+  border-radius: var(--radius-full, 9999px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--midnight, #0F414A);
+  outline: none;
+  box-shadow: 0 1px 2px rgba(15, 65, 74, 0.06);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.c-filter-bar--feedback .c-search-field__input:focus {
+  border-color: var(--skyblue, #7FC7CC);
+  box-shadow: 0 0 0 2px rgba(127, 199, 204, 0.3);
+}
+
+.c-filter-bar--feedback .c-filter-bar__selects {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto; /* Aligns dropdown to right corner of that row */
+}
+
+/* Feedback Cards Grid */
+.c-feedback-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .c-feedback-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .c-feedback-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Card Container: Clean card with standard border, NO top colored line */
+.c-feedback-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 1px solid var(--color-border, #E2E8F0);
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 65, 74, 0.04);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.c-feedback-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px -4px rgba(15, 65, 74, 0.1);
+  border-color: rgba(127, 199, 204, 0.6);
+}
+
+/* Card Body */
+.c-feedback-card__body {
+  padding: 1.25rem;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: #ffffff;
+}
+
+.c-feedback-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+/* ORIGINAL SOLID HIGHLIGHT TAB BADGES */
+.c-type-badge {
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.c-type-badge--positive {
+  background: var(--moss, #4B5B34) !important;
+  color: #ffffff !important;
+}
+
+.c-type-badge--constructive {
+  background: var(--sunshine, #EA8913) !important;
+  color: #ffffff !important;
+}
+
+.c-type-badge--negative {
+  background: var(--maroon, #7F0303) !important;
+  color: #ffffff !important;
+}
+
+.c-feedback-card__date {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(15, 65, 74, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.c-feedback-card__parent-line {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--midnight, #0F414A);
+  opacity: 0.8;
+  margin: 0;
+}
+
+.c-feedback-card__header-info {
+  margin-top: 0.125rem;
+}
+
+.c-feedback-card__subject {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+  line-height: 1.3;
+}
+
+.c-feedback-card__teacher-meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: rgba(15, 65, 74, 0.65);
+}
+
+.c-feedback-card__teacher-name {
+  font-weight: 600;
+  color: var(--midnight, #0F414A);
+}
+
+.c-feedback-card__teacher-sep {
+  margin: 0 0.35rem;
+  opacity: 0.5;
+}
+
+.c-feedback-card__preview {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: rgba(15, 65, 74, 0.72);
+  font-style: italic;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* FADED TINTED FOOTERS */
+.c-feedback-card__footer {
+  padding: 0.875rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border-top: 1px solid rgba(15, 65, 74, 0.06);
+  transition: background-color 150ms ease;
+}
+
+.c-feedback-card__footer--positive {
+  background: rgba(75, 91, 52, 0.08); /* Faded Moss */
+}
+
+.c-feedback-card__footer--constructive {
+  background: rgba(234, 137, 19, 0.08); /* Faded Sunshine */
+}
+
+.c-feedback-card__footer--negative {
+  background: rgba(127, 3, 3, 0.07); /* Faded Maroon */
+}
+
+.c-feedback-card:hover .c-feedback-card__footer--positive {
+  background: rgba(75, 91, 52, 0.14);
+}
+
+.c-feedback-card:hover .c-feedback-card__footer--constructive {
+  background: rgba(234, 137, 19, 0.14);
+}
+
+.c-feedback-card:hover .c-feedback-card__footer--negative {
+  background: rgba(127, 3, 3, 0.12);
+}
+
+.c-read-more {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+}
+
+.c-read-more__icon {
+  transition: transform 150ms ease;
+}
+
+.c-feedback-card:hover .c-read-more__icon {
+  transform: translateX(3px);
+}
+
+/* =========================================================================
+   DETAIL MODAL POPUP — SAME CARD EXPANDED WITH UNIVERSAL BACK BUTTON
+   ========================================================================= */
+/* Generic .c-modal Container (Overrides sizing; layer and backdrop inherit from global.css) */
+.c-modal {
+  width: min(38rem, 94vw);
+  max-width: 38rem;
+  max-height: 90vh;
+}
+
+/* Modal Wrapper with Universal Back Button on Top (For Same-Card Detail Popup) */
+.c-modal-card-wrapper {
+  position: relative !important;
+  z-index: 10 !important;
+  width: 100% !important;
+  max-width: 32rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.75rem !important;
+  opacity: 0 !important;
+  transform: scale(0.97) translateY(12px) !important;
+  transition: opacity 180ms ease, transform 180ms ease !important;
+}
+
+.c-modal-layer.c-is-open .c-modal-card-wrapper {
+  opacity: 1 !important;
+  transform: scale(1) translateY(0) !important;
+}
+
+/* The Expanded Card inside the Modal (Identical layout to the grid card) */
+.c-feedback-detail-card {
+  width: 100% !important;
+  max-height: 80vh !important;
+  overflow-y: auto !important;
+  border-radius: var(--radius-xl, 0.875rem) !important;
+  background: #ffffff !important;
+  border: 1px solid var(--color-border, #E2E8F0) !important;
+  box-shadow: var(--shadow-2xl, 0 25px 55px -15px rgba(9, 47, 51, 0.45)) !important;
+  cursor: default !important;
+  transform: none !important;
+}
+
+.c-feedback-detail-card .c-feedback-card__preview {
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  font-size: 0.875rem !important;
+  line-height: 1.7 !important;
+  color: var(--midnight, #0F414A) !important;
+  font-style: normal !important;
+}
+
+.c-feedback-detail-card .c-feedback-card__footer {
+  justify-content: space-between !important;
+  font-size: 0.75rem !important;
+  color: rgba(15, 65, 74, 0.6) !important;
+}
+
+/* Universal Back Button in the top row */
+.c-modal-card-wrapper .c-back-link-btn {
+  margin-bottom: 0 !important;
+  background: var(--moss, #4B5B34) !important;
+  color: #ffffff !important;
+  border-radius: 0.5rem !important;
+  padding: 0.5rem 1rem !important;
+  font-weight: 500 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.c-modal-card-wrapper .c-back-link-btn:hover {
+  background: #3c4929 !important;
+}
+
+/* Empty State */
+.c-feedback-empty {
+  grid-column: 1 / -1;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  background: #ffffff;
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 1px dashed var(--color-border, #E2E8F0);
+}
+
+.c-feedback-empty__icon {
+  color: rgba(15, 65, 74, 0.3);
+  margin-bottom: 0.75rem;
+}
+
+.c-feedback-empty__title {
+  margin: 0 0 0.25rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+}
+
+.c-feedback-empty__text {
+  margin: 0;
+  font-size: 0.875rem;
+  color: rgba(15, 65, 74, 0.6);
+}

@@ -1,0 +1,602 @@
+/* =========================================================================
+   L'ÉCOLE — TEACHER ACHIEVEMENT STUDENT CARDS & GRID
+   ========================================================================= */
+
+.c-student-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 3rem 1.5rem;
+  padding-top: 2.25rem;
+}
+
+@media (min-width: 640px) {
+  .c-student-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .c-student-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Student Profile Card — Exact Metrics from Original */
+.c-student-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 1.25rem;
+  padding: 0 1.25rem 1.25rem 1.25rem;
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.c-student-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Red bordered profiles automatically move up to top of grid */
+.c-student-card--highlighted {
+  order: -1;
+}
+
+/* Popped-out Avatar */
+.c-student-card__avatar-wrap {
+  position: relative;
+  margin-top: -2.25rem;
+  margin-bottom: 0.75rem;
+  border-radius: 50%;
+}
+
+.c-student-card__avatar {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: block;
+}
+
+/* Fallback Initials Avatar — 100% Solid Opaque Background */
+.c-student-card__avatar-initials {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  border: 4px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 800;
+  background-color: var(--midnight, #0F414A);
+  color: #ffffff;
+}
+
+/* Match solid tone to parent card color to completely cover the top border line */
+.c-student-card.c-bg-card-slate .c-student-card__avatar-initials   { background-color: var(--card-slate, #3C586B) !important; }
+.c-student-card.c-bg-card-steel .c-student-card__avatar-initials   { background-color: var(--card-steel, #345266) !important; }
+.c-student-card.c-bg-card-taupe .c-student-card__avatar-initials   { background-color: var(--card-taupe, #645552) !important; }
+.c-student-card.c-bg-card-sand .c-student-card__avatar-initials    { background-color: var(--card-sand, #6B5C4D) !important; }
+.c-student-card.c-bg-card-seafoam .c-student-card__avatar-initials { background-color: var(--card-seafoam, #2D5D63) !important; }
+.c-student-card.c-bg-card-sage .c-student-card__avatar-initials    { background-color: var(--card-sage, #446152) !important; }
+
+
+/* Highlighted Student Avatar (Controlled by Flag) */
+.c-student-card--highlighted .c-student-card__avatar,
+.c-student-card--highlighted .c-student-card__avatar-initials {
+  border: 3px solid #E53E3E !important;
+  box-shadow: 0 0 0 2px #E53E3E, 0 0 14px rgba(229, 62, 62, 0.85) !important;
+}
+
+/* Card Typography — Exact Original */
+.c-student-card__name {
+  margin: 0 0 0.25rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 800;
+  text-align: center;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.c-student-card__index {
+  margin: 0 0 1.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  text-align: center;
+}
+
+/* Action Buttons */
+.c-student-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: auto;
+}
+
+.c-student-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border-radius: 9999px;
+  padding: 0.45rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: transform 150ms ease, background-color 150ms ease;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.c-student-btn:hover {
+  transform: scale(1.03);
+}
+
+/* View Button: Whiter Frosted Glass Style */
+.c-student-btn--view {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  color: var(--midnight, #0F414A);
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.c-student-btn--view:hover {
+  background: #ffffff;
+  color: var(--deepsea, #092F33);
+}
+
+/* Record Button: Signature Sunshine Accent */
+.c-student-btn--record {
+  background: var(--sunshine, #EA8913);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(234, 137, 19, 0.3);
+}
+
+.c-student-btn--record:hover {
+  background: #d47b11;
+}
+
+/* Issue Button: Dark Maroon Alert Tone */
+.c-student-btn--issue {
+  background: #8A1515 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(138, 21, 21, 0.35) !important;
+}
+
+.c-student-btn--issue:hover {
+  background: #701010 !important;
+}
+
+.c-student-btn--issue .c-icon,
+.c-btn--issue .c-icon {
+  stroke: #ffffff !important;
+  stroke-width: 2 !important;
+}
+
+/* Achievements Filter Bar */
+.c-achievements-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+/* Back Link Navigation in Student Detail View */
+.c-back-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.375rem !important;
+  width: fit-content !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin-bottom: 1rem !important;
+  font-family: 'Poppins', system-ui, sans-serif !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  color: rgba(15, 65, 74, 0.75) !important;
+  cursor: pointer !important;
+  transition: color 150ms ease !important;
+  text-decoration: none !important;
+}
+
+.c-back-link:hover {
+  color: var(--midnight, #0F414A) !important;
+}
+
+/* =========================================================================
+   TIMELINE CARD CONTAINER (Unified Header & Timeline Body)
+   ========================================================================= */
+.c-timeline-card-container {
+  display: flex;
+  flex-direction: column;
+  border-radius: 1.25rem;
+  border: 1px solid #E2D9CD;
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.c-timeline-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #EDE8E2;
+  border-bottom: 1px solid #D6CFC6;
+  padding: 0.875rem 1.75rem;
+  box-sizing: border-box;
+  min-height: auto;
+}
+
+.c-timeline-banner__student {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.c-timeline-avatar-initials {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: #3E5B65;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.c-timeline-banner__name {
+  margin: 0 !important;
+  font-size: 1.15rem !important;
+  font-weight: 800 !important;
+  color: var(--midnight, #0F414A) !important;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  line-height: 1.2 !important;
+}
+
+.c-timeline-banner__badge {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: #D5EBE8;
+  color: #2E7588;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.c-timeline-banner__index {
+  margin: 0.15rem 0 0 0 !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  color: rgba(15, 65, 74, 0.65) !important;
+  line-height: 1.2 !important;
+}
+
+.c-timeline-card-body {
+  padding: 1.75rem 2rem;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Dark Maroon View Issue Button */
+.c-btn--issue {
+  background: #8A1515 !important;
+  color: #ffffff !important;
+  border-radius: 9999px !important;
+  padding: 0.45rem 1.125rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 700 !important;
+  border: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.375rem !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+  transition: background-color 150ms ease !important;
+}
+
+.c-btn--issue:hover {
+  background: #701010 !important;
+}
+
+/* =========================================================================
+   RECORD ACHIEVEMENT & REVIEW ISSUE MODAL
+   ========================================================================= */
+.c-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.c-modal.c-is-open {
+  display: flex !important;
+}
+
+.c-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 65, 74, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1;
+  cursor: pointer;
+}
+
+.c-record-dialog {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 45px rgba(9, 47, 51, 0.25);
+  padding: 1.75rem 2rem 2rem 2rem;
+  box-sizing: border-box;
+  overflow-y: auto;
+  transform: translateY(16px) scale(0.98);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease;
+}
+
+.c-modal.c-is-open .c-record-dialog {
+  transform: translateY(0) scale(1);
+}
+
+.c-record-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-shrink: 0;
+}
+
+.c-record-dialog__title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--midnight, #0F414A);
+  letter-spacing: -0.01em;
+}
+
+.c-record-dialog__close {
+  background: transparent;
+  border: none;
+  padding: 0.375rem;
+  cursor: pointer;
+  color: var(--midnight, #0F414A);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  opacity: 0.7;
+  transition: opacity 150ms ease, background-color 150ms ease;
+}
+
+.c-record-dialog__close:hover {
+  opacity: 1;
+  background-color: rgba(15, 65, 74, 0.08);
+}
+
+.c-record-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+  width: 100%;
+}
+
+.c-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  width: 100%;
+}
+
+.c-field-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+  margin-bottom: 0.125rem;
+}
+
+.c-field-required {
+  color: #E53E3E;
+  margin-left: 2px;
+}
+
+.c-record-input {
+  width: 100%;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border, #EFE8DF);
+  background: #ffffff;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--midnight, #0F414A);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.c-record-input::placeholder {
+  color: rgba(15, 65, 74, 0.45);
+}
+
+.c-record-input:focus {
+  border-color: #A86B32;
+  box-shadow: 0 0 0 3px rgba(168, 107, 50, 0.15);
+}
+
+.c-record-textarea {
+  width: 100%;
+  min-height: 5.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border, #EFE8DF);
+  background: #ffffff;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--midnight, #0F414A);
+  outline: none;
+  box-sizing: border-box;
+  resize: vertical;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.c-record-textarea::placeholder {
+  color: rgba(15, 65, 74, 0.45);
+}
+
+.c-record-textarea:focus {
+  border-color: #A86B32;
+  box-shadow: 0 0 0 3px rgba(168, 107, 50, 0.15);
+}
+
+.c-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.875rem;
+}
+
+/* Upload Box for Supporting Proof (Light brown warm tone) */
+.c-upload-box {
+  border: 1.5px dashed rgba(168, 107, 50, 0.35);
+  border-radius: var(--radius-lg, 0.75rem);
+  background: var(--alabaster, #FAF8F5);
+  padding: 1.25rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.c-upload-box:hover,
+.c-upload-box.c-is-dragover {
+  border-color: #A86B32;
+  background: #F5EFE6;
+}
+
+.c-upload-box__icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: #8C5A24;
+  margin-bottom: 0.5rem;
+}
+
+.c-upload-box__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--midnight, #0F414A);
+}
+
+.c-upload-box__title strong {
+  font-weight: 700;
+}
+
+.c-upload-box__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: rgba(15, 65, 74, 0.65);
+}
+
+.c-upload-box__filename {
+  margin-top: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--midnight, #0F414A);
+  background: rgba(228, 203, 169, 0.35);
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+}
+
+/* Modal Action Buttons */
+.c-record-actions {
+  display: flex;
+  gap: 0.875rem;
+  justify-content: center;
+  margin-top: 0.75rem;
+  padding-top: 0.25rem;
+  flex-shrink: 0;
+}
+
+.c-record-btn-cancel {
+  background: transparent;
+  color: var(--midnight, #0F414A);
+  border: 1px solid var(--color-border, #EFE8DF);
+  border-radius: 9999px;
+  padding: 0.6rem 2.25rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.c-record-btn-cancel:hover {
+  background: rgba(228, 203, 169, 0.2);
+  border-color: #A86B32;
+}
+
+.c-record-btn-submit {
+  background: var(--midnight, #0F414A);
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  padding: 0.6rem 2.25rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(15, 65, 74, 0.25);
+  transition: background-color 150ms ease, transform 150ms ease;
+}
+
+.c-record-btn-submit:hover {
+  background: var(--deepsea, #092F33);
+  transform: translateY(-1px);
+}

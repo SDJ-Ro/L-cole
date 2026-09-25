@@ -1,0 +1,101 @@
+/* =========================================================================
+   L'ÉCOLE — UPCOMING EVENTS COMPONENT STYLES
+   ========================================================================= */
+
+.c-events-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.c-events-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--midnight, #0F414A);
+}
+
+.c-events-card__pill {
+  flex-shrink: 0;
+  border-radius: var(--radius-full, 9999px);
+  background: rgba(15, 65, 74, 0.08);
+  color: var(--midnight, #0F414A);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.625rem;
+}
+
+.c-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.c-event-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.c-event-row__date {
+  min-width: 44px;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid rgba(228, 203, 169, 0.3);
+  background: var(--alabaster, #EFE8DF);
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.c-event-row__day {
+  margin: 0 0 0.125rem;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--midnight, #0F414A);
+}
+
+.c-event-row__month {
+  margin: 0;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--terracotta, #AF5031);
+}
+
+.c-event-row__name {
+  margin: 0 0 0.125rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--midnight, #0F414A);
+}
+
+.c-event-row__tag {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 0.125rem 0.375rem;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.c-event-row__tag--sand {
+  background: rgba(228, 203, 169, 0.45);
+  color: var(--midnight, #0F414A);
+}
+
+.c-event-row__tag--sky {
+  background: rgba(127, 199, 204, 0.15);
+  color: var(--midnight, #0F414A);
+}
+
+.c-event-row__tag--terracotta {
+  background: rgba(175, 80, 49, 0.15);
+  color: var(--terracotta, #AF5031);
+}

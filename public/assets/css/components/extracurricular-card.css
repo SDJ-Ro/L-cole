@@ -1,0 +1,602 @@
+/* =========================================================================
+   L'ÉCOLE — EXTRACURRICULAR CARD COMPONENT STYLES
+   Used across Admin, Management, Teacher, and Student portals.
+   Handles both active cards and greyed-out pending cards with smooth transitions.
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   1. CLUB GRID LAYOUT (Overview Page)
+   ------------------------------------------------------------------------- */
+.c-club-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .c-club-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .c-club-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* -------------------------------------------------------------------------
+   TOOLBAR & FILTER CONTROLS
+   ------------------------------------------------------------------------- */
+.c-extracurricular-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+@media (min-width: 640px) {
+  .c-extracurricular-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.c-segmented-tabs {
+  display: inline-flex;
+  align-items: center;
+  background: #ffffff;
+  padding: 0.25rem;
+  border-radius: 9999px;
+  border: 1px solid var(--alabaster, #EFE8DF);
+  box-shadow: 0 1px 2px rgba(15, 65, 74, 0.04);
+}
+
+.c-segmented-tab {
+  background: transparent;
+  border: none;
+  padding: 0.4rem 1.125rem;
+  border-radius: 9999px;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--midnight, #0F414A);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+  white-space: nowrap;
+}
+
+.c-segmented-tab:hover:not(.is-active) {
+  color: var(--midnight, #0F414A);
+  background: rgba(127, 199, 204, 0.2);
+}
+
+.c-segmented-tab.is-active {
+  background: var(--midnight, #0F414A);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 65, 74, 0.2);
+}
+
+/* -------------------------------------------------------------------------
+   2. MAIN CARD SHELL
+   ------------------------------------------------------------------------- */
+.c-club-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-2xl, 1.125rem);
+  background: #ffffff;
+  border: 2px solid var(--alabaster, #EFE8DF);
+  box-shadow: 0 4px 16px rgba(15, 65, 74, 0.04);
+  overflow: hidden;
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 250ms ease, filter 400ms ease, opacity 400ms ease;
+  box-sizing: border-box;
+}
+
+.c-club-card--clickable {
+  cursor: pointer;
+}
+
+.c-club-card--clickable:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(15, 65, 74, 0.1);
+  border-color: rgba(127, 199, 204, 0.5);
+}
+
+/* -------------------------------------------------------------------------
+   3. GREYED-OUT PENDING STATE (Filter lifts away smoothly on Accept)
+   ------------------------------------------------------------------------- */
+.c-club-card--pending {
+  filter: grayscale(0.65);
+  opacity: 0.88;
+  border: 2px dashed rgba(234, 137, 19, 0.6) !important;
+  background: rgba(250, 248, 245, 0.96);
+}
+
+.c-club-card--pending:hover {
+  filter: grayscale(0.2);
+  opacity: 1;
+  border-color: var(--sunshine, #EA8913) !important;
+}
+
+/* -------------------------------------------------------------------------
+   4. CARD TOP BANNER & THEMES
+   ------------------------------------------------------------------------- */
+.c-club-card__top {
+  position: relative;
+  height: 9.5rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  color: #ffffff;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Gradient overlay to ensure text contrast over background photos */
+.c-club-card__top::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.65) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Themed Gradient Fallbacks (when no cover image is uploaded) */
+.c-club-card__top--main-sport {
+  background: linear-gradient(135deg, #2D4C3B 0%, #1A2E23 100%);
+}
+.c-club-card__top--creative-arts {
+  background: linear-gradient(135deg, #3A6973 0%, #203A40 100%);
+}
+.c-club-card__top--academic-club {
+  background: linear-gradient(135deg, #1C3345 0%, #0F1C26 100%);
+}
+.c-club-card__top--mental-sport {
+  background: linear-gradient(135deg, #4F2E2D 0%, #291818 100%);
+}
+.c-club-card__top--performing-arts {
+  background: linear-gradient(135deg, #592525 0%, #2D1313 100%);
+}
+.c-club-card__top--team-sport {
+  background: linear-gradient(135deg, #965B27 0%, #4D2E14 100%);
+}
+.c-club-card__top--aquatics {
+  background: linear-gradient(135deg, #1A404F 0%, #0D2129 100%);
+}
+.c-club-card__top--stem-club {
+  background: linear-gradient(135deg, #2A4045 0%, #152023 100%);
+}
+.c-club-card__top--club {
+  background: linear-gradient(135deg, #2D3E42 0%, #131E21 100%);
+}
+
+.c-club-card__bg-icon {
+  position: absolute;
+  right: -1.75rem;
+  bottom: -1.75rem;
+  color: rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.c-club-card__header-badges {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* -------------------------------------------------------------------------
+   5. PILL BADGES
+   ------------------------------------------------------------------------- */
+.c-club-card__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 250ms ease;
+}
+
+.c-club-card__pill--sport {
+  background: var(--maroon, #7F0303);
+  color: #ffffff;
+}
+
+.c-club-card__pill--club {
+  background: #8EB7B5;
+  color: var(--midnight, #0F414A);
+}
+
+.c-club-card__pill--enrolled {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  backdrop-filter: blur(4px);
+}
+
+.c-club-card__pill--pending {
+  background: rgba(234, 137, 19, 0.25) !important;
+  color: #c46800 !important;
+  border: 1px solid rgba(234, 137, 19, 0.5);
+  font-weight: 800;
+}
+
+.c-club-card__titles {
+  position: relative;
+  z-index: 2;
+}
+
+.c-club-card__category {
+  margin: 0 0 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.c-club-card__name {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #ffffff;
+}
+
+/* -------------------------------------------------------------------------
+   6. CARD BOTTOM DETAILS
+   ------------------------------------------------------------------------- */
+.c-club-card__bottom {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+  background: #ffffff;
+}
+
+.c-club-card__tic {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.c-club-card__tic-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  object-fit: cover;
+  border: 1.5px solid var(--alabaster, #EFE8DF);
+  flex-shrink: 0;
+}
+
+.c-club-card__tic-avatar-placeholder {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  background: var(--cream, #F7F3EC);
+  color: var(--midnight, #0F414A);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.c-club-card__tic-label {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(15, 65, 74, 0.5);
+  margin-bottom: 0.125rem;
+}
+
+.c-club-card__tic-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+  line-height: 1.2;
+}
+
+/* Contact Info Row */
+.c-club-card__contact {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.c-club-card__contact--unlocked {
+  color: var(--maroon, #7F0303);
+  font-weight: 700;
+}
+
+.c-club-card__contact--locked {
+  padding: 0.375rem 0.625rem;
+  border-radius: var(--radius-md, 0.375rem);
+  background: rgba(239, 232, 223, 0.5);
+  color: rgba(15, 65, 74, 0.55);
+  font-style: italic;
+}
+
+.c-club-card__contact-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* -------------------------------------------------------------------------
+   7. ACTIONS (Accept/Reject for Pending, View Details for Active)
+   ------------------------------------------------------------------------- */
+.c-club-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.25rem;
+}
+
+.c-btn--card-action {
+  flex: 1 1 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.55rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border-radius: var(--radius-lg, 0.625rem);
+  cursor: pointer;
+}
+
+.c-btn--moss {
+  background: var(--midnight, #0F414A) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(15, 65, 74, 0.2);
+}
+.c-btn--moss:hover {
+  background: #175a66 !important;
+}
+
+.c-club-card__btn {
+  width: 100%;
+  padding: 0.625rem;
+  border-radius: 9999px;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem;
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.c-club-card__btn:hover {
+  opacity: 0.92;
+  transform: scale(1.01);
+}
+
+.c-club-card__btn--sport {
+  background: var(--maroon, #7F0303);
+  color: #ffffff;
+}
+
+.c-club-card__btn--club {
+  background: #A6C9C9;
+  color: var(--midnight, #0F414A);
+}
+
+.c-club-card__btn--interest {
+  background: var(--alabaster, #EFE8DF);
+  color: var(--midnight, #0F414A);
+  border: 1px solid rgba(15, 65, 74, 0.15);
+}
+.c-club-card__btn--interest:hover {
+  background: var(--sand, #E4CBA9);
+  color: var(--midnight, #0F414A);
+  border-color: rgba(15, 65, 74, 0.25);
+  transform: scale(1.02);
+}
+.c-club-card__btn--interest svg {
+  color: var(--terracotta, #AF5031);
+}
+
+.c-club-card__btn--requested {
+  background: rgba(239, 232, 223, 0.6) !important;
+  color: rgba(15, 65, 74, 0.6) !important;
+  border: 1px dashed rgba(15, 65, 74, 0.2) !important;
+  cursor: default !important;
+  opacity: 0.85;
+}
+.c-club-card__btn--requested svg {
+  color: #175a66;
+}
+
+/* -------------------------------------------------------------------------
+   8. CREATE NEW EXTRACURRICULAR CARD BUTTON (Dashed entry card)
+   ------------------------------------------------------------------------- */
+.c-club-card--create {
+  display: flex;
+  min-height: 18rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-2xl, 1.125rem);
+  border: 2px dashed rgba(234, 137, 19, 0.45);
+  background: rgba(247, 243, 236, 0.6);
+  padding: 1.75rem;
+  text-align: center;
+  cursor: pointer;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: background-color 200ms ease, border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+}
+
+.c-club-card--create:hover {
+  background: rgba(239, 232, 223, 0.85);
+  border-color: var(--sunshine, #EA8913);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(15, 65, 74, 0.08);
+}
+
+.c-club-card--create__icon {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: var(--midnight, #0F414A);
+  box-shadow: 0 2px 8px rgba(15, 65, 74, 0.1);
+  transition: transform 200ms ease, background-color 200ms ease;
+}
+
+.c-club-card--create:hover .c-club-card--create__icon {
+  transform: scale(1.08);
+  background: var(--sand, #E4CBA9);
+}
+
+.c-club-card--create__title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+  margin-bottom: 0.375rem;
+}
+
+.c-club-card--create__desc {
+  max-width: 14rem;
+  font-size: 0.75rem;
+  color: rgba(15, 65, 74, 0.65);
+  line-height: 1.45;
+}
+
+/* -------------------------------------------------------------------------
+   9. CREATE EXTRACURRICULAR MODAL STYLES (from original admin prototype)
+   ------------------------------------------------------------------------- */
+.c-modal--create-club {
+  max-width: 40rem;
+  width: 100%;
+}
+
+.c-position-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid var(--color-border, #E2E8F0);
+  background: rgba(239, 232, 223, 0.3);
+  padding: 0.75rem;
+  box-sizing: border-box;
+}
+
+.c-position-row .c-field-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: #fff;
+}
+
+.c-position-row__star-btn {
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: rgba(15, 65, 74, 0.3);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 150ms ease;
+}
+
+.c-position-row__star-btn:hover,
+.c-position-row__star-btn.c-is-active {
+  color: var(--sunshine, #EA8913);
+}
+
+.c-position-row__star-btn.c-is-active svg {
+  fill: currentColor;
+}
+
+.c-position-row__remove-btn {
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: rgba(15, 65, 74, 0.4);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 150ms ease;
+}
+
+.c-position-row__remove-btn:hover:not(:disabled) {
+  color: var(--maroon, #7F0303);
+}
+
+.c-position-row__remove-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.c-form-section {
+  border-top: 1px solid var(--color-border, #E2E8F0);
+  padding-top: 1.25rem;
+}
+
+.c-form-section__head {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.c-form-section__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+}
+
+.c-form-section__hint {
+  margin: 0.125rem 0 0;
+  font-size: 0.75rem;
+  color: rgba(15, 65, 74, 0.6);
+}
+
+.c-form-section__add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: transparent;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--skyblue, #7FC7CC);
+  cursor: pointer;
+}
+
+.c-form-section__add-btn:hover {
+  color: var(--midnight, #0F414A);
+}
+
+.c-field-span-2 {
+  grid-column: span 2;
+}
+
+
