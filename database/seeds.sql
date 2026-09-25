@@ -57,4 +57,15 @@ INSERT INTO student_parents (student_id, parent_id, is_primary)
 VALUES (1, 1, 1)
 ON DUPLICATE KEY UPDATE is_primary = 1;
 
+-- 7. INITIAL NOTICES
+INSERT INTO notices (id, account_id, title, category, audience, body, author_name, is_pinned, created_at)
+VALUES 
+(1, 1, 'Term 2 Examination Schedule — June 2026', 'Academic', 'All', 'Term 2 examinations run from 17–26 June 2026. Students should follow their grade and class section timetable for subject sessions, rooms, and reporting times. The make-up examination session is scheduled for 26 June for approved absences.', 'Academic Office', 1, '2026-06-10 08:30:00'),
+(2, 1, 'Sports Day Rehearsal Schedule', 'Extracurricular', 'Students,Teachers', 'Final rehearsal for the annual sports meet will take place on the main grounds this Friday at 14:00. Attendance is mandatory for all participating athletes and event coordinators.', 'Student Life Office', 0, '2026-06-14 10:15:00'),
+(3, 1, 'Library Renovation Notice', 'General', 'All', 'The main library will be closed for digital catalog upgrades starting next Monday. A temporary reading room and borrowing desk has been set up in Hall B for student and faculty use.', 'Admin Office', 0, '2026-05-20 09:00:00'),
+(4, 3, 'Parent-Teacher Conference: Grade 10 & 11', 'Academic', 'Parents,Teachers', 'The termly parent-teacher conference for Grade 10 & 11 will be held virtually this Saturday. One-on-one booking links have been dispatched to registered email addresses.', 'Mrs. Perera', 0, '2026-05-18 14:00:00'),
+(5, 2, 'Annual Staff Leadership & Curriculum Review', 'Administrative', 'Teachers,Management', 'Departmental curriculum reviews and teaching strategy workshops will convene in the Executive Boardroom on Friday at 16:00. All faculty heads are expected to attend with term assessments.', 'Dr. Vance', 0, '2026-05-12 16:30:00')
+ON DUPLICATE KEY UPDATE title = VALUES(title);
+
 SET FOREIGN_KEY_CHECKS = 1;
+

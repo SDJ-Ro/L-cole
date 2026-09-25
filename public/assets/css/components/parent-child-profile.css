@@ -1,0 +1,296 @@
+/* =========================================================================
+   L'ÉCOLE — PARENT CHILD PROFILE STYLESHEET
+   =========================================================================
+   Modular styles for Child Profile Page:
+     1. Child Identity Card (reuses .c-modal-header markup from profile-modal.css)
+     2. Tab Navigation Bar (Information, Academics, Sports & Clubs, Achievements)
+     3. Tab Switching Transitions
+     4. Sports & Clubs Filter Bar & Grid
+   ========================================================================= */
+
+.c-child-profile-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* -------------------------------------------------------------------------
+   1. CHILD IDENTITY CARD
+   Reuses .c-modal-header + .c-header-sky markup from _person_profile_modal.php.
+   All colours/layout come from profile-modal.css (already linked).
+   Only override needed: full-page context needs its own border-radius
+   since there's no parent .c-modal-card to clip it.
+   ------------------------------------------------------------------------- */
+.c-child-profile-header {
+  border-radius: var(--radius-xl, 0.875rem);
+  overflow: hidden;
+  border: 1px solid rgba(127, 199, 204, 0.3);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 65, 74, 0.06));
+}
+
+/* -------------------------------------------------------------------------
+   2. TOP NAVIGATION TABS
+   ------------------------------------------------------------------------- */
+.profile-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 1.25rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 10px 16px;
+  border-radius: var(--radius-xl, 0.875rem);
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  border: 1px solid var(--alabaster, #EFE8DF);
+  background: #ffffff;
+  color: rgba(15, 65, 74, 0.6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.tab-btn:hover {
+  color: var(--midnight, #0F414A);
+  background: var(--cream, #F7F3EC);
+}
+
+.tab-btn.active {
+  background: var(--midnight, #0F414A);
+  color: #ffffff;
+  border-color: var(--midnight, #0F414A);
+  box-shadow: 0 2px 6px rgba(15, 65, 74, 0.12);
+}
+
+/* -------------------------------------------------------------------------
+   3. TAB PANELS & TRANSITIONS
+   ------------------------------------------------------------------------- */
+.tab-panel {
+  display: none;
+  width: 100%;
+  margin-top: 0 !important;
+}
+
+.tab-panel > * {
+  margin-top: 0 !important;
+}
+
+.tab-panel.active {
+  display: block;
+  animation: c-tab-fade-in 0.25s ease-out;
+}
+
+@keyframes c-tab-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* -------------------------------------------------------------------------
+   4. INFORMATION TAB SPECIFIC OVERRIDES
+   ------------------------------------------------------------------------- */
+#tab-information .c-subtab-panel {
+  display: block !important;
+  margin-top: 0 !important;
+  background: #ffffff;
+  border: 1px solid var(--alabaster, #EFE8DF);
+  border-radius: var(--radius-xl, 0.875rem);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 65, 74, 0.06));
+}
+
+#tab-information section {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+#tab-information section + section,
+#tab-information section[style*="margin-top"] {
+  margin-top: 1.25rem !important;
+  padding-top: 1.25rem !important;
+  border-top: 1px solid var(--alabaster, #EFE8DF) !important;
+}
+
+#tab-information .c-info-card {
+  background: var(--cream, #F7F3EC);
+  border: 1px solid var(--alabaster, #EFE8DF);
+  border-radius: var(--radius-lg, 0.625rem);
+  padding: 1rem 1.125rem;
+}
+
+#tab-information .c-info-card-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(15, 65, 74, 0.5);
+  margin-bottom: 4px;
+}
+
+#tab-information .c-info-card-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+  margin: 0;
+}
+
+/* -------------------------------------------------------------------------
+   5. SPORTS & CLUBS TAB TOOLBAR & GRID
+   ------------------------------------------------------------------------- */
+.sc-header {
+  margin-bottom: 1.75rem;
+}
+
+.sc-header h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+  margin: 0 0 4px;
+}
+
+.sc-header p {
+  font-size: 0.875rem;
+  color: rgba(15, 65, 74, 0.65);
+  margin: 0;
+}
+
+.sc-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.sc-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+}
+
+.sc-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: rgba(15, 65, 74, 0.45);
+  pointer-events: none;
+}
+
+.sc-search-input {
+  width: 100%;
+  padding: 0.625rem 1rem 0.625rem 2.35rem;
+  border-radius: var(--radius-lg, 0.625rem);
+  border: 1px solid var(--alabaster, #EFE8DF);
+  background: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8125rem;
+  color: var(--midnight, #0F414A);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.sc-search-input:focus {
+  border-color: var(--skyblue, #7FC7CC);
+  box-shadow: 0 0 0 2px rgba(127, 199, 204, 0.25);
+}
+
+.sc-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sc-tab {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-lg, 0.625rem);
+  border: 1px solid var(--alabaster, #EFE8DF);
+  background: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  color: rgba(15, 65, 74, 0.65);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sc-tab:hover {
+  background: var(--cream, #F7F3EC);
+  color: var(--midnight, #0F414A);
+}
+
+.sc-tab.active {
+  background: var(--midnight, #0F414A);
+  color: #ffffff;
+  border-color: var(--midnight, #0F414A);
+}
+
+.sc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.sc-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: rgba(15, 65, 74, 0.55);
+  font-size: 0.875rem;
+}
+
+/* -------------------------------------------------------------------------
+   6. ACHIEVEMENTS PLACEHOLDER
+   ------------------------------------------------------------------------- */
+.achievements-placeholder {
+  padding: 3.5rem 2rem;
+  background: #ffffff;
+  border: 1px dashed var(--alabaster, #EFE8DF);
+  border-radius: var(--radius-xl, 0.875rem);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.achievements-placeholder-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(234, 137, 19, 0.12);
+  color: var(--sunshine, #EA8913);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.achievements-placeholder-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+  margin: 0;
+}
+
+.achievements-placeholder-desc {
+  font-size: 0.8125rem;
+  color: rgba(15, 65, 74, 0.6);
+  max-width: 420px;
+  margin: 0;
+}

@@ -1,0 +1,842 @@
+/* =========================================================================
+   L'ÉCOLE — UNIVERSAL FORM CARD COMPONENT STYLES
+   =========================================================================
+   Master shared form system for:
+   - Post Notice form
+   - Add Extracurricular form
+   - People Directory (Add Student, Add Teacher, Add Parent, Add Management)
+   - Add Event forms
+   ========================================================================= */
+
+.c-form-page,
+.c-post-notice {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+/* Back Link / Back Button (Uniform Solid Moss Green across all forms) */
+.c-form-back,
+.c-back-link,
+.c-back-link-btn {
+  margin-bottom: 1.5rem;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  font-family: 'Poppins', system-ui, sans-serif !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  background: var(--moss, #4B5B34) !important;
+  color: #ffffff !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 0.5rem !important;
+  border: none !important;
+  cursor: pointer !important;
+  text-decoration: none;
+  transition: background-color 150ms ease, transform 150ms ease;
+  align-self: flex-start;
+  box-shadow: 0 1px 2px rgba(15, 65, 74, 0.08);
+}
+
+.c-form-back:hover,
+.c-back-link:hover,
+.c-back-link-btn:hover {
+  background: #3c4929 !important;
+  color: #ffffff !important;
+  transform: translateX(-2px);
+}
+
+/* Master Form Card Container */
+.c-form-card,
+.c-notice-form {
+  overflow: hidden;
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 1px solid var(--alabaster, #EFE8DF);
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgba(9, 47, 51, 0.05);
+}
+
+/* -------------------------------------------------------------------------
+   HEADER VARIANTS
+   Header background color changes per role / section; body remains constant.
+   ------------------------------------------------------------------------- */
+.c-form-header,
+.c-notice-form__header {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.c-form-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.c-form-header-title,
+.c-notice-form__header-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.c-form-header-subtitle,
+.c-notice-form__header-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  opacity: 0.88;
+  line-height: 1.4;
+}
+
+/* Student & Notice Blue: The canonical platform blue */
+.c-form-header--sky,
+.c-notice-form__header--admin,
+.c-header-sky {
+  background: var(--skyblue, #7FC7CC);
+  color: var(--midnight, #0F414A);
+}
+
+/* Calendar / Extracurricular Cream & Sand: Exact match with Calendar Add Event modal header */
+.c-form-header--cream,
+.c-form-header--sand,
+.c-header-cream,
+.c-header-sand,
+.c-modal__header {
+  background: var(--cream, #F7F3EC) !important;
+  border-bottom: 1px solid var(--color-border, #E2E8F0);
+  color: var(--midnight, #0F414A);
+}
+
+/* Teacher / Sunshine Gold */
+.c-form-header--sunshine,
+.c-notice-form__header--teacher,
+.c-header-sunshine {
+  background: var(--sunshine, #EA8913);
+  color: #ffffff;
+}
+
+/* Parent Terracotta */
+.c-form-header--terracotta,
+.c-header-terracotta {
+  background: var(--terracotta, #AF5031);
+  color: #ffffff;
+}
+
+/* Management Maroon */
+.c-form-header--maroon,
+.c-notice-form__header--management,
+.c-header-maroon {
+  background: var(--maroon, #7F0303);
+  color: #ffffff;
+}
+
+/* Moss Green */
+.c-form-header--moss,
+.c-header-moss {
+  background: var(--moss, #4B5B34);
+  color: #ffffff;
+}
+
+/* Draft Pill Badge (in header) */
+.c-draft-pill {
+  display: inline-flex;
+  border-radius: var(--radius-sm, 0.375rem);
+  padding: 0.25rem 0.625rem;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--midnight, #0F414A);
+}
+
+/* -------------------------------------------------------------------------
+   FORM BODY & GRID LAYOUT
+   ------------------------------------------------------------------------- */
+
+.c-form-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: #ffffff;
+}
+
+.c-form-section-head {}
+
+.c-form-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--midnight, #0F414A);
+  margin: 0;
+}
+
+.c-form-section-desc {
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+  font-size: 10px;
+  color: rgba(15, 65, 74, 0.55);
+}
+
+.c-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .c-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.c-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.c-form-field.c-span-2,
+.c-span-2 {
+  grid-column: 1 / -1;
+}
+
+.c-form-field-label,
+.c-form-field__label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(15, 65, 74, 0.7);
+  margin: 0;
+}
+
+.c-required-mark {
+  font-weight: 700;
+}
+
+.c-field-helper {
+  margin-left: 0.25rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: rgba(15, 65, 74, 0.55);
+  font-style: italic;
+  font-size: 10px;
+}
+
+.c-form-input,
+.c-form-textarea {
+  width: 100%;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid var(--color-border, #EFE8DF);
+  background: var(--color-white, #ffffff);
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--midnight, #0F414A);
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  box-sizing: border-box;
+}
+
+.c-form-input::placeholder,
+.c-form-textarea::placeholder {
+  color: rgba(15, 65, 74, 0.3);
+}
+
+.c-form-input:focus,
+.c-form-textarea:focus {
+  border-color: var(--skyblue, #7FC7CC);
+  box-shadow: 0 0 0 2px rgba(127, 199, 204, 0.4);
+}
+
+.c-form-input:disabled {
+  cursor: not-allowed;
+  background: rgba(239, 232, 223, 0.55);
+  color: rgba(15, 65, 74, 0.5);
+  border-color: var(--color-border, #EFE8DF);
+}
+
+.c-form-textarea {
+  resize: vertical;
+  min-height: 5.5rem;
+}
+
+.c-form-note {
+  margin-top: 0.125rem;
+  font-size: 10px;
+  color: rgba(15, 65, 74, 0.5);
+}
+
+/* Photo Field */
+.c-photo-field {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid var(--color-border, #EFE8DF);
+  background: var(--color-white, #ffffff);
+  padding: 0.5rem 0.75rem;
+  box-sizing: border-box;
+}
+
+.c-photo-choose-btn {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 0.375rem;
+  border: 1px solid rgba(127, 199, 204, 0.6);
+  background: rgba(127, 199, 204, 0.1);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.c-photo-choose-btn:hover {
+  background: rgba(127, 199, 204, 0.2);
+}
+
+.c-photo-filename {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(15, 65, 74, 0.55);
+}
+
+/* -------------------------------------------------------------------------
+   UNIVERSAL FORM CONTROL TYPOGRAPHY & PLACEHOLDER SYSTEM
+   Ensures 100% font family, size, weight, and placeholder opacity consistency.
+   ------------------------------------------------------------------------- */
+.c-form-card .c-form-input,
+.c-form-card .c-form-textarea,
+.c-form-card .c-dropdown > .c-dropdown__trigger,
+.c-form-card .c-select__trigger,
+.c-form-card .c-datepicker-trigger {
+  font-family: 'Poppins', system-ui, sans-serif !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  color: var(--midnight, #0F414A) !important;
+  line-height: 1.5;
+}
+
+/* Universal Placeholders across inputs, textareas, dropdowns, and datepickers */
+.c-form-card .c-form-input::placeholder,
+.c-form-card .c-form-textarea::placeholder,
+.c-form-card .c-dropdown__placeholder,
+.c-form-card .c-select__value.c-dropdown__placeholder,
+.c-form-card .c-select__trigger.is-placeholder .c-select__value,
+.c-form-card .c-dropdown__trigger.is-placeholder .c-dropdown__value,
+.c-form-card .c-datepicker-trigger .c-dp-placeholder,
+.c-form-card .c-datepicker-trigger.is-placeholder .j-dp-label {
+  color: rgba(15, 65, 74, 0.45) !important;
+  opacity: 1 !important;
+  font-family: 'Poppins', system-ui, sans-serif !important;
+  font-size: 0.875rem !important;
+  font-weight: 400 !important;
+}
+
+/* Selected Value state in Dropdowns & Datepickers */
+.c-form-card .c-select__trigger.has-value .c-select__value,
+.c-form-card .c-dropdown__trigger.has-value .c-dropdown__value,
+.c-form-card .c-datepicker-trigger:not(.is-placeholder) .j-dp-label {
+  color: var(--midnight, #0F414A) !important;
+  font-family: 'Poppins', system-ui, sans-serif !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+}
+
+/* -------------------------------------------------------------------------
+   COLOR FADE ON DROPDOWNS & INPUTS PER ROLE
+   ------------------------------------------------------------------------- */
+/* Student (Sky) */
+.c-form-card--sky .c-dropdown > .c-dropdown__trigger,
+.c-form-card--sky .c-select__trigger,
+.c-form-card--sky .c-datepicker-trigger,
+.c-select-sky .c-dropdown__trigger,
+.c-select-sky .c-select__trigger {
+  border-color: rgba(127, 199, 204, 0.45) !important;
+  background: rgba(127, 199, 204, 0.1) !important;
+  border-radius: var(--radius-lg, 0.5rem) !important;
+  padding: 0.625rem 0.75rem !important;
+  height: auto !important;
+}
+.c-form-card--sky .c-dropdown > .c-dropdown__trigger:hover,
+.c-form-card--sky .c-datepicker-trigger:hover,
+.c-select-sky .c-dropdown__trigger:hover,
+.c-select-sky .c-select__trigger:hover {
+  border-color: rgba(127, 199, 204, 0.7) !important;
+  background: rgba(127, 199, 204, 0.15) !important;
+}
+.c-form-card--sky .c-form-input:focus,
+.c-form-card--sky .c-form-textarea:focus {
+  border-color: var(--skyblue, #7FC7CC) !important;
+  box-shadow: 0 0 0 2px rgba(127, 199, 204, 0.4) !important;
+}
+
+/* Teacher (Sunshine) */
+.c-form-card--sunshine .c-dropdown > .c-dropdown__trigger,
+.c-form-card--sunshine .c-select__trigger,
+.c-form-card--sunshine .c-datepicker-trigger,
+.c-select-sunshine .c-dropdown__trigger,
+.c-select-sunshine .c-select__trigger {
+  border-color: rgba(234, 137, 19, 0.35) !important;
+  background: rgba(234, 137, 19, 0.1) !important;
+  border-radius: var(--radius-lg, 0.5rem) !important;
+  padding: 0.625rem 0.75rem !important;
+  height: auto !important;
+}
+.c-form-card--sunshine .c-dropdown > .c-dropdown__trigger:hover,
+.c-form-card--sunshine .c-datepicker-trigger:hover,
+.c-select-sunshine .c-dropdown__trigger:hover,
+.c-select-sunshine .c-select__trigger:hover {
+  border-color: rgba(234, 137, 19, 0.7) !important;
+  background: rgba(234, 137, 19, 0.15) !important;
+}
+.c-form-card--sunshine .c-form-input:focus,
+.c-form-card--sunshine .c-form-textarea:focus {
+  border-color: var(--sunshine, #EA8913) !important;
+  box-shadow: 0 0 0 2px rgba(234, 137, 19, 0.4) !important;
+}
+
+/* Parent (Terracotta) */
+.c-form-card--terracotta .c-dropdown > .c-dropdown__trigger,
+.c-form-card--terracotta .c-select__trigger,
+.c-form-card--terracotta .c-datepicker-trigger,
+.c-select-terracotta .c-dropdown__trigger,
+.c-select-terracotta .c-select__trigger {
+  border-color: rgba(175, 80, 49, 0.3) !important;
+  background: rgba(175, 80, 49, 0.1) !important;
+  border-radius: var(--radius-lg, 0.5rem) !important;
+  padding: 0.625rem 0.75rem !important;
+  height: auto !important;
+}
+.c-form-card--terracotta .c-dropdown > .c-dropdown__trigger:hover,
+.c-form-card--terracotta .c-datepicker-trigger:hover,
+.c-select-terracotta .c-dropdown__trigger:hover,
+.c-select-terracotta .c-select__trigger:hover {
+  border-color: rgba(175, 80, 49, 0.65) !important;
+  background: rgba(175, 80, 49, 0.15) !important;
+}
+.c-form-card--terracotta .c-form-input:focus,
+.c-form-card--terracotta .c-form-textarea:focus {
+  border-color: var(--terracotta, #AF5031) !important;
+  box-shadow: 0 0 0 2px rgba(175, 80, 49, 0.4) !important;
+}
+
+/* Management (Maroon) */
+.c-form-card--maroon .c-dropdown > .c-dropdown__trigger,
+.c-form-card--maroon .c-select__trigger,
+.c-form-card--maroon .c-datepicker-trigger,
+.c-select-maroon .c-dropdown__trigger,
+.c-select-maroon .c-select__trigger {
+  border-color: rgba(127, 3, 3, 0.3) !important;
+  background: rgba(127, 3, 3, 0.05) !important;
+  border-radius: var(--radius-lg, 0.5rem) !important;
+  padding: 0.625rem 0.75rem !important;
+  height: auto !important;
+}
+.c-form-card--maroon .c-dropdown > .c-dropdown__trigger:hover,
+.c-form-card--maroon .c-datepicker-trigger:hover,
+.c-select-maroon .c-dropdown__trigger:hover,
+.c-select-maroon .c-select__trigger:hover {
+  border-color: rgba(127, 3, 3, 0.6) !important;
+  background: rgba(127, 3, 3, 0.1) !important;
+}
+.c-form-card--maroon .c-form-input:focus,
+.c-form-card--maroon .c-form-textarea:focus {
+  border-color: var(--maroon, #7F0303) !important;
+  box-shadow: 0 0 0 2px rgba(127, 3, 3, 0.4) !important;
+}
+
+/* Status note box & Warning box matching original */
+.c-status-note-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid rgba(234, 137, 19, 0.3);
+  background: rgba(234, 137, 19, 0.1);
+  padding: 1rem;
+}
+.c-status-note-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+}
+.c-status-note-desc {
+  margin: 0.125rem 0 0;
+  font-size: 10px;
+  color: rgba(15, 65, 74, 0.6);
+}
+.c-status-note-pill {
+  border-radius: 0.25rem;
+  background: #ffffff;
+  padding: 0.25rem 0.5rem;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(15, 65, 74, 0.6);
+}
+.c-form-warning-box {
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid rgba(127, 3, 3, 0.2);
+  background: rgba(127, 3, 3, 0.05);
+  padding: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--maroon, #7F0303);
+  margin: 0;
+}
+
+/* Solid Tone Action Buttons (.c-btn-solid-tone) are defined canonically in global.css */
+
+/* -------------------------------------------------------------------------
+   AUDIENCE & MULTI-SELECT TAG CHIPS
+   Preserves full multi-select functionality with remove buttons.
+   ------------------------------------------------------------------------- */
+.c-tag-field__chips,
+.c-form-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  min-height: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.c-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: var(--radius-sm, 0.375rem);
+  background: rgba(127, 199, 204, 0.2);
+  padding: 0.25rem 0.5rem;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+  border: 1px solid rgba(127, 199, 204, 0.4);
+}
+
+.c-chip__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: rgba(15, 65, 74, 0.6);
+  cursor: pointer;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.c-chip__remove:hover {
+  color: var(--maroon, #7F0303);
+}
+
+/* Info Banner */
+.c-info-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 1px solid rgba(127, 199, 204, 0.35);
+  background: rgba(127, 199, 204, 0.1);
+  padding: 0.875rem 1rem;
+  color: var(--midnight, #0F414A);
+}
+
+.c-info-banner__icon {
+  flex-shrink: 0;
+  color: var(--skyblue, #7FC7CC);
+}
+
+.c-info-banner__text {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* File Attachment Dropzone */
+.c-file-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border-radius: var(--radius-xl, 0.875rem);
+  border: 2px dashed var(--alabaster, #EFE8DF);
+  background: #ffffff;
+  padding: 1.5rem;
+  text-align: center;
+  color: rgba(15, 65, 74, 0.5);
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.c-file-drop:hover {
+  border-color: rgba(127, 199, 204, 0.6);
+  background: rgba(239, 232, 223, 0.15);
+}
+
+.c-file-drop__icon {
+  color: var(--skyblue, #7FC7CC);
+  margin-bottom: 0.5rem;
+}
+
+.c-file-drop__filename {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--midnight, #0F414A);
+}
+
+.c-file-drop__hint {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+}
+
+/* Checkbox */
+.c-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.c-checkbox__box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  height: 1.25rem;
+  width: 1.25rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--alabaster, #EFE8DF);
+  background: #ffffff;
+  color: transparent;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.c-checkbox.c-is-checked .c-checkbox__box {
+  border-color: var(--skyblue, #7FC7CC);
+  background: var(--skyblue, #7FC7CC);
+  color: var(--midnight, #0F414A);
+}
+
+.c-checkbox__label {
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--midnight, #0F414A);
+}
+
+/* -------------------------------------------------------------------------
+   FORM FOOTER ACTIONS
+   ------------------------------------------------------------------------- */
+.c-form-footer,
+.c-notice-form__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-top: 1px solid var(--alabaster, #EFE8DF);
+  padding: 1.25rem 1.5rem;
+  background: rgba(239, 232, 223, 0.2);
+}
+
+.c-required-note {
+  margin-right: auto;
+  font-size: 0.75rem;
+  color: rgba(15, 65, 74, 0.55);
+}
+
+.c-form-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Outline Buttons */
+.c-btn-outline-sky,
+.c-btn-outline-sunshine,
+.c-btn-outline-terracotta,
+.c-btn-outline-maroon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  background: #ffffff;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.c-btn-outline-sky { border: 1px solid rgba(127,199,204,0.6); color: var(--midnight, #0F414A); }
+.c-btn-outline-sky:hover { background: rgba(127,199,204,0.12); }
+
+.c-btn-outline-sunshine { border: 1px solid rgba(234,137,19,0.6); color: var(--midnight, #0F414A); }
+.c-btn-outline-sunshine:hover { background: rgba(234,137,19,0.12); }
+
+.c-btn-outline-terracotta { border: 1px solid rgba(175,80,49,0.6); color: var(--midnight, #0F414A); }
+.c-btn-outline-terracotta:hover { background: rgba(175,80,49,0.12); }
+
+.c-btn-outline-maroon { border: 1px solid rgba(127,3,3,0.6); color: var(--midnight, #0F414A); }
+.c-btn-outline-maroon:hover { background: rgba(127,3,3,0.12); }
+
+/* Solid Buttons */
+.c-btn-solid-sky,
+.c-btn-solid-sunshine,
+.c-btn-solid-terracotta,
+.c-btn-solid-maroon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: none;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 65, 74, 0.08));
+  transition: all 150ms ease;
+}
+
+.c-btn-solid-sky { background: var(--skyblue, #7FC7CC); color: var(--midnight, #0F414A); }
+.c-btn-solid-sky:hover { background: #6ebac0; }
+
+.c-btn-solid-sunshine { background: var(--sunshine, #EA8913); color: #ffffff; }
+.c-btn-solid-sunshine:hover { background: #d37708; }
+
+.c-btn-solid-terracotta { background: var(--terracotta, #AF5031); color: #ffffff; }
+.c-btn-solid-terracotta:hover { background: #963e22; }
+
+.c-btn-solid-maroon { background: var(--maroon, #7F0303); color: #ffffff; }
+.c-btn-solid-maroon:hover { background: #600202; }
+
+/* -------------------------------------------------------------------------
+   MODAL FORM CARD EMBED
+   When c-form-card is embedded inside a modal overlay.
+   ------------------------------------------------------------------------- */
+.c-form-card--modal {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  border-radius: var(--radius-2xl, 1.25rem);
+  overflow: hidden;
+  box-shadow: 0 20px 45px rgba(15, 65, 74, 0.22);
+  border: 1px solid var(--color-border, #EFE8DF);
+}
+
+.c-form-card--modal .c-form-header {
+  flex-shrink: 0;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 1rem !important;
+}
+
+.c-form-card--modal .c-form-body {
+  overflow-y: auto;
+  flex: 1 1 auto;
+  max-height: calc(90vh - 140px);
+}
+
+.c-form-card--modal .c-form-footer {
+  flex-shrink: 0;
+}
+
+.c-form-header .c-modal__close-btn {
+  color: var(--midnight, #0F414A);
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(15, 65, 74, 0.15);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 150ms ease, transform 150ms ease;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-left: auto;
+}
+
+.c-form-header .c-modal__close-btn:hover {
+  background: #ffffff;
+  transform: scale(1.05);
+}
+
+/* Universal Modal Header Heading Group & Icon Badge (Exact match with Calendar Add Event) */
+.c-modal__heading-group {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+
+.c-modal__icon-badge {
+  flex-shrink: 0;
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xl, 0.875rem);
+  color: var(--midnight, #0F414A);
+}
+
+.c-modal__icon-badge--sky {
+  background: rgba(127, 199, 204, 0.25);
+  color: var(--midnight, #0F414A);
+}
+
+.c-modal__eyebrow {
+  margin: 0 0 2px 0;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(15, 65, 74, 0.6);
+}
+
+.c-modal__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--midnight, #0F414A);
+}
+
+.c-modal__description {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: rgba(15, 65, 74, 0.65);
+  line-height: 1.4;
+}

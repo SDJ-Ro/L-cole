@@ -251,4 +251,43 @@ CREATE TABLE daily_stats (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- -------------------------------------------------------------------------
+-- 11. NOTICES & ANNOUNCEMENTS
+-- -------------------------------------------------------------------------
+DROP TABLE IF EXISTS notices;
+CREATE TABLE notices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    account_id INT NULL,
+    title VARCHAR(200) NOT NULL,
+    category ENUM('Academic', 'Extracurricular', 'General', 'Administrative') NOT NULL DEFAULT 'General',
+    audience VARCHAR(150) NOT NULL DEFAULT 'All',
+    body TEXT NOT NULL,
+    author_name VARCHAR(150) NOT NULL DEFAULT 'Admin Office',
+    attachment_url VARCHAR(255) NULL,
+    is_pinned TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_notices_account FOREIGN KEY (account_id) 
+        REFERENCES user_accounts(id) ON DELETE SET NULL,
+    INDEX idx_notice_category (category),
+    INDEX idx_notice_pinned (is_pinned),
+    INDEX idx_notice_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -------------------------------------------------------------------------
+-- 12. NOTICE VIEWS / READ TRACKING
+-- -------------------------------------------------------------------------
+DROP TABLE IF EXISTS notice_views;
+CREATE TABLE notice_views (
+    notice_id INT NOT NULL,
+    account_id INT NOT NULL,
+    viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (notice_id, account_id),
+    CONSTRAINT fk_nv_notice FOREIGN KEY (notice_id) 
+        REFERENCES notices(id) ON DELETE CASCADE,
+    CONSTRAINT fk_nv_account FOREIGN KEY (account_id) 
+        REFERENCES user_accounts(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
+
