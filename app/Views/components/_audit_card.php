@@ -34,12 +34,33 @@ $time          = $l['time'] ?? '';
 $ip            = $l['ip'] ?? '';
 $linkedStudent = $l['linkedStudent'] ?? null;
 
-$themeClass = 'c-theme-' . strtolower($role);
-$searchData = strtolower(trim("{$actor} {$action} {$details} {$ip} " . ($linkedStudent ?? '')));
+$cleanRole = strtolower(trim((string)$role));
+if (str_contains($cleanRole, 'admin')) {
+    $themeClass  = 'c-theme-admin';
+    $roleDisplay = 'Admin';
+} elseif (str_contains($cleanRole, 'student') || str_contains($cleanRole, 'stu')) {
+    $themeClass  = 'c-theme-student';
+    $roleDisplay = 'Student';
+} elseif (str_contains($cleanRole, 'manage') || str_contains($cleanRole, 'mgmt')) {
+    $themeClass  = 'c-theme-management';
+    $roleDisplay = 'Management';
+} elseif (str_contains($cleanRole, 'teach') || str_contains($cleanRole, 'staff')) {
+    $themeClass  = 'c-theme-teacher';
+    $roleDisplay = 'Teacher';
+} elseif (str_contains($cleanRole, 'parent') || str_contains($cleanRole, 'guard')) {
+    $themeClass  = 'c-theme-parent';
+    $roleDisplay = 'Parent';
+} else {
+    $themeClass  = 'c-theme-system';
+    $roleDisplay = 'System';
+}
+
+$actorRole  = $l['actorRole'] ?? ($roleDisplay . ' account');
+$searchData = strtolower(trim("{$actor} {$action} {$details} {$ip} {$roleDisplay} " . ($linkedStudent ?? '')));
 ?>
 
 <article class="c-log-card <?= htmlspecialchars($themeClass) ?> j-log-card" 
-         data-role="<?= htmlspecialchars($role) ?>" 
+         data-role="<?= htmlspecialchars($roleDisplay) ?>" 
          data-action="<?= htmlspecialchars($action) ?>"
          data-search="<?= htmlspecialchars($searchData) ?>">
   <div class="c-log-card__row">

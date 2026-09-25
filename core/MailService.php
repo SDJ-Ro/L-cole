@@ -144,19 +144,21 @@ class MailService {
         string $role = '',
         string $name = '',
         int $lockMinutes = 15,
-        string $ipAddress = ''
+        string $ipAddress = '',
+        string $accountIdentifier = ''
     ): array {
         $subject = "Security Alert: Account Temporarily Locked (Unlock Code Inside)";
         $roleTitle = ucfirst($role ?: 'portal');
-        $unlockUrl = 'http://localhost:8040/auth/' . strtolower($role ?: 'student') . '?unlock=1&identifier=' . urlencode($toBookCover);
+        $canonicalIdentifier = !empty($accountIdentifier) ? $accountIdentifier : $toBookCover;
+        $unlockUrl = 'http://localhost:8040/auth/' . strtolower($role ?: 'student') . '?unlock=1&identifier=' . urlencode($canonicalIdentifier);
 
         $body = '
           <h2 style="margin-top:0;color:#9e2a2b;font-size:19px;">Security Alert: Temporary Account Lockout</h2>
           <p>Hello ' . htmlspecialchars($name ?: 'there') . ',</p>
-          <p>Your L\'École <strong>' . htmlspecialchars($roleTitle) . '</strong> account (<code>' . htmlspecialchars($toBookCover) . '</code>) was temporarily locked after <strong>5 consecutive failed sign-in attempts</strong>.</p>
+          <p>Your L\'École <strong>' . htmlspecialchars($roleTitle) . '</strong> account (<code>' . htmlspecialchars($canonicalIdentifier) . '</code>) was temporarily locked after <strong>5 consecutive failed sign-in attempts</strong>.</p>
           
           <table class="meta-table">
-            <tr><td class="label">Target Account:</td><td>' . htmlspecialchars($toBookCover) . ' (' . htmlspecialchars($roleTitle) . ')</td></tr>
+            <tr><td class="label">Target Account:</td><td>' . htmlspecialchars($canonicalIdentifier) . ' (' . htmlspecialchars($roleTitle) . ')</td></tr>
             <tr><td class="label">Lock Duration:</td><td>' . $lockMinutes . ' Minutes</td></tr>
             <tr><td class="label">Time of Incident:</td><td>' . date('Y-m-d H:i:s T') . '</td></tr>
             ' . (!empty($ipAddress) ? '<tr><td class="label">IP Address:</td><td>' . htmlspecialchars($ipAddress) . '</td></tr>' : '') . '

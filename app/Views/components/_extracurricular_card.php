@@ -109,10 +109,16 @@ $contactPhone = !empty($coach['phone']) ? $coach['phone'] : (!empty($tic['phone'
           <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24"><use href="#icon-usersRound"/></svg>
         </div>
       <?php endif; ?>
-      <div>
+      <div style="flex: 1; min-width: 0;">
         <div class="c-club-card__tic-label">TEACHER IN CHARGE</div>
-        <div class="c-club-card__tic-name"><?= htmlspecialchars($tic['name'] ?? 'Faculty Mentor') ?></div>
+        <div class="c-club-card__tic-name j-card-tic-name"><?= htmlspecialchars($tic['name'] ?? 'Faculty Mentor') ?></div>
       </div>
+      <?php if (!empty($canModerate) || !empty($canCreate)): ?>
+        <button type="button" class="c-btn c-btn--ghost c-btn--sm j-edit-card-tic-btn" data-club-id="<?= $clubId ?>" data-club-name="<?= htmlspecialchars($clubName) ?>" data-current-tic="<?= htmlspecialchars($tic['name'] ?? '') ?>" title="Change Teacher in Charge" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; margin-left: auto; height: auto; border-radius: var(--radius-md);">
+          <svg class="c-icon" width="11" height="11" viewBox="0 0 24 24"><use href="#icon-edit"/></svg>
+          <span>Change</span>
+        </button>
+      <?php endif; ?>
     </div>
 
     <!-- Contact Row -->

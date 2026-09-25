@@ -33,8 +33,22 @@ ob_start();
       ?>
     </div>
     <div>
-      <label class="c-field-label" for="j-cc-category">Category</label>
-      <input class="c-field-input" id="j-cc-category" type="text" placeholder="e.g. Academic" required />
+      <label class="c-field-label">Teacher in Charge (TIC)</label>
+      <?php
+      $dropdownId    = 'j-cc-tic';
+      $dropdownLabel = 'Teacher in Charge';
+      $placeholder   = 'Assign Teacher in Charge';
+      $staffList     = $staffAssignments ?? (class_exists('AcademicModel') ? AcademicModel::getStaffAssignments() : []);
+      $staffNames    = !empty($staffList) ? array_map(fn($s) => $s['name'], $staffList) : [];
+      $fallbackFaculty = [
+          'James Wilson', 'Sarah Peiris', 'Rohan Dias', 'Madhavi Fernando',
+          'Alex Benjamin', 'Priya De Silva', 'Sofia Fernando', 'Shanthi Silva',
+          'Anura Wijesinghe', 'Mr. Weerasinghe', 'David Peris'
+      ];
+      $options       = array_values(array_unique(array_filter(array_merge($staffNames, $fallbackFaculty))));
+      $name          = 'tic_name';
+      require __DIR__ . '/_dropdown.php';
+      ?>
     </div>
   </div>
 

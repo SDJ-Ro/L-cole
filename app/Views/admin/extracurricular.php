@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="/assets/css/components/delete-modal.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/notice-card.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/team-card.css?v=<?= time() ?>" />
+  <link rel="stylesheet" href="/assets/css/components/grade-card.css?v=<?= time() ?>" />
 </head>
 <body>
 
@@ -154,12 +155,22 @@
   <?php require_once __DIR__ . '/../components/_add_extracurricular_modal.php'; ?>
 <?php endif; ?>
 
+<!-- Shared Workload Hover Preview Template -->
+<template id="tmpl-grade-teacher-hover">
+  <?php require __DIR__ . '/../components/_grade_teacher_hover.php'; ?>
+</template>
+
+<script>
+  window.LECOLE_STAFF_DIRECTORY = <?= json_encode($staffAssignments ?? []) ?>;
+</script>
+
 <script src="/assets/js/components/sidebar.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/dialogs-and-popups.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/feedback-banners.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/dropdown.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/calendar.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/form-card.js?v=<?= time() ?>"></script>
+<script src="/assets/js/components/teacher-hover.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/extracurricular-card.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/image-uploader.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/extracurricular-achievement.js?v=<?= time() ?>"></script>

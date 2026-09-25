@@ -157,12 +157,17 @@
 <!-- Universal Delete Confirmation Modal -->
 <?php require_once __DIR__ . '/../components/_delete_modal.php'; ?>
 
+<script>
+  window.LECOLE_STAFF_DIRECTORY = <?= json_encode($staffAssignments ?? []) ?>;
+</script>
+
 <script src="/assets/js/components/sidebar.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/dialogs-and-popups.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/feedback-banners.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/dropdown.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/calendar.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/form-card.js?v=<?= time() ?>"></script>
+<script src="/assets/js/components/teacher-hover.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/extracurricular-card.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/image-uploader.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/extracurricular-achievement.js?v=<?= time() ?>"></script>

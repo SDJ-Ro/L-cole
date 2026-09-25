@@ -151,11 +151,18 @@
 <!-- Add Grade Modal -->
 <?php require_once __DIR__ . '/../components/_add_grade_modal.php'; ?>
 
+<script>
+  window.LECOLE_CURRENT_ROLE = <?= json_encode($currentRole ?? 'management') ?>;
+  window.LECOLE_STAFF_DIRECTORY = <?= json_encode($staffAssignments ?? []) ?>;
+  window.LECOLE_CSRF_TOKEN = <?= json_encode($csrf_token ?? '') ?>;
+</script>
+
 <script src="/assets/js/components/sidebar.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/dialogs-and-popups.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/dropdown.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/bar-chart.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/calendar.js?v=<?= time() ?>"></script>
+<script src="/assets/js/components/teacher-hover.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/grade-card.js?v=<?= time() ?>"></script>
 </body>
 </html>
