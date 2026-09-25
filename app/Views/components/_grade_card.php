@@ -18,7 +18,7 @@ $gradeId          = $grade['id'] ?? 'g6';
 $gradeName        = $grade['name'] ?? 'Grade 6';
 $classes          = $grade['classes'] ?? [];
 $idx              = $gradeIndex ?? 0;
-$previewPlacement = ($idx % 2 === 1) ? 'left' : 'right';
+$previewPlacement = 'auto';
 
 // Calculate total enrollment for this grade
 $totalStudents = 0;
@@ -26,28 +26,20 @@ foreach ($classes as $cName) {
     $totalStudents += ($classEnrollments[$cName] ?? 30);
 }
 
-// Find appropriate subjects from curriculum
+// Find appropriate subjects dynamically from curriculum groups
 $gradeNum = (int)preg_replace('/\D/', '', $gradeName);
 $subjects = [];
 if (!empty($curriculumGroups)) {
-    if ($gradeNum >= 6 && $gradeNum <= 9) {
-        foreach ($curriculumGroups as $cg) {
-            if ($cg['range'] === 'Years 6–9') {
-                $subjects = $cg['subjects'] ?? [];
-                break;
-            }
-        }
-    } else {
-        foreach ($curriculumGroups as $cg) {
-            if ($cg['range'] === 'Years 10–11') {
+    foreach ($curriculumGroups as $cg) {
+        if (preg_match_all('/\d+/', $cg['range'], $m) && !empty($m[0])) {
+            $min = (int)$m[0][0];
+            $max = isset($m[0][1]) ? (int)$m[0][1] : $min;
+            if ($gradeNum >= $min && $gradeNum <= $max) {
                 $subjects = $cg['subjects'] ?? [];
                 break;
             }
         }
     }
-}
-if (empty($subjects)) {
-    $subjects = ['English', 'Mathematics', 'Science', 'History', 'Sinhala / Tamil', 'ICT'];
 }
 ?>
 
@@ -102,7 +94,15 @@ if (empty($subjects)) {
 
 <template id="tmpl-grade-teacher-hover">
   <?php 
-    $teacher = ['id' => '', 'name' => '', 'subject' => '', 'subjectClasses' => [], 'extracurriculars' => []];
+    $teacher = [
+      'id'               => '',
+      'name'             => '',
+      'qualification'    => '',
+      'subject'          => '',
+      'classTeacher'     => '',
+      'subjects'         => [],
+      'extracurriculars' => []
+    ];
     $placement = 'right';
     require __DIR__ . '/_grade_teacher_hover.php'; 
   ?>

@@ -4,6 +4,7 @@ require_once __DIR__ . '/../Models/NoticeModel.php';
 require_once __DIR__ . '/../Models/ExtracurricularModel.php';
 require_once __DIR__ . '/../Models/PeopleModel.php';
 require_once __DIR__ . '/../Models/AchievementModel.php';
+require_once __DIR__ . '/../Models/AcademicModel.php';
 
 class TeacherController extends Controller {
 
@@ -313,6 +314,7 @@ class TeacherController extends Controller {
             'clubs'             => $clubs,
             'joinRequests'      => $joinRequests,
             'enrollmentMetrics' => $enrollmentMetrics,
+            'staffAssignments'  => AcademicModel::getStaffAssignments(),
             'canModerate'       => false,
             'canCreate'         => true,
             'canEdit'           => true,

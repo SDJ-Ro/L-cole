@@ -18,11 +18,65 @@
 (function () {
   'use strict';
 
+  function getSafeViewportBounds() {
+    const sidebar = document.querySelector('.c-sidebar');
+    let sidebarRight = 0;
+    if (sidebar && window.getComputedStyle(sidebar).display !== 'none') {
+      const sRect = sidebar.getBoundingClientRect();
+      sidebarRight = sRect.right;
+    }
+    return {
+      minLeft: Math.max(sidebarRight + 12, 12),
+      maxRight: window.innerWidth - 12,
+      minTop: 12,
+      maxBottom: window.innerHeight - 12
+    };
+  }
+
+  function adjustDropdownPosition(root, trigger) {
+    const menu = root.querySelector('.c-select__menu, .c-dropdown__menu');
+    if (!menu || !trigger) return;
+
+    menu.style.left = '';
+    menu.style.right = '';
+    menu.style.top = '';
+    menu.style.bottom = '';
+
+    const bounds = getSafeViewportBounds();
+    const menuRect = menu.getBoundingClientRect();
+    const triggerRect = trigger.getBoundingClientRect();
+
+    // 1. Horizontal check against sidebar (left edge)
+    if (menuRect.left < bounds.minLeft) {
+      const offset = bounds.minLeft - triggerRect.left;
+      menu.style.left = `${Math.max(0, offset)}px`;
+      menu.style.right = 'auto';
+    } else if (menuRect.right > bounds.maxRight) {
+      menu.style.left = 'auto';
+      menu.style.right = '0';
+    }
+
+    // 2. Vertical check (flip upwards if bottom overflows and there's space above)
+    const spaceBelow = bounds.maxBottom - triggerRect.bottom;
+    const spaceAbove = triggerRect.top - bounds.minTop;
+    if (menuRect.bottom > bounds.maxBottom && spaceAbove > spaceBelow) {
+      menu.style.top = 'auto';
+      menu.style.bottom = 'calc(100% + 4px)';
+    }
+  }
+
   function closeAllDropdowns() {
     document.querySelectorAll('.c-select.c-is-open, .c-dropdown.c-is-open').forEach((el) => {
       el.classList.remove('c-is-open');
       const trigger = el.querySelector('.c-select__trigger, .c-dropdown__trigger');
       if (trigger) trigger.setAttribute('aria-expanded', 'false');
+      const menu = el.querySelector('.c-select__menu, .c-dropdown__menu');
+      if (menu) {
+        menu.style.left = '';
+        menu.style.right = '';
+        menu.style.top = '';
+        menu.style.bottom = '';
+      }
     });
   }
 
@@ -193,6 +247,7 @@
       if (!wasOpen) {
         root.classList.add('c-is-open');
         trigger.setAttribute('aria-expanded', 'true');
+        adjustDropdownPosition(root, trigger);
       }
       return;
     }
@@ -353,4 +408,6 @@
   window.setDropdownValue = setDropdownValue;
   window.getDropdownValue = getDropdownValue;
   window.resetDropdown = resetDropdown;
+  window.getSafeViewportBounds = getSafeViewportBounds;
+  window.adjustDropdownPosition = adjustDropdownPosition;
 })();

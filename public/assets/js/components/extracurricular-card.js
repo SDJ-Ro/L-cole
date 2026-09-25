@@ -423,6 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Reset dropdown via universal dropdown.js component
     if (typeof window.resetDropdown === 'function') {
       window.resetDropdown('j-cc-type', 'Select type');
+      window.resetDropdown('j-cc-tic', 'Assign Teacher in Charge');
     }
 
     renderPositions();
@@ -486,13 +487,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const name = document.getElementById('j-cc-name')?.value.trim() || '';
       const selectedType = createForm.querySelector('input[name="type"]')?.value
         || (typeof window.getDropdownValue === 'function' ? window.getDropdownValue('j-cc-type') : '')
+        || 'Sports';
+      const selectedTic = createForm.querySelector('input[name="tic_name"]')?.value
+        || (typeof window.getDropdownValue === 'function' ? window.getDropdownValue('j-cc-tic') : '')
         || '';
-      const category = document.getElementById('j-cc-category')?.value.trim() || '';
+      const ageLimit = document.getElementById('j-cc-age-limit')?.value.trim() || '';
+      const teamLimit = document.getElementById('j-cc-team-limit')?.value.trim() || '';
       const description = document.getElementById('j-cc-description')?.value.trim() || '';
 
-      if (!name || !selectedType || !category || !description) {
+      if (!name || !selectedType || !description) {
         if (errorBanner) {
-          errorBanner.textContent = 'Add a programme name, type, category, and description.';
+          errorBanner.textContent = 'Add a programme name, type, and description.';
           errorBanner.classList.add('c-is-visible');
         }
         return;
@@ -500,23 +505,71 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (errorBanner) errorBanner.classList.remove('c-is-visible');
 
-      // Add to UI grid as a new Pending card
       const newId = Date.now();
       const isSport = (selectedType === 'Sports');
-      const grid = document.getElementById('j-club-grid');
+      const pillClass = isSport ? 'c-club-card__pill--sport' : 'c-club-card__pill--club';
+      const pillText  = isSport ? 'SPORT' : 'CLUB';
+      const topTheme  = isSport ? 'c-club-card__top--main-sport' : 'c-club-card__top--club';
+      const bgIcon    = isSport ? 'trophy' : 'usersRound';
+      const leadPositions = positions.filter(p => p.title.trim() && p.showOnCard).map(p => p.title.trim()).join(' · ');
 
+      const assignedTic = selectedTic || 'Faculty Coordinator';
+      const emailPrefix = assignedTic.toLowerCase().replace(/[^a-z0-9]/g, '.');
+
+      // Create rich in-memory club data object so "View Details" opens an active page
+      const newClubObj = {
+        id: newId,
+        name: name,
+        type: selectedType,
+        category: selectedType,
+        theme: isSport ? 'main-sport' : 'club',
+        bgIcon: bgIcon,
+        desc: description,
+        status: 'Active',
+        createdAt: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        image: isSport ? 'https://images.unsplash.com/photo-1518605368461-1e1e38ce1548?w=800&h=400&fit=crop' : 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&h=400&fit=crop',
+        tic: {
+          name: assignedTic,
+          avatar: '',
+          email: `${emailPrefix}@lecole.edu`,
+          subject: 'Teacher in Charge',
+          phone: '+94 77 123 4567'
+        },
+        coach: {
+          name: 'Not Assigned',
+          avatar: '',
+          phone: '',
+          specialty: 'Head Coach'
+        },
+        schedule: 'Tuesdays & Thursdays, 3:30 – 5:00 PM',
+        location: isSport ? 'Main Sports Grounds' : 'Activity Hall',
+        ageGroups: ageLimit ? [`Up to ${ageLimit} students`] : ['All Grades'],
+        stats: { members: 0, teams: 0, trophies: 0 },
+        unassignedStudents: [],
+        team: [],
+        teams: [],
+        squad: [],
+        notices: [],
+        awards: []
+      };
+
+      if (!window.allClubsData) window.allClubsData = [];
+      window.allClubsData.unshift(newClubObj);
+      if (typeof clubsData !== 'undefined' && Array.isArray(clubsData)) {
+        clubsData.unshift(newClubObj);
+      }
+
+      const grid = document.getElementById('j-club-grid');
       if (grid) {
         const cardArticle = document.createElement('article');
-        cardArticle.className = 'c-club-card c-club-card--pending j-club-card';
+        cardArticle.className = 'c-club-card c-club-card--clickable j-club-card';
         cardArticle.id = `j-club-card-${newId}`;
         cardArticle.dataset.clubId = String(newId);
         cardArticle.dataset.clubName = name;
         cardArticle.dataset.clubType = selectedType;
-        cardArticle.dataset.status = 'Pending';
+        cardArticle.dataset.status = 'Active';
 
-        const topTheme = isSport ? 'c-club-card__top--main-sport' : 'c-club-card__top--club';
-        const bgIcon = isSport ? 'trophy' : 'usersRound';
-        const leadPositions = positions.filter(p => p.title.trim() && p.showOnCard).map(p => p.title.trim()).join(' · ');
+        const btnClass = isSport ? 'c-club-card__btn--sport' : 'c-club-card__btn--club';
 
         cardArticle.innerHTML = `
           <div class="c-club-card__top ${topTheme}">
@@ -526,10 +579,10 @@ document.addEventListener('DOMContentLoaded', () => {
               </svg>
             </div>
             <div class="c-club-card__header-badges">
-              <span class="c-club-card__pill c-club-card__pill--pending j-club-pill" data-type="${escapeHtml(selectedType)}">PENDING APPROVAL</span>
+              <span class="c-club-card__pill ${pillClass} j-club-pill" data-type="${escapeHtml(selectedType)}">${pillText}</span>
             </div>
             <div class="c-club-card__titles">
-              <p class="c-club-card__category">${escapeHtml(category.toUpperCase())}</p>
+              <p class="c-club-card__category">${escapeHtml(selectedType.toUpperCase())}</p>
               <h2 class="c-club-card__name c-font-display">${escapeHtml(name)}</h2>
             </div>
           </div>
@@ -538,23 +591,24 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="c-club-card__tic-avatar-placeholder" aria-hidden="true">
                 <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24"><use href="#icon-usersRound"/></svg>
               </div>
-              <div>
-                <div class="c-club-card__tic-label">${leadPositions ? escapeHtml(leadPositions.toUpperCase()) : 'LEADERSHIP PENDING'}</div>
-                <div class="c-club-card__tic-name">Faculty Coordinator</div>
+              <div style="flex: 1; min-width: 0;">
+                <div class="c-club-card__tic-label">${leadPositions ? escapeHtml(leadPositions.toUpperCase()) : 'TEACHER IN CHARGE'}</div>
+                <div class="c-club-card__tic-name j-card-tic-name">${escapeHtml(assignedTic)}</div>
               </div>
+              <button type="button" class="c-btn c-btn--ghost c-btn--sm j-edit-card-tic-btn" data-club-id="${newId}" data-club-name="${escapeHtml(name)}" data-current-tic="${escapeHtml(assignedTic)}" title="Change Teacher in Charge" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; margin-left: auto; height: auto; border-radius: var(--radius-md);">
+                <svg class="c-icon" width="11" height="11" viewBox="0 0 24 24"><use href="#icon-edit"/></svg>
+                <span>Change</span>
+              </button>
             </div>
-            <div class="c-club-card__contact c-club-card__contact--locked j-contact-locked">
+            <div class="c-club-card__contact c-club-card__contact--unlocked">
               <span class="c-club-card__contact-icon" aria-hidden="true">
-                <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24"><use href="#icon-lock"/></svg>
+                <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24"><use href="#icon-phone"/></svg>
               </span>
-              <span class="c-club-card__contact-text">Contact info locked until approved</span>
+              <span class="c-club-card__contact-text">+94 77 123 4567</span>
             </div>
             <div class="c-club-card__actions j-card-actions">
-              <button type="button" class="c-club-card__btn c-club-card__btn--approve j-approve-club" data-club-id="${newId}">
-                Accept
-              </button>
-              <button type="button" class="c-club-card__btn c-club-card__btn--reject j-reject-club" data-club-id="${newId}" data-club-name="${escapeHtml(name)}" aria-label="Reject">
-                <svg class="c-icon" width="16" height="16"><use href="#icon-close"/></svg>
+              <button type="button" class="c-club-card__btn ${btnClass} j-view-details" data-club-id="${newId}">
+                View Details &rarr;
               </button>
             </div>
           </div>
@@ -576,10 +630,248 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Toast feedback banner
       if (typeof window.showFeedbackBanner === 'function') {
-        window.showFeedbackBanner(`${name} was created and added to the pending queue.`, 'success');
+        window.showFeedbackBanner(`"${name}" was created successfully with TIC ${assignedTic}.`, 'success');
       }
     });
   }
+
+  // ---------------------------------------------------------------------------
+  // 6A. TEACHER 3-LEVEL WORKLOAD HOVER PREVIEW COMPONENT
+  // Delegates to unified window.attachTeacherHoverPreview & window.findTeacherData
+  // ---------------------------------------------------------------------------
+  const findTeacherData = (name) => {
+    return (typeof window.findTeacherData === 'function')
+      ? window.findTeacherData(name)
+      : { name: name, qualification: 'Faculty Member', classTeacher: '', extras: [], subjects: [] };
+  };
+
+  const attachTeacherHoverPreview = (itemEl, teacherNameOrId, options = {}) => {
+    if (typeof window.attachTeacherHoverPreview === 'function') {
+      window.attachTeacherHoverPreview(itemEl, teacherNameOrId, options);
+    }
+  };
+
+  function initCreateClubTicHover() {
+    const ticDropdown = document.getElementById('j-cc-tic');
+    if (!ticDropdown) return;
+    ticDropdown.querySelectorAll('.c-select__option, .c-dropdown__option').forEach(opt => {
+      const tName = opt.dataset.value || opt.textContent.trim();
+      attachTeacherHoverPreview(opt, tName);
+    });
+  }
+
+  // Dismiss any active preview on global click or scroll
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.c-extracurricular-teacher-preview').forEach(p => p.remove());
+  });
+  window.addEventListener('scroll', () => {
+    document.querySelectorAll('.c-extracurricular-teacher-preview').forEach(p => p.remove());
+  }, { passive: true });
+
+  // Universal hover preview delegator across all extracurricular UI contexts
+  document.addEventListener('mouseover', (e) => {
+    // 1. Dropdown options in Create Extracurricular Modal
+    const dropdownOpt = e.target.closest('#j-cc-tic .c-dropdown__option, #j-cc-tic .c-select__option');
+    if (dropdownOpt && !dropdownOpt.dataset.previewBound) {
+      dropdownOpt.dataset.previewBound = 'true';
+      const tName = dropdownOpt.dataset.value || (dropdownOpt.querySelector('span') ? dropdownOpt.querySelector('span').textContent.trim() : dropdownOpt.textContent.trim());
+      attachTeacherHoverPreview(dropdownOpt, tName);
+      dropdownOpt.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false, cancelable: true }));
+      return;
+    }
+
+    // 2. Buttons in Card TIC Popovers
+    const popoverBtn = e.target.closest('.c-card-tic-popover button');
+    if (popoverBtn && !popoverBtn.dataset.previewBound) {
+      popoverBtn.dataset.previewBound = 'true';
+      const tName = popoverBtn.dataset.teacherName || (popoverBtn.querySelector('span') ? popoverBtn.querySelector('span').textContent.trim() : popoverBtn.textContent.trim());
+      attachTeacherHoverPreview(popoverBtn, tName);
+      popoverBtn.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false, cancelable: true }));
+      return;
+    }
+
+    // 3. Teacher in Charge row / name directly inside extracurricular cards
+    const cardTicRow = e.target.closest('.c-club-card__tic');
+    if (cardTicRow && !e.target.closest('.j-edit-card-tic-btn') && !cardTicRow.dataset.previewBound) {
+      const nameEl = cardTicRow.querySelector('.j-card-tic-name');
+      const tName = nameEl ? nameEl.textContent.trim() : '';
+      if (tName && tName !== 'Faculty Mentor') {
+        cardTicRow.dataset.previewBound = 'true';
+        cardTicRow.style.cursor = 'help';
+        attachTeacherHoverPreview(cardTicRow, () => {
+          const freshNameEl = cardTicRow.querySelector('.j-card-tic-name');
+          return freshNameEl ? freshNameEl.textContent.trim() : tName;
+        });
+        cardTicRow.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false, cancelable: true }));
+      }
+      return;
+    }
+
+    // 4. Teacher in Charge in detail view sidebar
+    const detailTicCard = e.target.closest('.c-staff-card-box');
+    if (detailTicCard && !e.target.closest('#j-edit-tic-btn') && !detailTicCard.dataset.previewBound) {
+      const nameEl = document.getElementById('j-detail-tic-name');
+      const tName = nameEl ? nameEl.textContent.trim() : '';
+      if (tName && tName !== 'Pending') {
+        detailTicCard.dataset.previewBound = 'true';
+        detailTicCard.style.cursor = 'help';
+        attachTeacherHoverPreview(detailTicCard, () => {
+          const freshEl = document.getElementById('j-detail-tic-name');
+          return freshEl ? freshEl.textContent.trim() : tName;
+        });
+        detailTicCard.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false, cancelable: true }));
+      }
+      return;
+    }
+  });
+
+  // Initialize hover on create modal dropdown
+  initCreateClubTicHover();
+
+  // ---------------------------------------------------------------------------
+  // 6B. QUICK EDIT TEACHER-IN-CHARGE ON CARDS (Admin & Management)
+  // ---------------------------------------------------------------------------
+  document.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.j-edit-card-tic-btn');
+    if (!editBtn) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const clubId = editBtn.dataset.clubId;
+    const currentTic = editBtn.dataset.currentTic || '';
+    const clubCard = editBtn.closest('.j-club-card');
+
+    const baseTeachers = [
+      'James Wilson',
+      'Sarah Peiris',
+      'Rohan Dias',
+      'Madhavi Fernando',
+      'Alex Benjamin',
+      'Priya De Silva',
+      'Sofia Fernando',
+      'Shanthi Silva',
+      'Anura Wijesinghe',
+      'Mr. Weerasinghe',
+      'Nethmi Perera',
+      'Amara Silva',
+      'Kavindi Jayasinghe',
+      'David Peris',
+      'Ruwan Silva'
+    ];
+    const dirTeachers = (window.LECOLE_STAFF_DIRECTORY && Array.isArray(window.LECOLE_STAFF_DIRECTORY))
+      ? window.LECOLE_STAFF_DIRECTORY.map(s => s.name).filter(Boolean)
+      : [];
+    const teachersList = Array.from(new Set([...baseTeachers, ...dirTeachers]));
+
+    // Remove any existing card tic popovers
+    document.querySelectorAll('.c-card-tic-popover').forEach(p => p.remove());
+
+    const popover = document.createElement('div');
+    popover.className = 'c-card-tic-popover';
+    popover.style.cssText = `
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      max-height: 220px;
+      overflow-y: auto;
+      background: #ffffff;
+      border: 1px solid var(--color-border, #EFE8DF);
+      border-radius: var(--radius-xl, 0.875rem);
+      box-shadow: 0 12px 30px rgba(15, 65, 74, 0.2);
+      z-index: 100;
+      padding: 0.5rem;
+    `;
+
+    const titleEl = document.createElement('div');
+    titleEl.style.cssText = 'padding: 0.35rem 0.5rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted, #71717A); border-bottom: 1px solid var(--alabaster, #F4F1EA); margin-bottom: 0.35rem;';
+    titleEl.textContent = 'Select Teacher in Charge';
+    popover.appendChild(titleEl);
+
+    teachersList.forEach(tName => {
+      const itemBtn = document.createElement('button');
+      itemBtn.type = 'button';
+      itemBtn.className = 'c-btn-plain';
+      itemBtn.dataset.teacherName = tName;
+      const isSelected = (tName === currentTic);
+      itemBtn.style.cssText = `
+        width: 100%;
+        text-align: left;
+        padding: 0.45rem 0.65rem;
+        font-size: 0.82rem;
+        font-weight: ${isSelected ? '700' : '500'};
+        color: ${isSelected ? 'var(--deepsea, #0F414A)' : 'inherit'};
+        background: ${isSelected ? 'rgba(15, 65, 74, 0.08)' : 'transparent'};
+        border-radius: var(--radius-md, 0.5rem);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        transition: background 150ms ease;
+      `;
+      itemBtn.innerHTML = `
+        <span>${escapeHtml(tName)}</span>
+        ${isSelected ? '<svg class="c-icon" width="13" height="13" style="stroke:var(--sky-blue,#38BDF8);"><use href="#icon-check"/></svg>' : ''}
+      `;
+      itemBtn.addEventListener('mouseenter', () => { if (!isSelected) itemBtn.style.background = 'var(--sand-light, #FAF7F2)'; });
+      itemBtn.addEventListener('mouseleave', () => { if (!isSelected) itemBtn.style.background = 'transparent'; });
+
+      // Attach 3-level workload hover preview to this option button inside the card popover
+      attachTeacherHoverPreview(itemBtn, tName);
+
+      itemBtn.onclick = (evt) => {
+        evt.stopPropagation();
+        document.querySelectorAll('.c-extracurricular-teacher-preview').forEach(p => p.remove());
+
+        // Update Card UI
+        const ticNameEl = clubCard?.querySelector('.j-card-tic-name');
+        if (ticNameEl) ticNameEl.textContent = tName;
+        editBtn.dataset.currentTic = tName;
+
+        // Update In-memory Store
+        const pool = window.allClubsData || clubsData;
+        const targetClub = pool.find(c => Number(c.id) === Number(clubId));
+        if (targetClub) {
+          if (!targetClub.tic) targetClub.tic = {};
+          targetClub.tic.name = tName;
+        }
+
+        // If detail hero is active for this club, sync
+        if (window.currentExtracurricularClub && Number(window.currentExtracurricularClub.id) === Number(clubId)) {
+          window.currentExtracurricularClub.tic.name = tName;
+          const heroTic = document.getElementById('j-detail-tic-name');
+          if (heroTic) heroTic.textContent = tName;
+        }
+
+        popover.remove();
+        if (typeof window.showFeedbackBanner === 'function') {
+          window.showFeedbackBanner(`Teacher in Charge updated to ${tName}.`, 'success');
+        }
+      };
+
+      popover.appendChild(itemBtn);
+    });
+
+    const cardBottom = clubCard?.querySelector('.c-club-card__bottom') || editBtn.parentElement;
+    cardBottom.style.position = 'relative';
+    cardBottom.appendChild(popover);
+
+    // Dismiss active preview on popover scroll
+    popover.addEventListener('scroll', () => {
+      document.querySelectorAll('.c-extracurricular-teacher-preview').forEach(p => p.remove());
+    }, { passive: true });
+
+    // Close on outside click
+    const outsideCloser = (evt) => {
+      if (!popover.contains(evt.target) && evt.target !== editBtn) {
+        document.querySelectorAll('.c-extracurricular-teacher-preview').forEach(p => p.remove());
+        popover.remove();
+        document.removeEventListener('click', outsideCloser);
+      }
+    };
+    setTimeout(() => { document.addEventListener('click', outsideCloser); }, 20);
+  });
 
   // ---------------------------------------------------------------------------
   // 7. EDIT EXTRACURRICULAR PROGRAMME MODAL
@@ -633,6 +925,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (hiddenInp) hiddenInp.value = currentCat;
       }
     }
+
+    // Pre-fill TIC fields
+    const tic = club.tic || {};
+    const ticNameInput  = document.getElementById('j-pi-tic-name');
+    const ticSpecInput  = document.getElementById('j-pi-tic-specialty');
+    const ticEmailInput = document.getElementById('j-pi-tic-email');
+    const ticPhoneInput = document.getElementById('j-pi-tic-phone');
+
+    const curTicName  = document.getElementById('j-detail-tic-name')?.textContent.trim() || tic.name || '';
+    const curTicSpec  = document.getElementById('j-detail-tic-specialty')?.textContent.trim() || tic.subject || '';
+    const curTicEmail = document.getElementById('j-detail-tic-email')?.textContent.trim() || tic.email || '';
+    const curTicPhone = document.getElementById('j-detail-tic-phone')?.textContent.trim() || tic.phone || '';
+
+    if (ticNameInput)  ticNameInput.value  = curTicName;
+    if (ticSpecInput)  ticSpecInput.value  = curTicSpec;
+    if (ticEmailInput) ticEmailInput.value = curTicEmail;
+    if (ticPhoneInput) ticPhoneInput.value = curTicPhone;
 
     // Pre-fill Coach fields
     const coach = club.coach || {};
@@ -716,6 +1025,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const descVal = document.getElementById('j-pi-description')?.value.trim() || '';
       const ageVal  = document.getElementById('j-pi-age-groups')?.value.trim() || '';
 
+      const ticNameVal  = document.getElementById('j-pi-tic-name')?.value.trim() || '';
+      const ticSpecVal  = document.getElementById('j-pi-tic-specialty')?.value.trim() || '';
+      const ticEmailVal = document.getElementById('j-pi-tic-email')?.value.trim() || '';
+      const ticPhoneVal = document.getElementById('j-pi-tic-phone')?.value.trim() || '';
+
       const coachNameVal  = document.getElementById('j-pi-coach-name')?.value.trim() || '';
       const coachSpecVal  = document.getElementById('j-pi-coach-specialty')?.value.trim() || '';
       const coachEmailVal = document.getElementById('j-pi-coach-email')?.value.trim() || '';
@@ -732,8 +1046,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (catEl)  catEl.textContent  = catVal;
       if (descEl) descEl.textContent = descVal;
 
-      // Update Coach in Sidebar DOM
+      // Update TIC & Coach in Sidebar DOM
       const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      if (ticNameVal)  setTxt('j-detail-tic-name', ticNameVal);
+      if (ticSpecVal)  setTxt('j-detail-tic-specialty', ticSpecVal);
+      if (ticEmailVal) setTxt('j-detail-tic-email', ticEmailVal);
+      if (ticPhoneVal) setTxt('j-detail-tic-phone', ticPhoneVal);
+
       if (coachNameVal)  setTxt('j-detail-coach-name', coachNameVal);
       if (coachSpecVal)  setTxt('j-detail-coach-specialty', coachSpecVal);
       if (coachEmailVal) setTxt('j-detail-coach-email', coachEmailVal);
@@ -765,6 +1084,12 @@ document.addEventListener('DOMContentLoaded', () => {
         c.ageGroups = ageVal;
         if (progCoverImage) c.image = progCoverImage;
 
+        if (!c.tic) c.tic = {};
+        if (ticNameVal)  c.tic.name    = ticNameVal;
+        if (ticSpecVal)  c.tic.subject = ticSpecVal;
+        if (ticEmailVal) c.tic.email   = ticEmailVal;
+        if (ticPhoneVal) c.tic.phone   = ticPhoneVal;
+
         if (!c.coach) c.coach = {};
         if (coachNameVal)  c.coach.name      = coachNameVal;
         if (coachSpecVal)  c.coach.specialty = coachSpecVal;
@@ -779,8 +1104,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (gridCard) {
           const cardName = gridCard.querySelector('.c-club-card__name');
           const cardCat  = gridCard.querySelector('.c-club-card__category');
+          const cardTic  = gridCard.querySelector('.j-card-tic-name');
+          const cardTicBtn = gridCard.querySelector('.j-edit-card-tic-btn');
           if (cardName) cardName.textContent = nameVal;
           if (cardCat)  cardCat.textContent  = catVal.toUpperCase();
+          if (cardTic && ticNameVal) cardTic.textContent = ticNameVal;
+          if (cardTicBtn && ticNameVal) cardTicBtn.dataset.currentTic = ticNameVal;
         }
       }
 

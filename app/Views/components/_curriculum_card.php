@@ -47,12 +47,16 @@ $idx      = $stageIndex ?? 0;
   </div>
 
   <div class="c-curriculum-card__subjects j-curriculum-subjects">
-    <?php foreach ($subjects as $sIndex => $subj): 
-      $toneClass = 'c-subject-tone-' . ($sIndex % 5);
-    ?>
-      <span class="c-subject-chip <?= $toneClass ?>">
-        <?= htmlspecialchars($subj) ?>
-      </span>
-    <?php endforeach; ?>
+    <?php if (!empty($subjects)): ?>
+      <?php foreach ($subjects as $sIndex => $subj): 
+        $toneClass = 'c-subject-tone-' . ($sIndex % 5);
+      ?>
+        <span class="c-subject-chip <?= $toneClass ?>">
+          <?= htmlspecialchars($subj) ?>
+        </span>
+      <?php endforeach; ?>
+    <?php else: ?>
+      <span class="c-curr-empty-badge" style="font-size:11px;color:rgba(15,65,74,0.5);font-style:italic;">No subjects assigned yet</span>
+    <?php endif; ?>
   </div>
 </article>

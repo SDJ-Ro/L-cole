@@ -182,8 +182,9 @@ button.field-password-toggle:focus-visible,
 .fp-otp-input { width: 100%; border-radius: var(--radius-lg); border: 1px solid var(--alabaster); background: #fff; padding: 0.625rem 0.75rem; text-align: center; font-family: monospace; font-size: 1.125rem; letter-spacing: 0.5em; color: var(--midnight); outline: none; }
 .fp-otp-input:focus { border-color: var(--skyblue); box-shadow: 0 0 0 3px rgba(127,199,204,0.35); }
 .fp-otp-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.fp-link-btn { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 700; color: rgba(15,65,74,0.65); border: none; background: none; padding: 0; }
-.fp-link-btn:hover { color: var(--flameorange); }
+.fp-link-btn { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 700; color: rgba(15,65,74,0.65); border: none; background: none; padding: 0; cursor: pointer; transition: color 0.15s ease, opacity 0.15s ease; }
+.fp-link-btn:hover:not(:disabled) { color: var(--flameorange); }
+.fp-link-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* ---------- access hub (access.html) ---------- */
 .gw-back-btn { position: fixed; top: 1.25rem; left: 1.25rem; z-index: 50; display: inline-flex; align-items: center; gap: 0.5rem; border-radius: var(--radius-lg); background: var(--deepsea); padding: 0.65rem 0.9rem; font-size: 0.75rem; font-weight: 700; color: #fff; box-shadow: var(--shadow-lg); border: none; transition: background 0.15s; }

@@ -74,7 +74,7 @@
         <div class="field-group">
           <div class="field">
             <span class="field-label"><?= htmlspecialchars($inputLabel ?? 'Email address') ?></span>
-            <input type="<?= htmlspecialchars($inputType ?? 'text') ?>" name="identifier" class="field-input" placeholder="<?= htmlspecialchars($inputPlaceholder ?? 'name@lecole.edu') ?>" required autocomplete="username" />
+            <input type="<?= htmlspecialchars($inputType ?? 'text') ?>" name="identifier" class="field-input" placeholder="<?= htmlspecialchars($inputPlaceholder ?? 'name@lecole.edu') ?>" value="<?= htmlspecialchars($_GET['identifier'] ?? '') ?>" required autocomplete="username" />
           </div>
           <div class="field">
             <div class="field-label-row">

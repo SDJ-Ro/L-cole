@@ -83,23 +83,26 @@
       '</div>' +
       '<div class="fp-step" data-step="code">' +
       '<p class="fp-code-hint" id="fp-code-hint"></p>' +
-      '<div class="field"><span class="field-label">6-digit verification code</span><input type="text" inputmode="numeric" maxlength="6" class="fp-otp-input" id="fp-code" placeholder="000000" /></div>' +
-      '<div class="fp-toggle-wrap" style="margin:12px 0 6px 0;">' +
+      '<div class="field"><span class="field-label">6-digit verification code</span><input type="text" inputmode="numeric" maxlength="6" class="fp-otp-input" id="fp-code" placeholder="000000" autocomplete="one-time-code" /></div>' +
+      '<div class="field" style="margin-top:0.75rem;">' +
+      '<span class="field-label" id="fp-pw-label">Account password</span>' +
+      '<div class="field-password-wrap" style="position:relative;display:flex;align-items:center;width:100%;">' +
+      '<input type="password" class="field-input" id="fp-password" placeholder="Enter your current password" style="width:100%;padding-right:2.75rem;" autocomplete="current-password" />' +
+      '<button type="button" class="field-password-toggle j-toggle-password" aria-label="Show password" tabindex="-1" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:transparent;border:none;outline:none;box-shadow:none;padding:0;margin:0;cursor:pointer;color:rgba(15,65,74,0.4);display:inline-flex;align-items:center;justify-content:center;z-index:5;"><svg class="icon icon-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="stroke:currentColor;fill:none;display:block;width:16px;height:16px;"><use href="#icon-eye"/></svg></button>' +
+      '</div></div>' +
+      '<div class="fp-toggle-wrap" style="margin:10px 0 6px 0;">' +
       '<label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#0f414a;cursor:pointer;user-select:none;font-weight:500;">' +
       '<input type="checkbox" id="fp-change-password-toggle" style="accent-color:#0f414a;width:15px;height:15px;cursor:pointer;" />' +
       '<span>I forgot my password — set a new one</span>' +
       '</label>' +
       '</div>' +
-      '<div id="fp-password-fields" style="display:none;margin-top:0.5rem;">' +
-      '<div class="field"><span class="field-label">New password</span><div class="field-password-wrap" style="position:relative;display:flex;align-items:center;width:100%;"><input type="password" class="field-input" id="fp-new-password" placeholder="Create a new password" style="width:100%;padding-right:2.75rem;" /><button type="button" class="field-password-toggle j-toggle-password" aria-label="Show password" tabindex="-1" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:transparent;border:none;outline:none;box-shadow:none;padding:0;margin:0;cursor:pointer;color:rgba(15,65,74,0.4);display:inline-flex;align-items:center;justify-content:center;z-index:5;"><svg class="icon icon-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="stroke:currentColor;fill:none;display:block;width:16px;height:16px;"><use href="#icon-eye"/></svg></button></div></div>' +
-      '</div>' +
       '<p class="form-alert" id="fp-code-alert"></p>' +
       '<div class="fp-otp-row"><button type="button" class="fp-link-btn" id="fp-resend"><svg class="icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-mailCheck"/></svg>Resend code</button>' +
-      '<button type="button" class="auth-submit-btn" id="fp-verify-code">Unlock account</button></div>' +
+      '<button type="button" class="auth-submit-btn" id="fp-verify-code">Verify & Sign in</button></div>' +
       '</div>' +
       '<div class="fp-step" data-step="success">' +
-      '<div class="form-success is-visible"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-checkCircle2"/></svg><span id="fp-success-msg">Account unlocked successfully! You can now sign in.</span></div>' +
-      '<button type="button" class="auth-submit-btn auth-submit-btn--block" id="fp-done">Sign in now</button>' +
+      '<div class="form-success is-visible"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-checkCircle2"/></svg><span id="fp-success-msg">Verified successfully! Redirecting to your dashboard…</span></div>' +
+      '<div style="margin-top:1rem;font-size:13px;color:rgba(15,65,74,0.7);text-align:center;">Redirecting to your dashboard&hellip;</div>' +
       '</div>' +
       '</div></div></div>';
 
@@ -107,29 +110,88 @@
     function showStep(name) {
       qsa('.fp-step', overlay).forEach(function (s) { s.classList.toggle('is-active', s.getAttribute('data-step') === name); });
     }
-    function open() { overlay.classList.add('is-open'); showStep('email'); qs('#fp-email-alert').classList.remove('is-visible'); }
-    function close() { overlay.classList.remove('is-open'); }
+    var lastResolvedRole = '';
+    var lastResolvedIdentifier = '';
+    var lastSigninUrl = '';
+
+    function open() { 
+      overlay.classList.add('is-open'); 
+      showStep('email'); 
+      qs('#fp-email-alert').classList.remove('is-visible'); 
+      var titleEl = qs('#fp-title');
+      var subEl = qs('#fp-subtitle');
+      if (titleEl) titleEl.textContent = 'Reset your password';
+      if (subEl) subEl.textContent = "Enter your account email and we'll send a 6-digit code.";
+    }
+    function close() { 
+      overlay.classList.remove('is-open'); 
+      try {
+        if (window.history && window.history.replaceState) {
+          var url = new URL(window.location.href);
+          if (url.searchParams.has('unlock') || url.searchParams.has('reset')) {
+            url.searchParams.delete('unlock');
+            url.searchParams.delete('reset');
+            var cleanUrl = url.pathname + (url.search ? url.search : '');
+            window.history.replaceState({}, document.title, cleanUrl);
+          }
+        }
+      } catch (e) {}
+    }
     qsa('.j-forgot-trigger').forEach(function (btn) { btn.addEventListener('click', open); });
     qs('#fp-close').addEventListener('click', close);
     overlay.addEventListener('mousedown', function (e) { if (e.target === overlay) close(); });
 
     var pwToggle = qs('#fp-change-password-toggle');
-    var pwFields = qs('#fp-password-fields');
     var verifyBtn = qs('#fp-verify-code');
 
     function updatePasswordToggleState() {
       if (!pwToggle) return;
+      var pwLabel = qs('#fp-pw-label');
+      var pwInput = qs('#fp-password');
       if (pwToggle.checked) {
-        if (pwFields) pwFields.style.display = 'block';
-        if (verifyBtn) verifyBtn.textContent = 'Unlock & reset password';
+        if (pwLabel) pwLabel.textContent = 'Create new password';
+        if (pwInput) {
+          pwInput.placeholder = 'Enter a new password (min. 8 chars)';
+          pwInput.setAttribute('autocomplete', 'new-password');
+        }
+        if (verifyBtn) verifyBtn.textContent = 'Reset & Sign in';
       } else {
-        if (pwFields) pwFields.style.display = 'none';
-        if (verifyBtn) verifyBtn.textContent = 'Unlock account';
+        if (pwLabel) pwLabel.textContent = 'Account password';
+        if (pwInput) {
+          pwInput.placeholder = 'Enter your current password';
+          pwInput.setAttribute('autocomplete', 'current-password');
+        }
+        if (verifyBtn) verifyBtn.textContent = 'Verify & Sign in';
       }
     }
     if (pwToggle) {
       pwToggle.addEventListener('change', updatePasswordToggleState);
     }
+
+    window.openUnlockModal = function (identifier) {
+      open();
+      var emailInput = qs('#fp-email');
+      if (emailInput && identifier) emailInput.value = identifier;
+      showStep('code');
+      var titleEl = qs('#fp-title');
+      var subEl = qs('#fp-subtitle');
+      if (titleEl) titleEl.textContent = 'Unlock account & sign in';
+      if (subEl) subEl.textContent = 'Enter your 6-digit verification code and password.';
+      if (pwToggle) {
+        pwToggle.checked = false;
+        updatePasswordToggleState();
+      }
+      var hintEl = qs('#fp-code-hint');
+      if (hintEl) {
+        hintEl.textContent = 'Account temporarily locked. Enter the 6-digit code from your email and your password to regain access.';
+      }
+      wirePasswordToggles(overlay);
+      var codeInput = qs('#fp-code');
+      if (codeInput) {
+        codeInput.value = '';
+        setTimeout(function () { codeInput.focus(); }, 100);
+      }
+    };
 
     // Auto-open modal when arriving via Unlock & Reset link
     try {
@@ -138,19 +200,7 @@
       var paramIdent = urlParams.get('identifier');
       if (isUnlock && paramIdent) {
         setTimeout(function () {
-          open();
-          var emailInput = qs('#fp-email');
-          if (emailInput) emailInput.value = paramIdent;
-          showStep('code');
-          if (pwToggle) {
-            pwToggle.checked = false;
-            updatePasswordToggleState();
-          }
-          var hintEl = qs('#fp-code-hint');
-          if (hintEl) {
-            hintEl.textContent = 'Account temporarily locked. Enter your 6-digit verification code to unlock immediately and keep your password.';
-          }
-          wirePasswordToggles(overlay);
+          window.openUnlockModal(paramIdent);
         }, 80);
       }
     } catch (e) {}
@@ -199,28 +249,33 @@
     });
 
     qs('#fp-verify-code').addEventListener('click', function () {
-      var email = qs('#fp-email').value.trim();
-      var code = qs('#fp-code').value.trim();
+      var email = (qs('#fp-email') ? qs('#fp-email').value.trim() : '') || (new URLSearchParams(window.location.search).get('identifier') || '').trim();
+      var code = qs('#fp-code') ? qs('#fp-code').value.trim() : '';
       var isChangePw = pwToggle && pwToggle.checked;
-      var newPassEl = qs('#fp-new-password');
-      var newPassword = isChangePw && newPassEl ? newPassEl.value : '';
+      var passInput = qs('#fp-password');
+      var password = passInput ? passInput.value.trim() : '';
       var alertEl = qs('#fp-code-alert');
       var btn = qs('#fp-verify-code');
 
-      if (code.length !== 6 || !/^\d{6}$/.test(code)) {
-        alertEl.textContent = 'Enter the 6-digit numeric code.';
+      if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
+        alertEl.textContent = 'Enter the 6-digit numeric verification code.';
         alertEl.classList.add('is-visible');
         return;
       }
-      if (isChangePw && (!newPassword || newPassword.length < 8)) {
-        alertEl.textContent = 'Password must be at least 8 characters long.';
+      if (!password) {
+        alertEl.textContent = isChangePw ? 'Please enter a new password.' : 'Please enter your password to sign in.';
+        alertEl.classList.add('is-visible');
+        return;
+      }
+      if (isChangePw && password.length < 8) {
+        alertEl.textContent = 'New password must be at least 8 characters long.';
         alertEl.classList.add('is-visible');
         return;
       }
 
       alertEl.classList.remove('is-visible');
       btn.disabled = true;
-      btn.textContent = isChangePw ? 'Saving…' : 'Unlocking…';
+      btn.textContent = isChangePw ? 'Resetting & signing in…' : 'Verifying & signing in…';
 
       fetch('/auth/handleForgotReset', {
         method: 'POST',
@@ -231,21 +286,28 @@
         body: JSON.stringify({ 
           email: email, 
           code: code, 
-          newPassword: newPassword, 
+          password: password, 
+          is_reset: isChangePw,
           _csrf_token: getCsrfToken() 
         })
       })
       .then(function (res) { return res.json(); })
       .then(function (data) {
-        btn.disabled = false;
-        updatePasswordToggleState();
         if (data.success) {
           var successMsgEl = qs('#fp-success-msg');
           if (successMsgEl && data.message) {
             successMsgEl.textContent = data.message;
           }
           showStep('success');
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+          setTimeout(function () {
+            window.location.href = data.redirect || '/landing';
+          }, 700);
         } else {
+          btn.disabled = false;
+          updatePasswordToggleState();
           alertEl.textContent = data.error || 'Failed to process request.';
           alertEl.classList.add('is-visible');
         }
@@ -258,27 +320,90 @@
       });
     });
 
-    qs('#fp-resend').addEventListener('click', function () {
-      var email = qs('#fp-email').value.trim();
-      fetch('/auth/handleForgotSend', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': getCsrfToken()
-        },
-        body: JSON.stringify({ email: email, _csrf_token: getCsrfToken() })
-      })
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        var hint = 'A new 6-digit verification code has been dispatched. Please check your inbox.';
-        qs('#fp-code-hint').textContent = hint;
-      });
-    });
+    var resendBtn = qs('#fp-resend');
+    var resendTimer = null;
 
-    qs('#fp-done').addEventListener('click', function () {
-      close();
-      window.location.reload();
-    });
+    if (resendBtn) {
+      resendBtn.addEventListener('click', function () {
+        var email = (qs('#fp-email') ? qs('#fp-email').value.trim() : '') || (new URLSearchParams(window.location.search).get('identifier') || '').trim();
+        var alertEl = qs('#fp-code-alert');
+        var hintEl = qs('#fp-code-hint');
+
+        if (!email) {
+          if (alertEl) {
+            alertEl.textContent = 'Account email or index is missing. Please refresh and try again.';
+            alertEl.classList.add('is-visible');
+          }
+          return;
+        }
+
+        if (alertEl) alertEl.classList.remove('is-visible');
+        resendBtn.disabled = true;
+        var originalHtml = resendBtn.innerHTML;
+        resendBtn.textContent = 'Sending code…';
+
+        fetch('/auth/handleForgotSend', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': getCsrfToken()
+          },
+          body: JSON.stringify({ email: email, _csrf_token: getCsrfToken() })
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data && data.success) {
+            var dest = data.recipient || email;
+            if (hintEl) {
+              hintEl.textContent = 'A new 6-digit verification code has been dispatched to ' + dest + '. Please check your inbox.';
+            }
+            var codeInput = qs('#fp-code');
+            if (codeInput) {
+              codeInput.value = '';
+              codeInput.focus();
+            }
+
+            var countdown = 30;
+            resendBtn.textContent = 'Resend code (' + countdown + 's)';
+            if (resendTimer) clearInterval(resendTimer);
+            resendTimer = setInterval(function () {
+              countdown--;
+              if (countdown > 0) {
+                resendBtn.textContent = 'Resend code (' + countdown + 's)';
+              } else {
+                clearInterval(resendTimer);
+                resendTimer = null;
+                resendBtn.disabled = false;
+                resendBtn.innerHTML = originalHtml;
+              }
+            }, 1000);
+          } else {
+            resendBtn.disabled = false;
+            resendBtn.innerHTML = originalHtml;
+            if (alertEl) {
+              alertEl.textContent = (data && data.error) ? data.error : 'Failed to resend code. Please try again.';
+              alertEl.classList.add('is-visible');
+            }
+          }
+        })
+        .catch(function () {
+          resendBtn.disabled = false;
+          resendBtn.innerHTML = originalHtml;
+          if (alertEl) {
+            alertEl.textContent = 'Network error. Please try again.';
+            alertEl.classList.add('is-visible');
+          }
+        });
+      });
+    }
+
+    var doneBtn = qs('#fp-done');
+    if (doneBtn) {
+      doneBtn.addEventListener('click', function () {
+        close();
+        window.location.reload();
+      });
+    }
   }
 
   /* ---------------- sign-in / sign-up form: validate + redirect to admin portal ---------------- */
@@ -359,7 +484,19 @@
         } else {
           submitBtn.disabled = false;
           submitBtn.innerHTML = originalBtnHtml;
-          showAlert(data.error || 'Authentication failed. Please check your credentials.');
+          if (data.code === 'ACCOUNT_LOCKED_SOFT') {
+            var targetId = data.identifier || payload.identifier || payload.email || '';
+            showAlert((data.error || 'Account temporarily locked.') + 
+              '<div style="margin-top:0.5rem;"><button type="button" class="j-quick-unlock-btn" style="background:none;border:none;padding:0;color:inherit;text-decoration:underline;font-weight:700;cursor:pointer;font-family:inherit;font-size:0.8125rem;">Enter 6-digit unlock code &rarr;</button></div>');
+            var quickBtn = qs('.j-quick-unlock-btn', alertEl);
+            if (quickBtn && window.openUnlockModal) {
+              quickBtn.addEventListener('click', function () {
+                window.openUnlockModal(targetId);
+              });
+            }
+          } else {
+            showAlert(data.error || 'Authentication failed. Please check your credentials.');
+          }
         }
       })
       .catch(function (err) {
@@ -369,7 +506,7 @@
       });
     });
 
-    function showAlert(msg) { if (alertEl) { alertEl.textContent = msg; alertEl.classList.add('is-visible'); } }
+    function showAlert(msg) { if (alertEl) { alertEl.innerHTML = msg; alertEl.classList.add('is-visible'); } }
     function hideAlert() { if (alertEl) alertEl.classList.remove('is-visible'); }
   }
 
