@@ -15,9 +15,31 @@ class Controller {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
+        $this->checkParentAccountAccess();
         $this->checkSessionTimeout();
     }
     
+    protected function checkParentAccountAccess(): void {
+        if (($_SESSION['user']['role'] ?? '') !== 'parent') return;
+        $query = Database::getConnection()->prepare("SELECT activation_status FROM user_accounts WHERE id=? AND role='parent'");
+        $query->execute([$_SESSION['user']['id'] ?? 0]);
+        if ($query->fetchColumn() === 'ACTIVE') return;
+
+        $_SESSION = [];
+        session_regenerate_id(true);
+        $message = 'This parent account is not active. Please contact the school office.';
+        $isJson = strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false
+            || strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
+        if ($isJson) {
+            http_response_code(401);
+            header('Content-Type: application/json');
+            echo json_encode(['success'=>false,'error'=>$message,'redirect'=>'/auth/parent']);
+            exit;
+        }
+        $this->setFlash('notice', $message);
+        $this->redirect('/auth/parent');
+    }
+
     // This function fetches your UI files from the Views folder
     public function view($viewName, $data = []) {
         // Automatically inject CSRF token into all views

@@ -268,19 +268,187 @@ class ManagementController extends Controller {
         ]);
     }
 
+
+    public function editParent() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            http_response_code(405); header('Allow: GET'); return;
+        }
+        $code = $_GET['id'] ?? '';
+        $parent = is_string($code) ? ParentModel::findByCode($code) : null;
+        if (!$parent) { http_response_code(404); echo 'Parent not found.'; return; }
+        $this->view('management/edit-parent', [
+            'parent'=>$parent, 'values'=>ParentModel::editValues($parent),
+            'version'=>ParentModel::version($parent), 'error'=>''
+        ]);
+    }
+
+    public function updateParent() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405); header('Allow: POST'); return;
+        }
+        $isJson = strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false;
+        if (!$this->validateCsrf()) {
+            http_response_code(403);
+            if ($isJson) { header('Content-Type: application/json'); echo json_encode(['success'=>false,'error'=>'Session expired. Refresh the page and try again.']); }
+            else { echo 'Session verification failed. Reload the edit form.'; }
+            return;
+        }
+        $code = $_POST['parentCode'] ?? '';
+        $parent = is_string($code) ? ParentModel::findByCode($code) : null;
+        if (!$parent) { http_response_code(404);
+            if ($isJson) { header('Content-Type: application/json'); echo json_encode(['success'=>false,'error'=>'Parent not found.']); }
+            else { echo 'Parent not found.'; }
+            return; }
+        try {
+            ParentModel::updateProfile($code, $_POST, (int)$this->getUser()['id']);
+            if ($isJson) {
+                header('Content-Type: application/json');
+
+                $saved = null;
+                foreach (ParentModel::getAll() as $record) {
+                    if ($record['id'] === $code) { $saved = $record; break; }
+                }
+                echo json_encode(['success'=>true,'parent'=>$saved]);
+                return;
+            }
+            $this->setFlash('admission_success', 'Parent profile updated successfully.');
+            $this->redirect('/management/people?tab=parents');
+        } catch (InvalidArgumentException $error) {
+            http_response_code(422);
+            $message = $error->getMessage();
+        } catch (RuntimeException $error) {
+            if ($error->getCode() === 409) {
+                http_response_code(409); $message = $error->getMessage();
+            } else {
+                error_log('Parent update failed: '.$error->getMessage());
+                http_response_code(500); $message = 'Unable to save changes. Please try again.';
+            }
+        } catch (Throwable $error) {
+            error_log('Parent update failed: '.$error->getMessage());
+            http_response_code(500); $message = 'Unable to save changes. Please try again.';
+        }
+        if ($isJson) {
+            header('Content-Type: application/json');
+            echo json_encode(['success'=>false,'error'=>$message]);
+            return;
+        }
+        $values = ParentModel::editValues($parent);
+        foreach ($values as $field=>$value) {
+            if (isset($_POST[$field]) && is_string($_POST[$field])) $values[$field] = $_POST[$field];
+        }
+        $this->view('management/edit-parent', [
+            'parent'=>$parent, 'values'=>$values,
+            'version'=>is_string($_POST['version'] ?? null) ? $_POST['version'] : '', 'error'=>$message
+        ]);
+    }
+
+    public function deactivateParent() {
+        header('Content-Type: application/json; charset=utf-8');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405); header('Allow: POST');
+            echo json_encode(['success'=>false,'error'=>'Use POST.']); return;
+        }
+        if (!$this->validateCsrf()) {
+            http_response_code(403);
+            echo json_encode(['success'=>false,'error'=>'Session verification failed. Refresh and try again.']); return;
+        }
+        $code = $_POST['parentCode'] ?? '';
+        if (!is_string($code) || $code === '' || ($_POST['confirmed'] ?? '') !== 'yes') {
+            http_response_code(422);
+            echo json_encode(['success'=>false,'error'=>'Choose a parent and confirm deactivation.']); return;
+        }
+        try {
+            ParentModel::deactivate($code, (int)$this->getUser()['id']);
+            $this->setFlash('admission_success', 'Parent account deactivated. Profile and history have been retained.');
+            echo json_encode(['success'=>true]);
+        } catch (InvalidArgumentException $error) {
+            http_response_code(404);
+            echo json_encode(['success'=>false,'error'=>$error->getMessage()]);
+        } catch (Throwable $error) {
+            $blocked = $error->getCode() === 409;
+            http_response_code($blocked ? 409 : 500);
+            if (!$blocked) error_log('Parent deactivation failed: '.$error->getMessage());
+            echo json_encode(['success'=>false,'error'=>$blocked ? $error->getMessage() : 'Unable to deactivate the parent. Please try again.']);
+        }
+    }
+
+    public function createParent() {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(409);
+        echo json_encode(['success'=>false,'error'=>'Register a student and guardian together through Student Admission.']);
+    }
+
+    public function registerStudent() {
+        header('Content-Type: application/json; charset=utf-8');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405); header('Allow: POST');
+            echo json_encode(['success'=>false,'error'=>'Use POST.']); return;
+        }
+        if (!$this->validateCsrf()) {
+            http_response_code(403);
+            echo json_encode(['success'=>false,'error'=>'Session verification failed. Refresh the page and try again.']); return;
+        }
+        try {
+            if (!empty($_FILES['photo']['name'])) throw new InvalidArgumentException('Photo uploads are not available in this registration step.');
+            $result=StudentAdmissionModel::register($_POST,(int)$this->getUser()['id']);
+            http_response_code(201);
+            $this->setFlash('admission_success', 'Registered ' . $result['index'] . ' and linked its guardian. Account access is pending; no credentials email has been sent yet.');
+            echo json_encode(['success'=>true,'index'=>$result['index']]);
+        } catch (InvalidArgumentException $e) {
+            http_response_code(422);
+            echo json_encode(['success'=>false,'error'=>$e->getMessage()]);
+        } catch (Throwable $e) {
+            error_log('Student admission failed: '.$e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success'=>false,'error'=>'Unable to register the student. Please try again.']);
+        }
+    }
+
+    public function studentDetails() {
+        $index = $_GET['index'] ?? '';
+        foreach (StudentAdmissionModel::getStudents() as $student) {
+            if ($student['id'] === $index) {
+                $this->view('management/student-details', ['student'=>$student,'parents'=>ParentModel::getAll()]);
+                return;
+            }
+        }
+        http_response_code(404);
+        echo 'Student not found.';
+    }
+
+    public function changeStudentGuardian() {
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); echo json_encode(['success'=>false,'error'=>'Method not allowed.']); return; }
+        if (!$this->validateCsrfToken($_POST['_csrf_token'] ?? '')) { http_response_code(403); echo json_encode(['success'=>false,'error'=>'Your session token expired. Refresh and try again.']); return; }
+        if (($_POST['confirmed'] ?? '') !== 'yes') { http_response_code(422); echo json_encode(['success'=>false,'error'=>'Please confirm the guardian change.']); return; }
+        try {
+            $result = StudentAdmissionModel::changeGuardian((string)($_POST['studentIndex'] ?? ''),(string)($_POST['parentCode'] ?? ''),(int)$this->getUser()['id']);
+            $this->setFlash('admission_success', 'Guardian changed to '.$result['parentName'].' ('.$result['parentId'].').');
+            echo json_encode(['success'=>true,'guardian'=>$result]);
+        } catch (InvalidArgumentException $error) {
+            http_response_code(422); echo json_encode(['success'=>false,'error'=>$error->getMessage()]);
+        } catch (RuntimeException $error) {
+            http_response_code($error->getCode() === 409 ? 409 : 500);
+            echo json_encode(['success'=>false,'error'=>$error->getCode() === 409 ? $error->getMessage() : 'Unable to change the guardian.']);
+        } catch (Throwable $error) {
+            error_log('Guardian change failed: '.$error->getMessage());
+            http_response_code(500); echo json_encode(['success'=>false,'error'=>'Unable to change the guardian. Please try again.']);
+        }
+    }
+
     public function people() {
         $grades           = PeopleModel::getGrades();
         $classContext     = PeopleModel::getClassContext();
         $classEnrollments = PeopleModel::getClassEnrollments();
-        $students         = PeopleModel::getStudents();
+        $students         = StudentAdmissionModel::getStudents();
         $teachers         = PeopleModel::getTeachers();
-        $parents          = PeopleModel::getParents();
+        $parents          = ParentModel::getAll();
 
         $this->view('management/people', [
             'currentRole'      => 'management',
             'currentRoute'     => '/management/people',
             'allowedTabs'      => ['Students', 'Teachers', 'Parents'],
-            'activeTab'        => 'Students',
+            'activeTab'        => (($_GET['tab'] ?? '') === 'parents' ? 'Parents' : 'Students'),
             'grades'           => $grades,
             'classContext'     => $classContext,
             'classEnrollments' => $classEnrollments,

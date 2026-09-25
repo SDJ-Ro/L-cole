@@ -462,11 +462,13 @@ if (!function_exists('renderProfileDatepicker')) {
         <p class="c-info-card-value j-view-only" id="j-card-parent-fullname">Suresh Perera</p>
         <input type="text" class="c-info-card-input j-edit-only" id="j-input-parent-fullname" style="display: none;" />
       </div>
+
+
       <div class="c-info-card">
         <p class="c-info-card-label">Relationship</p>
         <p class="c-info-card-value j-view-only" id="j-card-parent-relation">Father</p>
         <div class="j-edit-only" style="display: none; margin-top: 0.375rem;">
-          <?php renderProfileDropdown('j-select-parent-relation', ['Father','Mother','Guardian','Other'], 'Father', 'Relationship'); ?>
+          <?php renderProfileDropdown('j-select-parent-relation', ['Father','Mother','Guardian'], 'Father', 'Relationship'); ?>
         </div>
       </div>
       <div class="c-info-card">

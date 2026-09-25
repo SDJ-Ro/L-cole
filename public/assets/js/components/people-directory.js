@@ -80,6 +80,30 @@
       activeTabName = initialActiveTabBtn.getAttribute('data-tab') || 'Students';
     }
 
+    const guardianMode = document.getElementById('guardian-mode');
+    if (guardianMode) {
+      guardianMode.addEventListener('dropdown:change', function (event) {
+        const isNew = event.detail.value === 'new';
+        const fields = document.getElementById('new-guardian-fields');
+        fields.hidden = !isNew;
+        fields.style.display = isNew ? 'grid' : 'none';
+        fields.disabled = !isNew;
+        document.getElementById('existing-guardian-fields').hidden = isNew;
+        document.getElementById('existing-guardian-fields').disabled = isNew;
+      });
+    }
+    const parentDialog = document.getElementById('parent-enrolment-dialog');
+    if (parentDialog) {
+      document.getElementById('cancel-parent-enrolment').addEventListener('click', function () {
+        parentDialog.close();
+      });
+      document.getElementById('continue-parent-enrolment').addEventListener('click', function () {
+        parentDialog.close();
+        openAddPersonForm('student');
+        const firstInput = document.querySelector('#j-enrollment-form input[name="fullName"]');
+        if (firstInput) firstInput.focus();
+      });
+    }
     bindEvents();
     renderClassChips(activeGradeId);
     updateContextCard(activeClassName);
@@ -185,7 +209,11 @@
       const addBtn = e.target.closest('.j-btn-add-account');
       if (addBtn) {
         const role = addBtn.getAttribute('data-role') || 'student';
-        openAddPersonForm(role);
+        if (role === 'parent' && document.getElementById('parent-enrolment-dialog')) {
+          document.getElementById('parent-enrolment-dialog').showModal();
+        } else {
+          openAddPersonForm(role);
+        }
         return;
       }
 
@@ -299,11 +327,33 @@
     }
 
     // 12. Form Submissions
-    document.addEventListener('submit', function (e) {
+    document.addEventListener('submit', async function (e) {
       const form = e.target.closest('.c-form-card');
       if (!form) return;
       e.preventDefault();
 
+      if (form.id === 'j-enrollment-form' && window.location.pathname.startsWith('/management/')) {
+        if (form.dataset.saving === 'true') return;
+        form.dataset.saving = 'true';
+        const buttons = form.querySelectorAll('[type="submit"]');
+        buttons.forEach(b => b.disabled = true);
+        try {
+          const response = await fetch('/management/registerStudent', {
+            method: 'POST', body: new FormData(form),
+            headers: {'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'}
+          });
+          const result = await response.json();
+          if (!response.ok || !result.success) throw new Error(result.error || 'Unable to save parent.');
+          showFormNotice(form, 'Student and guardian link saved. Opening Parents...', 'success');
+          window.location.assign('/management/people?tab=parents');
+        } catch (error) {
+          showFormNotice(form, error.message || 'Unable to connect. Please try again.', 'error');
+        } finally {
+          form.dataset.saving = 'false';
+          buttons.forEach(b => b.disabled = false);
+        }
+        return;
+      }
       const requiredInputs = form.querySelectorAll('[required]');
       let hasError = false;
       for (const input of requiredInputs) {
@@ -327,6 +377,7 @@
   }
 
   function openAddPersonForm(role) {
+    if (role === 'parent' && window.location.pathname.startsWith('/management/')) role = 'student';
     if (panelEl) panelEl.style.display = 'none';
     const pageHeader = document.querySelector('.c-page-header');
     if (pageHeader) pageHeader.style.display = 'none';
