@@ -1,0 +1,167 @@
+/* =========================================================================
+   L'ÉCOLE — BREAKDOWN GRID & DONUT / PIE CHART COMPONENT STYLES
+   Ported directly from Admin Dashboard
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   1. LOWER BREAKDOWN GRID (2 Donut Charts + Upcoming Events)
+   ------------------------------------------------------------------------- */
+.c-breakdown-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  .c-breakdown-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .c-breakdown-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* -------------------------------------------------------------------------
+   2. DONUT / PIE CHART CARDS
+   ------------------------------------------------------------------------- */
+.c-donut-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.c-donut-card__total {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.c-donut-card__total-value {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--midnight, #0F414A);
+}
+
+.c-donut-card__total-label {
+  margin: 0.25rem 0 0;
+  max-width: 6rem;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(15, 65, 74, 0.5);
+}
+
+.c-donut-card__plot {
+  position: relative;
+  height: 11rem;
+  overflow: visible;
+}
+
+.c-donut-card__svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.c-donut-card__slice {
+  cursor: pointer;
+  transition: opacity 150ms ease, filter 150ms ease;
+}
+
+.c-donut-card__slice:hover {
+  filter: brightness(1.08);
+}
+
+.c-donut-card__center {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.c-donut-card__center-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+}
+
+.c-donut-card__center-label {
+  margin-top: 0.125rem;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(15, 65, 74, 0.5);
+}
+
+.c-donut-card__legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.375rem 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.c-donut-card__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: none;
+  background: transparent;
+  padding: 0.25rem 0.375rem;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--midnight, #0F414A);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+  font-family: inherit;
+}
+
+.c-donut-card__legend-item:hover {
+  background: var(--alabaster, #EFE8DF);
+}
+
+.c-donut-card__legend-dot {
+  height: 0.5rem;
+  width: 0.5rem;
+  border-radius: var(--radius-full, 9999px);
+  flex-shrink: 0;
+}
+
+/* -------------------------------------------------------------------------
+   3. FLOATING HOVER TOOLTIP
+   ------------------------------------------------------------------------- */
+.c-chart-tooltip__eyebrow {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(15, 65, 74, 0.55);
+}
+
+.c-chart-tooltip__value {
+  margin: 0.125rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--midnight, #0F414A);
+}
+
+.c-chart-tooltip__value strong {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--midnight, #0F414A);
+}
+
