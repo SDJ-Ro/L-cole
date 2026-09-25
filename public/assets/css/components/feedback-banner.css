@@ -1,0 +1,170 @@
+/* =========================================================================
+   L'ÉCOLE — FEEDBACK BANNER (TOAST) COMPONENT STYLES
+   ========================================================================= */
+
+.c-feedback-banner-container {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+  pointer-events: none;
+  max-width: 90vw;
+  width: 480px;
+}
+
+.c-feedback-banner {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.125rem;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: var(--midnight);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  box-shadow: 0 10px 30px -5px rgba(15, 65, 74, 0.2), 0 4px 12px rgba(15, 65, 74, 0.08);
+  border: 1px solid var(--alabaster);
+  opacity: 0;
+  transform: translateY(-20px) scale(0.96);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.c-feedback-banner.c-is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.c-feedback-banner.c-is-leaving {
+  opacity: 0;
+  transform: translateY(-16px) scale(0.94);
+  pointer-events: none;
+}
+
+.c-feedback-banner__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Success Type (Brand Midnight / Moss) */
+.c-feedback-banner--success {
+  border-color: rgba(15, 65, 74, 0.15);
+}
+.c-feedback-banner--success .c-feedback-banner__icon-wrap {
+  background: rgba(15, 65, 74, 0.1);
+  color: var(--midnight);
+}
+
+/* Error Type (Brand Terracotta) */
+.c-feedback-banner--error {
+  border-color: rgba(175, 80, 49, 0.2);
+}
+.c-feedback-banner--error .c-feedback-banner__icon-wrap {
+  background: rgba(175, 80, 49, 0.12);
+  color: var(--terracotta);
+}
+
+/* Info Type (Brand Sky Blue) */
+.c-feedback-banner--info {
+  border-color: rgba(127, 199, 204, 0.35);
+}
+.c-feedback-banner--info .c-feedback-banner__icon-wrap {
+  background: rgba(127, 199, 204, 0.25);
+  color: var(--deepsea);
+}
+
+.c-feedback-banner__text {
+  flex: 1 1 auto;
+  word-break: break-word;
+}
+
+.c-feedback-banner__close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.c-feedback-banner__close-btn:hover {
+  background: rgba(15, 65, 74, 0.08);
+  color: var(--midnight);
+}
+
+/* Card Frosted Overlay & Centered Status Badge */
+.c-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  z-index: 20;
+  pointer-events: none;
+  animation: c-fade-down 200ms ease forwards;
+}
+
+.c-card-overlay__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(15, 65, 74, 0.12);
+}
+
+.c-card-overlay--approved .c-card-overlay__badge {
+  background: #E6F4EA;
+  color: #137333;
+  border: 1px solid #34A853;
+}
+
+.c-card-overlay--declined .c-card-overlay__badge {
+  background: #FCE8E6;
+  color: #C5221F;
+  border: 1px solid #EA4335;
+}
+
+/* Modal / Form Bottom Toast */
+.c-form-bottom-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  background: #E6F4EA;
+  border: 1px solid #34A853;
+  border-radius: var(--radius-sm, 0.375rem);
+  color: #137333;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 0.75rem;
+  width: 100%;
+  box-sizing: border-box;
+  animation: c-fade-down 200ms ease forwards;
+}
+
+
