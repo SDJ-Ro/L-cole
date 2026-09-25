@@ -1112,3 +1112,17 @@ textarea.c-info-card-input {
   line-height: 1.5;
   color: rgba(15, 65, 74, 0.7);
 }
+
+#j-section-parent .c-info-card-input {
+  background:transparent;
+  border:0;
+  border-bottom:1px solid rgba(175,80,49,.45);
+  border-radius:0;
+  box-shadow:none;
+  padding-left:0;
+}
+#j-section-parent .c-info-card-input:focus {
+  border-color:var(--terracotta,#AF5031);
+  box-shadow:0 1px 0 var(--terracotta,#AF5031);
+  outline:none;
+}

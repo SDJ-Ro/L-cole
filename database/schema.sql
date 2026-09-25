@@ -131,6 +131,7 @@ CREATE TABLE parents (
     home_phone VARCHAR(30) NULL,
     office_phone VARCHAR(30) NULL,
     office_address VARCHAR(255) NULL,
+    home_address TEXT NULL,
     personal_email VARCHAR(191) NOT NULL,
     emergency_name VARCHAR(150) NULL,
     emergency_contact VARCHAR(30) NULL,

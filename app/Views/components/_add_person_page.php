@@ -156,6 +156,7 @@ $parentRelationOptions = [
     </button>
 
     <form class="c-form-card c-form-card--<?= htmlspecialchars($cfg['headerTheme']) ?>" id="<?= htmlspecialchars($cfg['formId']) ?>" action="<?= htmlspecialchars($formAction ?? '') ?>" method="POST" enctype="multipart/form-data" novalidate>
+      <?= $this->csrfField() ?>
       
       <!-- Role-Themed Header matching 1:1 original -->
       <header class="c-form-header c-header-<?= htmlspecialchars($cfg['headerTheme']) ?>">
@@ -178,7 +179,7 @@ $parentRelationOptions = [
                =============================================================== -->
           <div class="c-form-section-head">
             <h2 class="c-form-section-title">Student personal data</h2>
-            <p class="c-form-section-desc">Enter these details once; index number and email are generated automatically.</p>
+            <p class="c-form-section-desc">Enter these details once; the student index number is generated when registration is saved.</p>
           </div>
 
           <div class="c-form-grid">
@@ -382,8 +383,8 @@ $parentRelationOptions = [
             <div class="c-form-field">
               <label class="c-form-field-label">Profile Photo <em class="c-field-helper">optional</em></label>
               <div class="c-photo-field">
-                <input type="file" accept="image/jpeg,image/png,image/webp" class="c-visually-hidden j-photo-input" id="j-student-photo-input" name="photo" style="display:none;" />
-                <button type="button" class="c-photo-choose-btn j-photo-choose">
+                <input type="file" accept="image/jpeg,image/png,image/webp" class="c-visually-hidden j-photo-input" id="j-student-photo-input" name="photo" disabled style="display:none;" />
+                <button type="button" disabled title="Photo uploads will be added later" class="c-photo-choose-btn j-photo-choose">
                   <svg class="c-icon" width="14" height="14"><use href="#icon-upload"/></svg>
                   <span>Choose file</span>
                 </button>
@@ -398,11 +399,12 @@ $parentRelationOptions = [
             </div>
           </div>
 
+          <?php if (($currentRole ?? '') === 'management') require __DIR__ . '/_admission_guardian.php'; ?>
           <!-- Actions Footer (1:1 with original enrollment) -->
           <footer class="c-form-footer">
             <p class="c-required-note">Fields marked <span class="c-req-star" style="color:var(--skyblue, #7FC7CC);">*</span> are required to enroll a student.</p>
             <div class="c-form-footer-actions">
-              <button id="j-enrollment-save-draft" class="c-btn-outline-sky j-btn-save-draft" type="button">
+              <button disabled title="Draft saving is not available yet" id="j-enrollment-save-draft" class="c-btn-outline-sky j-btn-save-draft" type="button">
                 <svg class="c-icon" width="16" height="16"><use href="#icon-save"/></svg>
                 <span>Save draft</span>
               </button>
@@ -670,7 +672,7 @@ $parentRelationOptions = [
             <!-- Email Address -->
             <div class="c-form-field">
               <label class="c-form-field-label">Email Address</label>
-              <input type="email" class="c-form-input j-form-input" name="email" placeholder="e.g. parent@email.com" />
+              <input type="email" class="c-form-input j-form-input" name="email" required placeholder="e.g. parent@email.com" />
             </div>
 
             <!-- Emergency name -->
