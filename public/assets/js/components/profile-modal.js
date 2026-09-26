@@ -1,26 +1,6 @@
-/**
- * =========================================================================
- * L'ÉCOLE — MASTER PERSON PROFILE MODAL CONTROLLER (VIEW & EDIT)
- * =========================================================================
- * Client-side controller for the unified Person Profile Modal dialog.
- * Directly copied & adapted from original Admin/people/app.js lines 1349-1950
- * and synced with Student and Parent portal profiles.
- *
- * Supports:
- *   - Students (Information [5 full sections], Academics [2 top dropdowns], Extracurriculars, Achievements)
- *   - Teachers (Contact, Class Responsibility, Employment, Emergency, Assignments, Qualifications)
- *   - Parents (Contact, Personal, Enrollment, Linked Students with instant jump-to-profile)
- *   - Management Staff (Contact, Employment & Personal, Administrative Scope)
- *   - Seamless Account Linking (Parent <-> Student bidirectional jumps)
- *   - View mode vs Edit mode toggling with live validation and DOM update
- * =========================================================================
- */
-
 (function () {
   'use strict';
-
-  // Role metadata and theme configurations matching Admin/people/app.js lines 1338-1343
-  const ROLE_THEMES = {
+const ROLE_THEMES = {
     student: {
       label: 'Student profile',
       headerClass: 'c-header-sky',
@@ -405,6 +385,8 @@
    * Open the master profile modal
    */
   function openProfileModal(role, id, mode) {
+    const oldError = document.getElementById('parent-edit-error');
+    if (oldError) oldError.hidden = true;
     if (!modalEl) return;
     activeRole = role || 'student';
     activeId = id || '';
@@ -1132,32 +1114,32 @@
    * Render Parent Section with Linked Students accounts
    */
   function renderParentDetails(person, mode) {
-    setCardVal('j-card-parent-id', person.id || person.index || 'P-045');
-    setFieldVal('parent-email', person.email || 'parent@gmail.com');
-    setFieldVal('parent-phone', person.phone || '+94 77 234 5678');
-    setFieldVal('parent-sphone', person.secondaryContact || person.secondaryPhone || '011-2345678');
+    setCardVal('j-card-parent-id', person.id || person.index || '');
+    setFieldVal('parent-email', person.email || '');
+    setFieldVal('parent-phone', person.phone || '');
+    setFieldVal('parent-sphone', person.secondaryContact || person.secondaryPhone || '');
 
     // Personal
-    setFieldVal('parent-fullname', person.name || 'Suresh Perera');
-    setFieldVal('parent-relation', person.relation || person.relationship || 'Father');
-    setFieldVal('parent-nic', person.nic || person.identityReference || '197829103948');
-    setFieldVal('parent-passport', person.passport || 'N1298492');
-    setFieldVal('parent-dob', person.dateOfBirth || person.dob || '1978-04-12');
-    setFieldVal('parent-emname', person.emergencyName || 'Kumari Perera');
-    setFieldVal('parent-emcontact', person.emergencyContact || '+94 77 998 8776');
-    setFieldVal('parent-guardianstatus', person.guardianStatus || 'Living');
+    setFieldVal('parent-fullname', person.name || '');
+    setFieldVal('parent-relation', person.relation || person.relationship || '');
+    setFieldVal('parent-nic', person.nic || person.identityReference || '');
+    setFieldVal('parent-passport', person.passport || '');
+    setFieldVal('parent-dob', person.dateOfBirth || person.dob || '');
+    setFieldVal('parent-emname', person.emergencyName || '');
+    setFieldVal('parent-emcontact', person.emergencyContact || '');
+    setFieldVal('parent-guardianstatus', person.guardianStatus || '');
 
     // Enrollment
-    setFieldVal('parent-occupation', person.occupation || 'Chartered Engineer');
-    setFieldVal('parent-employer', person.employer || 'Civil Engineering Bureau');
-    setFieldVal('parent-officephone', person.officePhone || '011-2334455');
-    setFieldVal('parent-officeaddress', person.officeAddress || 'Level 4, World Trade Centre, Colombo 01');
-    setFieldVal('parent-address', person.address || person.homeAddress || '45 Galle Road, Wellawatte, Colombo 06');
+    setFieldVal('parent-occupation', person.occupation || '');
+    setFieldVal('parent-employer', person.employer || '');
+    setFieldVal('parent-officephone', person.officePhone || '');
+    setFieldVal('parent-officeaddress', person.officeAddress || '');
+    setFieldVal('parent-address', person.address || person.homeAddress || '');
 
     // Linked Student Accounts
     let children = person.linkedStudents || person.children;
     if (!children || !children.length) {
-      children = ['Nethmi Perera — 6-A'];
+      children = [];
     }
 
     const normalizedChildren = children.map(function (c) {
@@ -1176,13 +1158,9 @@
       } else {
         linkedWrap.innerHTML = normalizedChildren.map(function (child) {
           const childLink = child.name + ' — ' + child.className;
-          return '<button type="button" class="c-linked-btn j-open-linked-child" data-link="' + escapeHtml(childLink) + '" data-name="' + escapeHtml(child.name) + '" ' + (child.id ? ('data-id="' + escapeHtml(child.id) + '"') : '') + '>' +
-            '<span class="c-linked-left">' +
-              '<svg class="c-icon" width="16" height="16"><use href="#icon-checkCircle"/></svg>' +
-              '<span class="c-linked-name">' + escapeHtml(child.name) + '</span>' +
-            '</span>' +
-            '<span class="c-assignment-pill c-assignment-pill--terracotta">Class ' + escapeHtml(child.className) + '</span>' +
-          '</button>';
+          return '<div class="c-linked-btn" style="cursor:default;pointer-events:none">' +
+            '<span>' + escapeHtml(childLink) + '</span>' +
+            (child.id ? '<span class="c-subtext">' + escapeHtml(child.id) + '</span>' : '') + '</div>';
         }).join('');
       }
     }
@@ -1227,6 +1205,7 @@
    * Toggle Modal between View and Edit modes
    */
   function toggleModalMode(mode) {
+    const persistedParent = activeRole === 'parent' && (window.__PEOPLE_DATA__?.parents || []).some(p => p.persisted && p.id === activeId);
     const allowEdit = !modalEl || modalEl.dataset.allowEdit !== 'false';
     if (!allowEdit) {
       mode = 'view';
@@ -1241,7 +1220,7 @@
     if (nameViewEl) nameViewEl.style.display = isEdit ? 'none' : 'block';
     if (nameEditWrap) nameEditWrap.style.display = isEdit ? 'block' : 'none';
     // Populate name input from current visible name (or person record)
-    if (isEdit && nameInputEl) {
+    if (isEdit && nameInputEl && !persistedParent) {
       const liveNameText = (nameViewEl && nameViewEl.textContent.trim()) || (currentPerson && currentPerson.name) || '';
       nameInputEl.value = liveNameText;
       // Focus at end of input so user can type immediately
@@ -1261,6 +1240,27 @@
     modalEl.querySelectorAll('.j-edit-only').forEach(function (el) {
       el.style.display = isEdit ? '' : 'none';
     });
+
+    if (persistedParent) {
+      if (nameViewEl) nameViewEl.style.display = 'block';
+      if (nameEditWrap) nameEditWrap.style.display = 'none';
+      if (statusPill) statusPill.style.display = 'inline-block';
+      if (statusSelect) statusSelect.style.display = 'none';
+
+      ['parent-email', 'parent-fullname'].forEach(function (field) {
+        const input = document.getElementById('j-input-' + field);
+        const value = document.getElementById('j-card-' + field);
+        if (input) input.style.display = 'none';
+        if (value) value.style.display = '';
+      });
+      const relationship = document.getElementById('j-select-parent-relation');
+      if (relationship) relationship.closest('.j-edit-only').style.display = 'none';
+      document.getElementById('j-card-parent-relation').style.display = '';
+      const guardianStatus = document.getElementById('j-select-parent-guardianstatus');
+      if (guardianStatus) guardianStatus.closest('.c-info-card').style.display = 'none';
+      document.getElementById('j-parent-linked-edit-wrap').style.display = 'none';
+      document.getElementById('j-parent-linked-students').parentElement.style.display = '';
+    }
 
     // Record book containers toggle
     const rbView = document.getElementById('j-recordbook-view-mode');
@@ -1334,10 +1334,81 @@
     return '';
   }
 
-  /**
-   * Save Profile Changes in place
-   */
+  async function saveParentProfile() {
+    const saveButton = document.getElementById('j-btn-save-profile');
+    if (saveButton.disabled) return;
+    let errorBox = document.getElementById('parent-edit-error');
+    if (!errorBox) {
+      errorBox = document.createElement('p');
+      errorBox.id = 'parent-edit-error';
+      errorBox.setAttribute('role', 'alert');
+      errorBox.style.cssText = 'padding:1rem;background:#fbe9e7;color:#8b2419;border-radius:8px';
+      document.getElementById('j-modal-body').prepend(errorBox);
+    }
+    errorBox.hidden = true;
+    errorBox.style.background = '#fbe9e7';
+    errorBox.style.color = '#8b2419';
+    const data = new FormData();
+    data.set('parentCode', activeId);
+    data.set('version', currentPerson.profileVersion);
+    data.set('_csrf_token', document.querySelector('input[name="_csrf_token"]').value);
+    data.set('fullName', currentPerson.name);
+    data.set('firstName', currentPerson.firstName);
+    data.set('lastName', currentPerson.lastName);
+    data.set('relationship', currentPerson.relation);
+    const savingParentId = activeId;
+    const fields = {
+      nic:'parent-nic',
+      dateOfBirth:'parent-dob', occupation:'parent-occupation',
+      mobile:'parent-phone', passport:'parent-passport', employer:'parent-employer',
+      homePhone:'parent-sphone', officePhone:'parent-officephone', officeAddress:'parent-officeaddress',
+      homeAddress:'parent-address', emergencyName:'parent-emname', emergencyContact:'parent-emcontact'
+    };
+    Object.entries(fields).forEach(function ([name, field]) { data.set(name, getFieldVal(field)); });
+    saveButton.disabled = true;
+    try {
+      const response = await fetch('/management/updateParent', {
+        method:'POST', body:data,
+        headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'}
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || 'Unable to save changes.');
+      const storedParent = window.__PEOPLE_DATA__.parents.find(parent => parent.id === savingParentId);
+      if (storedParent) Object.assign(storedParent, result.parent);
+
+      const row = Array.from(document.querySelectorAll('.j-person-row[data-role="parent"]'))
+        .find(row => row.dataset.id === savingParentId);
+      if (row) {
+        const contacts = row.querySelectorAll('.c-contact-line > span');
+        if (contacts[0]) contacts[0].textContent = result.parent.email;
+        if (contacts[1]) contacts[1].textContent = result.parent.phone;
+      }
+      if (activeRole === 'parent' && activeId === savingParentId) {
+        currentPerson = Object.assign({}, result.parent);
+        editedDraft = JSON.parse(JSON.stringify(currentPerson));
+        renderRoleSection('parent', currentPerson, 'view');
+        toggleModalMode('view');
+        applyModalHeaderTheme('parent', currentPerson);
+        document.getElementById('j-btn-edit-profile').focus();
+        errorBox.textContent = 'Parent details saved.';
+        errorBox.style.background = '#edf3e8';
+        errorBox.style.color = '#344a26';
+        errorBox.hidden = false;
+      }
+    } catch (error) {
+      errorBox.textContent = error.message || 'Unable to save changes. Try again.';
+      errorBox.hidden = false;
+      errorBox.scrollIntoView({block:'nearest'});
+    } finally {
+      saveButton.disabled = false;
+    }
+  }
+
   function saveProfileChanges() {
+    if (activeRole === 'parent' && currentPerson.persisted) {
+      saveParentProfile();
+      return;
+    }
     const nameInput = document.getElementById('j-modal-name-input');
     const nameError = modalEl.querySelector('.j-profile-name-error');
     const newName = nameInput ? nameInput.value.trim() : '';

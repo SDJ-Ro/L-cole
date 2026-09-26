@@ -247,7 +247,7 @@ $isTeacherMode = ($dirContext === 'teacher');
             <th style="width: 22%; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">STUDENT NAME</th>
             <th style="width: 12%; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">REG. NUMBER</th>
             <th style="width: 20%; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">EXTRA-CURRICULAR ACTIVITIES</th>
-            <th style="width: 18%; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">STUDENT EMAIL</th>
+            <th style="width: 18%; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;"> <?= ($currentRole ?? '') === 'management' ? 'PARENT / GUARDIAN' : 'STUDENT EMAIL' ?></th>
             <th style="width: 14%; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">PARENT'S NAME</th>
             <th style="width: 12%; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">CONTACT NUMBER</th>
             <th class="c-align-right" style="width: 6%; padding: 14px 16px; text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">VIEW</th>
@@ -257,7 +257,7 @@ $isTeacherMode = ($dirContext === 'teacher');
             <th style="width: 20%;">Student</th>
             <th style="width: 14%;">Reg. Number</th>
             <th style="width: 25%;">Extra-Curricular Activities</th>
-            <th style="width: 20%;">Student Email</th>
+            <th style="width: 20%;"> <?= ($currentRole ?? '') === 'management' ? 'Parent / Guardian' : 'Student Email' ?></th>
             <th style="width: 11%;">Account access</th>
             <th class="c-align-right" style="width: 10%;">Actions</th>
           </tr>

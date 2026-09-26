@@ -1,17 +1,4 @@
 <?php
-/**
- * =========================================================================
- * L'ÉCOLE — PEOPLE DIRECTORY ROW COMPONENT
- * =========================================================================
- * Renders a single <tr> table row adaptively for Students, Teachers, Parents,
- * or Management Panel staff. Direct 1:1 extraction from Admin/people/app.js.
- *
- * Expects:
- *   - $role   : 'student' | 'teacher' | 'parent' | 'management'
- *   - $person : array of user attributes
- * =========================================================================
- */
-
 $userRole  = $role ?? 'student';
 $p         = $person ?? [];
 $isTeacher = ($context ?? '') === 'teacher';
@@ -59,7 +46,13 @@ $getActStyle = function($act) {
     <td style="font-size:0.75rem;color:rgba(15,65,74,0.8);">
       <span class="c-mail-inline">
         <svg class="c-icon c-icon-muted" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:rgba(15,65,74,0.4);"><use href="#icon-mail"/></svg>
-        <span><?= htmlspecialchars($p['email'] ?? 'Not recorded') ?></span>
+        <?php if (!empty($p['persisted']) && !empty($p['parentId'])): ?>
+          <button type="button" class="c-row-action-btn j-open-profile" data-role="parent" data-id="<?= e($p['parentId']) ?>" style="display:block;text-align:left;white-space:normal">
+            <strong><?= e($p['parentName']) ?></strong><br><span><?= e($p['parentId']) ?></span>
+          </button>
+        <?php else: ?>
+          <span><?= htmlspecialchars($p['email'] ?? 'Not recorded') ?></span>
+        <?php endif; ?>
       </span>
     </td>
 
@@ -69,10 +62,14 @@ $getActStyle = function($act) {
       <td style="font-size:0.8125rem; font-weight:500; color:rgba(15,65,74,0.8);"><?= htmlspecialchars($p['phone'] ?? 'Not recorded') ?></td>
       <td class="c-align-right" style="text-align: center;">
         <div class="c-row-actions" style="justify-content: center;">
+          <?php if (!empty($p['persisted'])): ?>
+          <a class="c-row-action-btn" href="/management/studentDetails?index=<?= urlencode($id) ?>">View</a>
+          <?php else: ?>
           <button type="button" class="c-row-action-btn j-open-profile" data-role="student" data-id="<?= htmlspecialchars($id) ?>" title="View student profile">
             <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-eye"/></svg>
             <span class="c-row-action-label">View</span>
           </button>
+          <?php endif; ?>
         </div>
       </td>
     <?php else: ?>
@@ -88,17 +85,21 @@ $getActStyle = function($act) {
           $selectedValue = $status;
           $dropdownClass = 'c-dropdown--status c-dropdown--status-' . strtolower($status);
           $dropdownLabel = 'Account status for ' . $name;
-          require __DIR__ . '/_dropdown.php';
+          if (!empty($p['persisted'])) { echo e($status); } else { require __DIR__ . '/_dropdown.php'; }
           ?>
         </div>
       </td>
       <td class="c-align-right">
         <div class="c-row-actions" style="justify-content: flex-end;">
+          <?php if (!empty($p['persisted'])): ?>
+          <a class="c-row-action-btn" href="/management/studentDetails?index=<?= urlencode($id) ?>">View</a>
+          <?php else: ?>
           <button type="button" class="c-row-action-btn j-open-profile" data-role="student" data-id="<?= htmlspecialchars($id) ?>" title="View student profile">
             <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-eye"/></svg>
             <span class="c-row-action-label">View</span>
           </button>
-          <button type="button" class="c-row-action-btn j-edit-profile" data-role="student" data-id="<?= htmlspecialchars($id) ?>" title="Edit student record">
+          <?php endif; ?>
+          <button type="button" <?= !empty($p['persisted']) ? 'disabled aria-disabled="true"' : '' ?> class="c-row-action-btn j-edit-profile" data-role="student" data-id="<?= htmlspecialchars($id) ?>" title="Edit student record">
             <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-edit"/></svg>
             <span class="c-row-action-label">Edit</span>
           </button>
@@ -190,25 +191,15 @@ $getActStyle = function($act) {
     <td style="font-size:0.75rem;font-weight:700;color:var(--midnight, #0F414A);"><?= htmlspecialchars($id) ?></td>
     <td>
       <?php if (!empty($p['children'])): ?>
-        <div style="display:flex;flex-direction:column;gap:0.375rem;">
-          <?php foreach ($p['children'] as $child): ?>
-            <?php
-            preg_match('/—\s*(\d+)-/', $child, $m);
-            $gradeStr = $m[1] ?? '';
-            $style = 'background:rgba(175,80,49,0.15);color:var(--terracotta, #AF5031);';
-            if ($gradeStr === '6') $style = 'background:rgba(234,137,19,0.2);color:var(--sunshine, #EA8913);';
-            elseif ($gradeStr === '7') $style = 'background:rgba(127,199,204,0.3);color:var(--skyblue, #207C82);';
-            elseif ($gradeStr === '8') $style = 'background:rgba(164,171,152,0.3);color:var(--moss, #4B5B34);';
-            elseif ($gradeStr === '9') $style = 'background:rgba(15,65,74,0.15);color:var(--midnight, #0F414A);';
-            elseif ($gradeStr === '10' || $gradeStr === '11') $style = 'background:rgba(127,3,3,0.1);color:var(--maroon, #7F0303);';
-            ?>
-            <button type="button" class="c-tag-chip j-open-linked-student" style="<?= $style ?> font-size:10px;font-weight:700;padding:0.25rem 0.5rem;border-radius:var(--radius-lg, 0.5rem);border:none;cursor:pointer;width:fit-content;text-align:left;" data-link="<?= htmlspecialchars($child) ?>">
-              <?= htmlspecialchars($child) ?>
-            </button>
-          <?php endforeach; ?>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:0.375rem">
+          <span style="font-size:0.8125rem;cursor:default"><?= e($p['children'][0]) ?></span>
+          <?php $remaining = count($p['children']) - 1; ?>
+          <?php if ($remaining > 0): ?>
+            <span class="c-subtext">+<?= $remaining ?> more</span>
+          <?php endif; ?>
         </div>
       <?php else: ?>
-        <span class="c-tag-muted" style="font-size:11px;font-style:italic;color:rgba(15,65,74,0.4);">None linked</span>
+        <span class="c-tag-muted">None linked</span>
       <?php endif; ?>
     </td>
     <td class="c-stack-tight">
@@ -232,7 +223,7 @@ $getActStyle = function($act) {
         $selectedValue = $status;
         $dropdownClass = 'c-dropdown--status c-dropdown--status-' . strtolower($status);
         $dropdownLabel = 'Account status for ' . $name;
-        require __DIR__ . '/_dropdown.php';
+        if (!empty($p['persisted'])) { echo '<span>' . htmlspecialchars($status) . '</span>'; } else { require __DIR__ . '/_dropdown.php'; }
         ?>
       </div>
     </td>
@@ -242,10 +233,17 @@ $getActStyle = function($act) {
           <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-eye"/></svg>
           <span class="c-row-action-label">View</span>
         </button>
-        <button type="button" class="c-row-action-btn j-edit-profile" data-role="parent" data-id="<?= htmlspecialchars($id) ?>" title="Edit parent profile">
+        <?php if (!empty($p['persisted'])): ?>
+          <button type="button" class="c-row-action-btn j-edit-profile" data-role="parent" data-id="<?= e($id) ?>">Edit</button>
+          <?php if ($status !== 'Deactivated'): ?>
+            <button type="button" class="c-row-action-btn j-deactivate-parent" data-id="<?= e($id) ?>" style="color:var(--terracotta,#AF5031)">Deactivate</button>
+          <?php endif; ?>
+        <?php else: ?>
+        <button type="button" <?= !empty($p['persisted']) ? 'disabled aria-disabled="true"' : '' ?> class="c-row-action-btn j-edit-profile" data-role="parent" data-id="<?= htmlspecialchars($id) ?>" title="Edit parent profile">
           <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-edit"/></svg>
           <span class="c-row-action-label">Edit</span>
         </button>
+        <?php endif; ?>
       </div>
     </td>
   </tr>
