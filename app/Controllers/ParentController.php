@@ -5,6 +5,7 @@ require_once __DIR__ . '/../Models/ExtracurricularModel.php';
 require_once __DIR__ . '/../Models/AchievementModel.php';
 require_once __DIR__ . '/../Models/ComplaintModel.php';
 require_once __DIR__ . '/../Models/ParentApprovalModel.php';
+require_once __DIR__ . '/../Models/CalendarEventModel.php';
 
 
 class ParentController extends Controller {
@@ -128,20 +129,14 @@ class ParentController extends Controller {
         ];
 
         // Calendar Configuration (Parent: View-only)
+        $actor = $this->getUser();
+        $parentId = CalendarEventModel::getParentId((int)($actor['id'] ?? 0));
+
         $calendarConfig = [
             'canAddEvent' => false,
-            'initialDate' => '2026-06-17',
-            'viewDate'    => '2026-06-01',
-            'events'      => [
-                ['id' => 'exam-17', 'date' => '2026-06-17', 'time' => '08:30–10:30', 'title' => 'Mathematics examination', 'details' => 'Grades 6–8 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-18', 'date' => '2026-06-18', 'time' => '08:30–10:30', 'title' => 'English examination', 'details' => 'Grades 6–8 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-19', 'date' => '2026-06-19', 'time' => '08:30–10:30', 'title' => 'Science examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-20', 'date' => '2026-06-20', 'time' => '08:30–10:00', 'title' => 'History examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-23', 'date' => '2026-06-23', 'time' => '08:30–10:30', 'title' => 'Sinhala / Tamil examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-24', 'date' => '2026-06-24', 'time' => '08:30–11:00', 'title' => 'ICT practical assessment', 'details' => 'Grades 9–13 · Computer laboratories', 'category' => 'Academic'],
-                ['id' => 'exam-25', 'date' => '2026-06-25', 'time' => '08:30–11:30', 'title' => 'Senior stream papers', 'details' => 'Grades 12–13 · Senior examination hall', 'category' => 'Academic'],
-                ['id' => 'exam-26', 'date' => '2026-06-26', 'time' => '08:30–10:30', 'title' => 'Make-up examination session', 'details' => 'Grades 6–13 · Library seminar room', 'category' => 'Academic'],
-            ],
+            'initialDate' => date('Y-m-d'),
+            'viewDate'    => date('Y-m-01'),
+            'events'      => $parentId ? CalendarEventModel::getEventsForParent($parentId) : [],
         ];
 
         // Upcoming Events (Parent: Academic & Examinations)
@@ -341,6 +336,15 @@ class ParentController extends Controller {
         $achievements = \App\Models\AchievementModel::getAll();
         $metrics = \App\Models\AchievementModel::getMetrics($achievements);
 
+        $actor = $this->getUser();
+        $parentId = CalendarEventModel::getParentId((int)($actor['id'] ?? 0));
+        $calendarConfig = [
+            'canAddEvent' => false,
+            'initialDate' => date('Y-m-d'),
+            'viewDate'    => date('Y-m-01'),
+            'events'      => $parentId ? CalendarEventModel::getEventsForParent($parentId) : [],
+        ];
+
         $this->view('parent/child-profile', [
             'currentRole'     => 'parent',
             'currentRoute'    => '/parent/child-profile',
@@ -357,6 +361,7 @@ class ParentController extends Controller {
             'achievements'    => $achievements,
             'metrics'         => $metrics,
             'canModerate'     => false,
+            'calendarConfig'  => $calendarConfig,
         ]);
     }
 
@@ -474,6 +479,27 @@ class ParentController extends Controller {
             'currentRoute' => '/parent/profile',
             'profileData'  => $profileData,
         ]);
+    }
+
+    public function getCalendarEvents(): void {
+        $actor = $this->getUser();
+        $parentId = CalendarEventModel::getParentId((int)($actor['id'] ?? 0));
+        $events = $parentId ? CalendarEventModel::getEventsForParent($parentId) : [];
+        http_response_code(200);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => true, 'events' => $events]);
+        exit;
+    }
+
+    public function addCalendarEvent(): void { $this->rejectCalendarWrite(); }
+    public function updateCalendarEvent(): void { $this->rejectCalendarWrite(); }
+    public function deleteCalendarEvent(): void { $this->rejectCalendarWrite(); }
+
+    private function rejectCalendarWrite(): void {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'error' => 'Students and parents cannot modify calendar events.']);
+        exit;
     }
 }
 

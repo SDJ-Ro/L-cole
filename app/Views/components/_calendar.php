@@ -11,6 +11,17 @@ $canAddEvent = $calendarConfig['canAddEvent'] ?? false;
 $initialEvents = $calendarConfig['events'] ?? [];
 $initialDate = $calendarConfig['initialDate'] ?? '2026-06-17';
 $viewDate = $calendarConfig['viewDate'] ?? '2026-06-01';
+$scopeType = $calendarConfig['scopeType'] ?? 'school';
+$scopeId = $calendarConfig['scopeId'] ?? null;
+$calendarRole = $calendarConfig['role'] ?? ($currentRole ?? '');
+
+if (session_status() === PHP_SESSION_NONE) {
+    @session_start();
+}
+if (empty($_SESSION['_csrf_token'])) {
+    $_SESSION['_csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrfToken = $_SESSION['_csrf_token'];
 ?>
 
 <!-- Dark Month Calendar -->
@@ -18,7 +29,13 @@ $viewDate = $calendarConfig['viewDate'] ?? '2026-06-01';
          data-can-add="<?= $canAddEvent ? 'true' : 'false' ?>"
          data-initial-date="<?= htmlspecialchars($initialDate, ENT_QUOTES, 'UTF-8') ?>"
          data-view-date="<?= htmlspecialchars($viewDate, ENT_QUOTES, 'UTF-8') ?>"
-         data-events="<?= htmlspecialchars(json_encode($initialEvents), ENT_QUOTES, 'UTF-8') ?>">
+         data-events="<?= htmlspecialchars(json_encode($initialEvents), ENT_QUOTES, 'UTF-8') ?>"
+         data-role="<?= htmlspecialchars($calendarRole, ENT_QUOTES, 'UTF-8') ?>"
+         data-scope-type="<?= htmlspecialchars($scopeType, ENT_QUOTES, 'UTF-8') ?>"
+         data-scope-id="<?= htmlspecialchars((string)($scopeId ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+         data-scope-options="<?= htmlspecialchars(json_encode($calendarConfig['scopeOptions'] ?? []), ENT_QUOTES, 'UTF-8') ?>"
+         data-fixed-scope="<?= htmlspecialchars(json_encode($calendarConfig['fixedScope'] ?? null), ENT_QUOTES, 'UTF-8') ?>"
+         data-csrf="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
   <header class="c-calendar__header">
     <div class="c-calendar__header-row">
       <div class="c-calendar__nav">
@@ -110,8 +127,24 @@ $viewDate = $calendarConfig['viewDate'] ?? '2026-06-01';
     </header>
 
     <form class="c-event-form" id="j-event-form" novalidate>
+      <input type="hidden" name="_csrf_token" id="j-calendar-csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+      <input type="hidden" name="scope_type" id="j-calendar-scope-type" value="<?= htmlspecialchars($scopeType, ENT_QUOTES, 'UTF-8') ?>">
+      <input type="hidden" name="scope_id" id="j-calendar-scope-id" value="<?= htmlspecialchars((string)($scopeId ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+      <input type="hidden" name="id" id="j-calendar-event-id" value="">
       <div class="c-event-form__error-banner" id="j-event-form-error-banner">
         Complete the highlighted event details before saving.
+      </div>
+
+      <div id="j-event-scope-container" style="margin-bottom: 1rem;">
+        <span class="c-field-label">Event scope</span>
+        <div class="c-select c-select--cream" id="j-select-scope" style="width: 100%;">
+          <button type="button" class="c-select__trigger j-select-scope-btn" aria-haspopup="listbox" aria-expanded="false" style="width: 100%; justify-content: space-between;">
+            <span class="j-select-value" id="j-select-scope-label">Select scope</span>
+            <svg class="c-icon c-select__chevron" width="14" height="14" aria-hidden="true"><use href="#icon-chevronDown"/></svg>
+          </button>
+          <div class="c-select__menu" id="j-select-scope-menu" role="listbox" aria-label="Choose event scope" style="max-height: 200px; overflow-y: auto;">
+          </div>
+        </div>
       </div>
 
       <div>

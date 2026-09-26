@@ -570,12 +570,16 @@ class AcademicActions extends Model {
                     "Cleared subject teacher for {$subjectName} in {$sectionName}"
                 );
             } else {
+                $teacherIdLookup = $db->prepare("SELECT id FROM teachers WHERE full_name = ? LIMIT 1");
+                $teacherIdLookup->execute([$teacherName]);
+                $resolvedTeacherId = $teacherIdLookup->fetchColumn() ?: null;
+
                 $stmtUpsert = $db->prepare("
-                    INSERT INTO class_subject_teachers (class_id, subject_name, teacher_name) 
-                    VALUES (?, ?, ?) 
-                    ON DUPLICATE KEY UPDATE teacher_name = VALUES(teacher_name)
+                    INSERT INTO class_subject_teachers (class_id, subject_name, teacher_name, teacher_id) 
+                    VALUES (?, ?, ?, ?) 
+                    ON DUPLICATE KEY UPDATE teacher_name = VALUES(teacher_name), teacher_id = VALUES(teacher_id)
                 ");
-                $stmtUpsert->execute([$classId, $subjectName, $teacherName]);
+                $stmtUpsert->execute([$classId, $subjectName, $teacherName, $resolvedTeacherId]);
 
                 AuditModel::record(
                     $actorId,
@@ -928,5 +932,53 @@ class AcademicActions extends Model {
             'Sinhala / Tamil' => [79, 77],
             'ICT'             => [84, 80],
         ];
+    }
+
+    public static function assignClubTic(int $clubId, string $teacherName, int $actorAccountId, ?string $actorIdentifier): array {
+        $db = Database::getConnection();
+        $teacherLookup = $db->prepare("SELECT id FROM teachers WHERE full_name = ? LIMIT 1");
+        $teacherLookup->execute([$teacherName]);
+        $newTeacherId = $teacherLookup->fetchColumn();
+        if (!$newTeacherId) return ['success' => false, 'error' => 'No matching teacher found.'];
+
+        try {
+            $db->beginTransaction();
+            $db->prepare("UPDATE club_tic_history SET ended_at = NOW() WHERE club_id = ? AND ended_at IS NULL")->execute([$clubId]);
+            $db->prepare("INSERT INTO club_teachers (club_id, teacher_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE teacher_id = VALUES(teacher_id)")
+               ->execute([$clubId, $newTeacherId]);
+            $db->prepare("INSERT INTO club_tic_history (club_id, teacher_id, assigned_by) VALUES (?, ?, ?)")->execute([$clubId, $newTeacherId, $actorAccountId]);
+            $db->commit();
+
+            AuditModel::record($actorAccountId, $actorIdentifier ?? 'Admin', 'TIC_ASSIGNED', "Assigned {$teacherName} as TIC of club #{$clubId}.");
+            return ['success' => true, 'message' => 'Teacher-in-Charge assigned successfully.'];
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            error_log('[AcademicActions] assignClubTic: ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Database error while assigning TIC.'];
+        }
+    }
+
+    public static function assignSportTic(int $sportId, string $teacherName, int $actorAccountId, ?string $actorIdentifier): array {
+        $db = Database::getConnection();
+        $teacherLookup = $db->prepare("SELECT id FROM teachers WHERE full_name = ? LIMIT 1");
+        $teacherLookup->execute([$teacherName]);
+        $newTeacherId = $teacherLookup->fetchColumn();
+        if (!$newTeacherId) return ['success' => false, 'error' => 'No matching teacher found.'];
+
+        try {
+            $db->beginTransaction();
+            $db->prepare("UPDATE sport_tic_history SET ended_at = NOW() WHERE sport_id = ? AND ended_at IS NULL")->execute([$sportId]);
+            $db->prepare("INSERT INTO sport_teachers (sport_id, teacher_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE teacher_id = VALUES(teacher_id)")
+               ->execute([$sportId, $newTeacherId]);
+            $db->prepare("INSERT INTO sport_tic_history (sport_id, teacher_id, assigned_by) VALUES (?, ?, ?)")->execute([$sportId, $newTeacherId, $actorAccountId]);
+            $db->commit();
+
+            AuditModel::record($actorAccountId, $actorIdentifier ?? 'Admin', 'TIC_ASSIGNED', "Assigned {$teacherName} as TIC of sport #{$sportId}.");
+            return ['success' => true, 'message' => 'Teacher-in-Charge assigned successfully.'];
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            error_log('[AcademicActions] assignSportTic: ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Database error while assigning TIC.'];
+        }
     }
 }
