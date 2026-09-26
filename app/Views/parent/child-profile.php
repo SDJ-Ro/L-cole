@@ -267,7 +267,7 @@
                   <h2 class="c-font-display" style="font-size: 1.125rem; font-weight: 700; color: var(--midnight, #0F414A); margin: 0;">Schedule &amp; Events</h2>
                 </div>
                 <?php
-                $calendarConfig = [
+                $calendarConfig = $calendarConfig ?? [
                     'canAddEvent'  => false,
                     'initialDate'  => '2026-06-17',
                     'viewDate'     => '2026-06-01',

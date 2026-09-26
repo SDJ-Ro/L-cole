@@ -34,7 +34,7 @@
       ?>
 
       <!-- View 1: Extracurricular Activities Overview -->
-      <div id="j-view-overview">
+      <div id="j-view-overview" style="<?= !empty($_GET['id']) ? 'display: none;' : '' ?>">
         <!-- Search & Filter Toolbar -->
         <section class="c-extracurricular-toolbar" aria-label="Filter activities">
           <div class="c-search-field">
@@ -64,21 +64,24 @@
       </div>
 
       <!-- View 3: Inside Extracurricular Card (Detail View for Enrolled Activities) -->
-      <div id="j-view-club-detail" style="display: none;" data-clubs="<?= htmlspecialchars(json_encode($clubs ?? []), ENT_QUOTES, 'UTF-8') ?>">
+      <div id="j-view-club-detail" style="<?= !empty($_GET['id']) ? 'display: block;' : 'display: none;' ?>" data-clubs="<?= htmlspecialchars(json_encode($clubs ?? []), ENT_QUOTES, 'UTF-8') ?>">
         <!-- Common Header Component (Read-only for Students) -->
         <?php
-        $club = null;
-        if (!empty($clubs)) {
-            foreach ($clubs as $c) {
-                if (($c['id'] ?? 0) === 3) {
-                    $club = $c;
-                    break;
+        $selectedId = !empty($_GET['id']) ? (int)$_GET['id'] : 0;
+        $club = !empty($club) ? $club : null;
+        if (empty($club) && !empty($clubs)) {
+            if ($selectedId > 0) {
+                foreach ($clubs as $c) {
+                    if (($c['id'] ?? 0) === $selectedId) {
+                        $club = $c;
+                        break;
+                    }
                 }
             }
             if (!$club) {
                 $club = $clubs[0];
             }
-        } else {
+        } elseif (empty($club)) {
             $club = [];
         }
         $canEdit = false;
@@ -111,19 +114,12 @@
               <!-- Calendar Component (Read-only for Students) -->
               <?php
               $calendarConfig = [
-                  'canAddEvent'  => false,
-                  'initialDate'  => '2026-06-17',
-                  'viewDate'     => '2026-06-01',
-                  'events'       => [
-                      [
-                          'id'       => 'ev-1',
-                          'title'    => 'Regular Team Training',
-                          'date'     => '2026-06-17',
-                          'time'     => '15:30–17:30',
-                          'details'  => 'Weekly training on main pitch',
-                          'category' => 'Extracurricular'
-                      ]
-                  ],
+                  'canAddEvent' => false,
+                  'initialDate' => date('Y-m-d'),
+                  'viewDate'    => date('Y-m-01'),
+                  'events'      => ($scopeType ?? 'club') === 'sport'
+                      ? CalendarEventModel::getEventsForSport((int)($club['id'] ?? 0))
+                      : CalendarEventModel::getEventsForClub((int)($club['id'] ?? 0)),
               ];
               require __DIR__ . '/../components/_calendar.php';
               ?>

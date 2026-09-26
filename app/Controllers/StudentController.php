@@ -4,6 +4,7 @@ require_once __DIR__ . '/../Models/NoticeModel.php';
 require_once __DIR__ . '/../Models/ExtracurricularModel.php';
 require_once __DIR__ . '/../Models/AchievementModel.php';
 require_once __DIR__ . '/../Models/CertificateModel.php';
+require_once __DIR__ . '/../Models/CalendarEventModel.php';
 
 class StudentController extends Controller {
 
@@ -18,13 +19,29 @@ class StudentController extends Controller {
 
     public function extracurricular() {
         $clubs = ExtracurricularModel::getForStudent();
+        $user = $this->getUser();
+        $studentId = CalendarEventModel::getStudentId((int)($user['id'] ?? 0));
+
+        $scopeType = ($_GET['type'] ?? '') === 'sport' ? 'sport' : 'club';
+        $itemId = isset($_GET['id']) ? (int)$_GET['id'] : null;
+        $selectedClub = $itemId ? (ExtracurricularModel::getById($itemId) ?? ($clubs[0] ?? [])) : ($clubs[0] ?? []);
+
+        $calendarConfig = [
+            'canAddEvent' => false,
+            'initialDate' => date('Y-m-d'),
+            'viewDate'    => date('Y-m-01'),
+            'events'      => $itemId ? ($scopeType === 'sport' ? CalendarEventModel::getEventsForSport($itemId) : CalendarEventModel::getEventsForClub($itemId)) : ($studentId ? CalendarEventModel::getEventsForStudent($studentId) : []),
+        ];
 
         $this->view('student/extracurricular', [
-            'currentRole'  => 'student',
-            'currentRoute' => '/student/extracurricular',
-            'clubs'        => $clubs,
-            'canModerate'  => false,
-            'canCreate'    => false,
+            'currentRole'    => 'student',
+            'currentRoute'   => '/student/extracurricular',
+            'clubs'          => $clubs,
+            'club'           => $selectedClub,
+            'canModerate'    => false,
+            'canCreate'      => false,
+            'scopeType'      => $scopeType,
+            'calendarConfig' => $calendarConfig,
         ]);
     }
 
@@ -345,20 +362,14 @@ class StudentController extends Controller {
         ];
 
         // Calendar Configuration (Student: View-only)
+        $actor = $this->getUser();
+        $studentId = CalendarEventModel::getStudentId((int)($actor['id'] ?? 0));
+
         $calendarConfig = [
             'canAddEvent' => false,
-            'initialDate' => '2026-06-17',
-            'viewDate'    => '2026-06-01',
-            'events'      => [
-                ['id' => 'exam-17', 'date' => '2026-06-17', 'time' => '08:30–10:30', 'title' => 'Mathematics examination', 'details' => 'Grades 6–8 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-18', 'date' => '2026-06-18', 'time' => '08:30–10:30', 'title' => 'English examination', 'details' => 'Grades 6–8 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-19', 'date' => '2026-06-19', 'time' => '08:30–10:30', 'title' => 'Science examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-20', 'date' => '2026-06-20', 'time' => '08:30–10:00', 'title' => 'History examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-23', 'date' => '2026-06-23', 'time' => '08:30–10:30', 'title' => 'Sinhala / Tamil examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-24', 'date' => '2026-06-24', 'time' => '08:30–11:00', 'title' => 'ICT practical assessment', 'details' => 'Grades 9–13 · Computer laboratories', 'category' => 'Academic'],
-                ['id' => 'exam-25', 'date' => '2026-06-25', 'time' => '08:30–11:30', 'title' => 'Senior stream papers', 'details' => 'Grades 12–13 · Senior examination hall', 'category' => 'Academic'],
-                ['id' => 'exam-26', 'date' => '2026-06-26', 'time' => '08:30–10:30', 'title' => 'Make-up examination session', 'details' => 'Grades 6–13 · Library seminar room', 'category' => 'Academic'],
-            ],
+            'initialDate' => date('Y-m-d'),
+            'viewDate'    => date('Y-m-01'),
+            'events'      => $studentId ? CalendarEventModel::getEventsForStudent($studentId) : [],
         ];
 
         // Upcoming Events (Student: Activities & Events)
@@ -421,5 +432,26 @@ class StudentController extends Controller {
 
     public function noticeBoard() {
         $this->notice();
+    }
+
+    public function getCalendarEvents(): void {
+        $user = $this->getUser();
+        $studentId = CalendarEventModel::getStudentId((int)($user['id'] ?? 0));
+        $events = $studentId ? CalendarEventModel::getEventsForStudent($studentId) : [];
+        http_response_code(200);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => true, 'events' => $events]);
+        exit;
+    }
+
+    public function addCalendarEvent(): void { $this->rejectCalendarWrite(); }
+    public function updateCalendarEvent(): void { $this->rejectCalendarWrite(); }
+    public function deleteCalendarEvent(): void { $this->rejectCalendarWrite(); }
+
+    private function rejectCalendarWrite(): void {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'error' => 'Students and parents cannot modify calendar events.']);
+        exit;
     }
 }

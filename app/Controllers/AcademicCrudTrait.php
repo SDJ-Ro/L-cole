@@ -45,7 +45,8 @@ trait AcademicCrudTrait {
         $user = $this->getUser();
         return [
             'id'         => $user['id'] ?? null,
-            'identifier' => $user['identifier'] ?? ($user['email'] ?? null)
+            'identifier' => $user['identifier'] ?? ($user['email'] ?? null),
+            'role'       => strtolower($user['role'] ?? '')
         ];
     }
 
@@ -197,6 +198,32 @@ trait AcademicCrudTrait {
         $actor      = $this->getActorDetails();
 
         $result = AcademicActions::deleteCurriculumGroup($rangeLabel, $actor['id'], $actor['identifier']);
+        $this->sendJson($result, $result['success'] ? 200 : 400);
+    }
+
+    /**
+     * POST /admin/assignClubTic or /management/assignClubTic
+     */
+    public function assignClubTic(): void {
+        $data        = $this->getRequestPayload();
+        $clubId      = (int)($data['club_id'] ?? 0);
+        $teacherName = trim($data['teacher_name'] ?? '');
+        $actor       = $this->getActorDetails();
+
+        $result = AcademicActions::assignClubTic($clubId, $teacherName, (int)$actor['id'], $actor['identifier']);
+        $this->sendJson($result, $result['success'] ? 200 : 400);
+    }
+
+    /**
+     * POST /admin/assignSportTic or /management/assignSportTic
+     */
+    public function assignSportTic(): void {
+        $data        = $this->getRequestPayload();
+        $sportId     = (int)($data['sport_id'] ?? 0);
+        $teacherName = trim($data['teacher_name'] ?? '');
+        $actor       = $this->getActorDetails();
+
+        $result = AcademicActions::assignSportTic($sportId, $teacherName, (int)$actor['id'], $actor['identifier']);
         $this->sendJson($result, $result['success'] ? 200 : 400);
     }
 }

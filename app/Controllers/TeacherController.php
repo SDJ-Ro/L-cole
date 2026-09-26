@@ -5,8 +5,11 @@ require_once __DIR__ . '/../Models/ExtracurricularModel.php';
 require_once __DIR__ . '/../Models/PeopleModel.php';
 require_once __DIR__ . '/../Models/AchievementModel.php';
 require_once __DIR__ . '/../Models/AcademicModel.php';
+require_once __DIR__ . '/CalendarEventCrudTrait.php';
+require_once __DIR__ . '/../Models/CalendarEventModel.php';
 
 class TeacherController extends Controller {
+    use CalendarEventCrudTrait;
 
     public function __construct() {
         parent::__construct();
@@ -272,10 +275,28 @@ class TeacherController extends Controller {
     }
 
     public function extracurricular() {
-        // Assigned club managed by this faculty member (e.g. Cricket Club, ID: 3)
-        $club  = ExtracurricularModel::getById(3) ?? (ExtracurricularModel::getAll()[0] ?? []);
-        $clubs = [$club];
+        $actor = $this->getUser();
+        $teacherId = CalendarEventModel::getTeacherId((int)($actor['id'] ?? 0));
+        $ownedClubIds = $teacherId ? CalendarEventModel::getClubIdsForTeacher($teacherId) : [];
+        $ownedSportIds = $teacherId ? CalendarEventModel::getSportIdsForTeacher($teacherId) : [];
 
+        $scopeType = ($_GET['type'] ?? '') === 'sport' ? 'sport' : 'club';
+        $itemId = isset($_GET['id']) ? (int)$_GET['id'] : null;
+
+        if (!$itemId) {
+            // No selection yet — default to whichever the teacher owns first, club before sport.
+            if ($ownedClubIds) { $scopeType = 'club'; $itemId = $ownedClubIds[0]; }
+            elseif ($ownedSportIds) { $scopeType = 'sport'; $itemId = $ownedSportIds[0]; }
+            else { $scopeType = 'club'; $itemId = ExtracurricularModel::getAll()[0]['id'] ?? null; }
+        }
+
+        $club = $itemId ? (ExtracurricularModel::getById($itemId) ?? []) : [];
+        $isTicOfThis = $itemId && (
+            ($scopeType === 'club' && in_array($itemId, $ownedClubIds, true)) ||
+            ($scopeType === 'sport' && in_array($itemId, $ownedSportIds, true))
+        );
+
+        $clubs = !empty($club) ? [$club] : ExtracurricularModel::getAll();
         $joinRequests = $club['joinRequests'] ?? [];
         $pendingCount = count($joinRequests);
         $totalMembers = $club['stats']['members'] ?? 45;
@@ -307,6 +328,16 @@ class TeacherController extends Controller {
             ],
         ];
 
+        $calendarConfig = [
+            'canAddEvent' => $isTicOfThis,
+            'initialDate' => date('Y-m-d'),
+            'viewDate'    => date('Y-m-01'),
+            'events'      => $scopeType === 'sport'
+                ? CalendarEventModel::getEventsForSport($itemId ?? 0)
+                : CalendarEventModel::getEventsForClub($itemId ?? 0),
+            'fixedScope'  => ['type' => $scopeType, 'id' => $itemId],
+        ];
+
         $this->view('teacher/extracurricular', [
             'currentRole'       => 'teacher',
             'currentRoute'      => '/teacher/extracurricular',
@@ -316,8 +347,10 @@ class TeacherController extends Controller {
             'enrollmentMetrics' => $enrollmentMetrics,
             'staffAssignments'  => AcademicModel::getStaffAssignments(),
             'canModerate'       => false,
-            'canCreate'         => true,
-            'canEdit'           => true,
+            'canCreate'         => $isTicOfThis,
+            'canEdit'           => $isTicOfThis,
+            'scopeType'         => $scopeType,
+            'calendarConfig'    => $calendarConfig,
         ]);
     }
 
@@ -430,21 +463,20 @@ class TeacherController extends Controller {
                 </div>',
         ];
 
-        // Calendar Configuration (Teacher: Can add and manage events)
+        // Calendar Configuration (Teacher: Can add and manage events for assigned class/club/sport)
+        $actor = $this->getUser();
+        $teacherId = CalendarEventModel::getTeacherId((int)($actor['id'] ?? 0));
+        $ownedClassId = $teacherId ? CalendarEventModel::getClassIdForTeacher($teacherId) : null;
+        $ownedClubIds = $teacherId ? CalendarEventModel::getClubIdsForTeacher($teacherId) : [];
+        $ownedSportIds = $teacherId ? CalendarEventModel::getSportIdsForTeacher($teacherId) : [];
+        $scopeOptions = $teacherId ? CalendarEventModel::getScopeOptionsForTeacher($teacherId) : [];
+
         $calendarConfig = [
-            'canAddEvent' => true,
-            'initialDate' => '2026-06-17',
-            'viewDate'    => '2026-06-01',
-            'events'      => [
-                ['id' => 'exam-17', 'date' => '2026-06-17', 'time' => '08:30–10:30', 'title' => 'Mathematics examination', 'details' => 'Grades 6–8 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-18', 'date' => '2026-06-18', 'time' => '08:30–10:30', 'title' => 'English examination', 'details' => 'Grades 6–8 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-19', 'date' => '2026-06-19', 'time' => '08:30–10:30', 'title' => 'Science examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-20', 'date' => '2026-06-20', 'time' => '08:30–10:00', 'title' => 'History examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-23', 'date' => '2026-06-23', 'time' => '08:30–10:30', 'title' => 'Sinhala / Tamil examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-24', 'date' => '2026-06-24', 'time' => '08:30–11:00', 'title' => 'ICT practical assessment', 'details' => 'Grades 9–13 · Computer laboratories', 'category' => 'Academic'],
-                ['id' => 'exam-25', 'date' => '2026-06-25', 'time' => '08:30–11:30', 'title' => 'Senior stream papers', 'details' => 'Grades 12–13 · Senior examination hall', 'category' => 'Academic'],
-                ['id' => 'exam-26', 'date' => '2026-06-26', 'time' => '08:30–10:30', 'title' => 'Make-up examination session', 'details' => 'Grades 6–13 · Library seminar room', 'category' => 'Academic'],
-            ],
+            'canAddEvent'   => (bool)$ownedClassId || !empty($ownedClubIds) || !empty($ownedSportIds),
+            'scopeOptions'  => $scopeOptions,
+            'initialDate'   => date('Y-m-d'),
+            'viewDate'      => date('Y-m-01'),
+            'events'        => CalendarEventModel::getEventsForTeacher((int)($actor['id'] ?? 0)),
         ];
 
         // Donut / Pie Charts Data (Teacher Dashboard)
