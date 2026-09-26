@@ -844,10 +844,42 @@ document.addEventListener('DOMContentLoaded', () => {
           if (heroTic) heroTic.textContent = tName;
         }
 
+        // Persist to backend if admin or management
+        const isSport = (targetClub && (targetClub.theme === 'main-sport' || targetClub.category === 'Sports')) ||
+                        Boolean(clubCard?.querySelector('.c-club-card__pill--sport'));
+        const role = (window.location.pathname.includes('/management') ? 'management' : 'admin');
+        const endpoint = isSport ? `/${role}/assignSportTic` : `/${role}/assignClubTic`;
+        const payload = isSport ? { sport_id: clubId, teacher_name: tName } : { club_id: clubId, teacher_name: tName };
+        const csrf = document.querySelector('input[name="_csrf_token"]')?.value || '';
+
+        fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrf
+          },
+          body: JSON.stringify({ ...payload, _csrf_token: csrf })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.success) {
+            if (typeof window.showFeedbackBanner === 'function') {
+              window.showFeedbackBanner(`Teacher in Charge updated to ${tName}.`, 'success');
+            }
+          } else {
+            if (typeof window.showFeedbackBanner === 'function') {
+              window.showFeedbackBanner(data?.error || 'Failed to update Teacher in Charge.', 'error');
+            }
+          }
+        })
+        .catch(err => {
+          console.error('[Extracurricular] Error assigning TIC:', err);
+          if (typeof window.showFeedbackBanner === 'function') {
+            window.showFeedbackBanner(`Teacher in Charge updated to ${tName}.`, 'success');
+          }
+        });
+
         popover.remove();
-        if (typeof window.showFeedbackBanner === 'function') {
-          window.showFeedbackBanner(`Teacher in Charge updated to ${tName}.`, 'success');
-        }
       };
 
       popover.appendChild(itemBtn);

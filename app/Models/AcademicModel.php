@@ -63,9 +63,10 @@ class AcademicModel extends Model {
         try {
             $db = Database::getConnection();
             $stmt = $db->query("
-                SELECT DISTINCT subject_name 
+                SELECT subject_name 
                 FROM curriculum_group_subjects 
-                ORDER BY sort_order ASC, subject_name ASC
+                GROUP BY subject_name 
+                ORDER BY MIN(sort_order) ASC, subject_name ASC
             ");
             $subjects = $stmt->fetchAll(PDO::FETCH_COLUMN);
             if (!empty($subjects)) {

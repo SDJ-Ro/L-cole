@@ -3,6 +3,11 @@
  * Supports full interactive calendar with role-aware permissions:
  * - canAddEvent = true: Admin, Teacher, Management (edit/delete events, dashed Add Event button, Event Editor Modal)
  * - canAddEvent = false: Student, Parent (view-only cards, Day Schedule "View all" modal)
+ *
+ * Persisted via REST JSON endpoints:
+ *   POST /<role>/addCalendarEvent
+ *   POST /<role>/updateCalendarEvent
+ *   POST /<role>/deleteCalendarEvent
  */
 
 (function () {
@@ -19,12 +24,45 @@
     const initialDateStr = calendarEl.dataset.initialDate || '2026-06-17';
     const viewDateStr = calendarEl.dataset.viewDate || '2026-06-01';
 
+    // Role and Scope metadata
+    let apiRole = calendarEl.dataset.role || '';
+    if (!apiRole || !['admin', 'teacher', 'management', 'student', 'parent'].includes(apiRole.toLowerCase())) {
+      const path = window.location.pathname.toLowerCase();
+      if (path.includes('/admin')) apiRole = 'admin';
+      else if (path.includes('/management')) apiRole = 'management';
+      else if (path.includes('/teacher')) apiRole = 'teacher';
+      else if (path.includes('/student')) apiRole = 'student';
+      else if (path.includes('/parent')) apiRole = 'parent';
+      else apiRole = 'teacher';
+    }
+    apiRole = apiRole.toLowerCase();
+
+    const csrfToken = calendarEl.dataset.csrf || document.querySelector('input[name="_csrf_token"]')?.value || '';
+    const defaultScopeType = calendarEl.dataset.scopeType || 'schoolwide';
+    const defaultScopeId = calendarEl.dataset.scopeId || '';
+    const fixedScope = JSON.parse(calendarEl.dataset.fixedScope || 'null');
+    const scopeOptions = JSON.parse(calendarEl.dataset.scopeOptions || '[]');
+
     function parseDate(str) {
-      const parts = str.split('-');
+      if (!str) return new Date(2026, 5, 17);
+      if (str instanceof Date) return str;
+      const parts = String(str).split('T')[0].split('-');
       if (parts.length === 3) {
         return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
       }
       return new Date(2026, 5, 17);
+    }
+
+    function formatIsoDate(date) {
+      if (!date) return '';
+      if (typeof date === 'string') {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+        date = parseDate(date);
+      }
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
     }
 
     const MONTH_NAMES = [
@@ -48,13 +86,14 @@
         const parsed = JSON.parse(rawEvents);
         parsed.forEach(e => {
           state.calendarEvents.push({
-            id: e.id || `ev-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-            date: parseDate(e.date),
-            time: e.time || '08:30–10:30',
+            id: String(e.id),
+            date: parseDate(e.date || e.event_date),
+            time: e.time || e.time_range || '08:30–10:30',
             title: e.title || 'Event',
             details: e.details || '',
             category: e.category || 'Academic',
-            source: 'initial'
+            scope_type: e.scopeType || e.scope_type || defaultScopeType,
+            scope_id: e.scopeId ?? e.scope_id ?? defaultScopeId
           });
         });
       }
@@ -62,34 +101,30 @@
       console.warn('[Calendar] Could not parse initial events:', err);
     }
 
-    // Load shared user-created events from localStorage
-    function loadSharedEvents() {
-      try {
-        const stored = localStorage.getItem('lecole_shared_events');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          return parsed.map(e => ({
-            ...e,
-            date: new Date(e.date)
-          }));
-        }
-      } catch (err) {}
-      return [];
+    function refetchAndRender() {
+      fetch(`/${apiRole}/getCalendarEvents`, {
+        headers: { 'Accept': 'application/json' }
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (!res.success) throw new Error(res.error || 'Failed to load events');
+        state.calendarEvents = (res.events || []).map(e => ({
+          id: String(e.id),
+          date: parseDate(e.date || e.event_date),
+          time: e.time || '09:00',
+          title: e.title || 'Event',
+          details: e.details || '',
+          category: e.category || 'Academic',
+          scope_type: e.scopeType || e.scope_type || defaultScopeType,
+          scope_id: e.scopeId ?? e.scope_id ?? defaultScopeId
+        }));
+        refreshCalendar();
+      })
+      .catch(err => {
+        console.warn('[Calendar] Could not refresh events:', err);
+        window.showFeedbackBanner?.('Could not refresh the calendar. Showing last-known data.', 'error');
+      });
     }
-
-    function saveSharedEvents() {
-      try {
-        const userEvents = state.calendarEvents.filter(e => e.source === 'user');
-        localStorage.setItem('lecole_shared_events', JSON.stringify(userEvents));
-      } catch (err) {}
-    }
-
-    // Merge shared events without duplicates
-    loadSharedEvents().forEach(sharedEv => {
-      if (!state.calendarEvents.some(e => e.id === sharedEv.id)) {
-        state.calendarEvents.push(sharedEv);
-      }
-    });
 
     // Date math helpers
     function sameCalendarDay(a, b) {
@@ -187,6 +222,75 @@
       });
     }
 
+    // Modal helpers (delegates to universal dialogs-and-popups.js)
+    function openModal(modalEl) {
+      if (!modalEl) return;
+      if (typeof window.openModal === 'function') {
+        window.openModal(modalEl);
+      } else {
+        modalEl.classList.add('c-is-open');
+      }
+    }
+    function closeModal(modalEl) {
+      if (!modalEl) return;
+      if (typeof window.closeModal === 'function') {
+        window.closeModal(modalEl);
+      } else {
+        modalEl.classList.remove('c-is-open');
+      }
+    }
+
+    // Event deletion execution
+    function executeDeleteEvent(eventId, evTitle) {
+      const doDelete = () => {
+        fetch(`/${apiRole}/deleteCalendarEvent`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
+          },
+          body: JSON.stringify({
+            _csrf_token: csrfToken,
+            id: eventId
+          })
+        })
+        .then(res => {
+          if (res.status === 401) {
+            window.location.reload();
+            return null;
+          }
+          return res.json().then(data => ({ status: res.status, data }));
+        })
+        .then(result => {
+          if (!result) return;
+          const { data } = result;
+          if (data && data.success) {
+            refetchAndRender();
+            window.showFeedbackBanner?.('Event deleted.', 'success');
+          } else {
+            alert(data?.error || 'Failed to delete event.');
+          }
+        })
+        .catch(err => {
+          console.error('[Calendar] Error deleting event:', err);
+          alert('Network error while deleting event.');
+        });
+      };
+
+      if (typeof window.openUniversalDeleteModal === 'function') {
+        window.openUniversalDeleteModal({
+          title: `Delete '${evTitle}'?`,
+          description: 'This event will be permanently removed from the school calendar schedule.',
+          buttonText: 'Delete Event',
+          onConfirm: doDelete
+        });
+      } else {
+        if (confirm(`Delete '${evTitle}'? This event will be permanently removed.`)) {
+          doDelete();
+        }
+      }
+    }
+
     // Render Day Detail
     let currentEditingEvent = null;
 
@@ -199,9 +303,8 @@
       countEl.textContent = `${dayEvents.length} event${dayEvents.length === 1 ? '' : 's'} scheduled`;
 
       if (canAdd) {
-        // Roles with Add Event (Admin, Teacher, Management): ALWAYS TWO BOXES of identical height!
+        // Roles with Add Event (Admin, Teacher, Management): ALWAYS TWO BOXES of identical height
         if (dayEvents.length) {
-          // Exactly 1 event card shown above Add event box (remaining in View all)
           const recentEvent = dayEvents[dayEvents.length - 1];
           detailEl.innerHTML = `
             <div class="c-calendar__day-events">
@@ -225,34 +328,17 @@
             </div>`;
 
           detailEl.querySelector('.j-edit-event-btn')?.addEventListener('click', () => {
-            const ev = state.calendarEvents.find(e => e.id === recentEvent.id);
+            const ev = state.calendarEvents.find(e => String(e.id) === String(recentEvent.id));
             if (ev) openEventEditorModal(ev);
           });
 
           detailEl.querySelector('.j-delete-event-btn')?.addEventListener('click', () => {
-            const ev = state.calendarEvents.find(e => e.id === recentEvent.id) || recentEvent;
+            const ev = state.calendarEvents.find(e => String(e.id) === String(recentEvent.id)) || recentEvent;
             const evTitle = ev.title || 'this event';
-            if (typeof window.openUniversalDeleteModal === 'function') {
-              window.openUniversalDeleteModal({
-                title: `Delete '${evTitle}'?`,
-                description: 'This event will be permanently removed from the school calendar schedule.',
-                buttonText: 'Delete Event',
-                onConfirm: () => {
-                  state.calendarEvents = state.calendarEvents.filter(e => e.id !== recentEvent.id);
-                  saveSharedEvents();
-                  renderCalendarGrid();
-                  renderCalendarDayDetail();
-                }
-              });
-            } else {
-              state.calendarEvents = state.calendarEvents.filter(e => e.id !== recentEvent.id);
-              saveSharedEvents();
-              renderCalendarGrid();
-              renderCalendarDayDetail();
-            }
+            executeDeleteEvent(recentEvent.id, evTitle);
           });
         } else {
-          // No events scheduled: TWO BOXES of identical height: Box 1 says No events, Box 2 is Add event!
+          // No events scheduled: TWO BOXES of identical height: Box 1 says No events, Box 2 is Add event
           detailEl.innerHTML = `
             <div class="c-calendar__day-events">
               <div class="c-calendar__empty-box">
@@ -430,24 +516,6 @@
       renderCalendarDayDetail();
     }
 
-    // Modal helpers (delegates to universal dialogs-and-popups.js)
-    function openModal(modalEl) {
-      if (!modalEl) return;
-      if (typeof window.openModal === 'function') {
-        window.openModal(modalEl);
-      } else {
-        modalEl.classList.add('c-is-open');
-      }
-    }
-    function closeModal(modalEl) {
-      if (!modalEl) return;
-      if (typeof window.closeModal === 'function') {
-        window.closeModal(modalEl);
-      } else {
-        modalEl.classList.remove('c-is-open');
-      }
-    }
-
     // Wire Day Schedule Modal ("View all")
     const dayScheduleModal = document.getElementById('j-modal-day-schedule');
     const dayScheduleTitle = document.getElementById('j-day-schedule-title');
@@ -480,7 +548,17 @@
                       </p>
                       <h3 class="c-day-schedule__title">${event.title}</h3>
                     </div>
-                    ${event.category ? `<span class="c-day-schedule__type">${event.category}</span>` : ''}
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      ${event.category ? `<span class="c-day-schedule__type">${event.category}</span>` : ''}
+                      ${canAdd ? `
+                        <button type="button" class="j-modal-edit-btn" data-event-id="${event.id}" aria-label="Edit event" style="background:none;border:none;cursor:pointer;color:var(--midnight,#0F414A);opacity:0.7;padding:2px 4px;">
+                          <svg class="c-icon" width="14" height="14"><use href="#icon-edit"/></svg>
+                        </button>
+                        <button type="button" class="j-modal-delete-btn" data-event-id="${event.id}" aria-label="Delete event" style="background:none;border:none;cursor:pointer;color:#AF5031;padding:2px 4px;">
+                          <svg class="c-icon" width="14" height="14"><use href="#icon-trash"/></svg>
+                        </button>
+                      ` : ''}
+                    </div>
                   </div>
                   ${event.details ? `
                     <p class="c-day-schedule__details">
@@ -491,6 +569,27 @@
                 </li>
               `).join('')}
             </ol>`;
+
+          if (canAdd) {
+            dayScheduleBody.querySelectorAll('.j-modal-edit-btn').forEach(btn => {
+              btn.addEventListener('click', () => {
+                const evId = btn.dataset.eventId;
+                const ev = state.calendarEvents.find(e => String(e.id) === String(evId));
+                closeModal(dayScheduleModal);
+                if (ev) openEventEditorModal(ev);
+              });
+            });
+
+            dayScheduleBody.querySelectorAll('.j-modal-delete-btn').forEach(btn => {
+              btn.addEventListener('click', () => {
+                const evId = btn.dataset.eventId;
+                const ev = state.calendarEvents.find(e => String(e.id) === String(evId));
+                const evTitle = ev ? ev.title : 'this event';
+                closeModal(dayScheduleModal);
+                executeDeleteEvent(evId, evTitle);
+              });
+            });
+          }
         } else {
           dayScheduleBody.innerHTML = `
             <div class="c-day-schedule__empty">
@@ -524,7 +623,15 @@
       const modalTitle = document.getElementById('j-event-editor-title');
       const submitLabel = document.getElementById('j-event-form-submit-label');
 
-      if (modalEyebrow) modalEyebrow.textContent = formatMonthDayYear(state.selectedDate);
+      const scopeContainer = document.getElementById('j-event-scope-container');
+      const scopeSelect = document.getElementById('j-select-scope');
+      const scopeBtn = scopeSelect?.querySelector('.j-select-scope-btn');
+      const scopeLabel = document.getElementById('j-select-scope-label');
+      const scopeMenu = document.getElementById('j-select-scope-menu');
+      const hiddenScopeType = document.getElementById('j-calendar-scope-type');
+      const hiddenScopeId = document.getElementById('j-calendar-scope-id');
+
+      if (modalEyebrow) modalEyebrow.textContent = formatMonthDayYear(eventToEdit ? (eventToEdit.date || state.selectedDate) : state.selectedDate);
 
       if (eventToEdit) {
         if (modalTitle) modalTitle.textContent = 'Edit event';
@@ -532,6 +639,7 @@
         if (titleInput) titleInput.value = eventToEdit.title || '';
         if (timeInput) timeInput.value = eventToEdit.time || '';
         if (detailsInput) detailsInput.value = eventToEdit.details || '';
+        if (scopeContainer) scopeContainer.style.display = 'none';
         if (window.setDropdownValue) {
           window.setDropdownValue('j-field-category', eventToEdit.category || 'Academic');
         } else if (categoryInput) {
@@ -547,6 +655,48 @@
           window.setDropdownValue('j-field-category', 'Academic');
         } else if (categoryInput) {
           categoryInput.value = 'Academic';
+        }
+
+        // Scope options setup
+        if (fixedScope) {
+          if (scopeContainer) scopeContainer.style.display = 'none';
+          if (hiddenScopeType) hiddenScopeType.value = fixedScope.type;
+          if (hiddenScopeId) hiddenScopeId.value = fixedScope.id ?? '';
+        } else if (scopeOptions && scopeOptions.length > 0) {
+          if (scopeContainer) scopeContainer.style.display = 'block';
+          if (scopeMenu) {
+            scopeMenu.innerHTML = scopeOptions.map((opt, idx) => `
+              <button type="button" class="c-select__option j-scope-option ${idx === 0 ? 'c-is-selected' : ''}" data-type="${opt.type}" data-id="${opt.id ?? ''}" role="option">
+                <span>${opt.label}</span>
+              </button>
+            `).join('');
+
+            scopeMenu.querySelectorAll('.j-scope-option').forEach(btn => {
+              btn.onclick = () => {
+                scopeMenu.querySelectorAll('.j-scope-option').forEach(o => o.classList.remove('c-is-selected'));
+                btn.classList.add('c-is-selected');
+                if (scopeLabel) scopeLabel.textContent = btn.textContent.trim();
+                if (hiddenScopeType) hiddenScopeType.value = btn.dataset.type;
+                if (hiddenScopeId) hiddenScopeId.value = btn.dataset.id;
+                scopeSelect?.classList.remove('c-is-open');
+                scopeBtn?.setAttribute('aria-expanded', 'false');
+              };
+            });
+          }
+          const firstOpt = scopeOptions[0];
+          if (scopeLabel) scopeLabel.textContent = firstOpt.label;
+          if (hiddenScopeType) hiddenScopeType.value = firstOpt.type;
+          if (hiddenScopeId) hiddenScopeId.value = firstOpt.id ?? '';
+
+          if (scopeBtn) {
+            scopeBtn.onclick = (e) => {
+              e.stopPropagation();
+              const isOpen = scopeSelect.classList.toggle('c-is-open');
+              scopeBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            };
+          }
+        } else {
+          if (scopeContainer) scopeContainer.style.display = 'none';
         }
       }
 
@@ -590,32 +740,87 @@
         }
 
         if (hasError) {
-          document.getElementById('j-event-form-error-banner')?.classList.add('c-is-visible');
+          const banner = document.getElementById('j-event-form-error-banner');
+          if (banner) {
+            banner.textContent = 'Complete the highlighted event details before saving.';
+            banner.classList.add('c-is-visible');
+          }
           return;
         }
 
-        if (currentEditingEvent) {
-          currentEditingEvent.title = title;
-          currentEditingEvent.time = time;
-          currentEditingEvent.details = details;
-          currentEditingEvent.category = category;
-        } else {
-          const newEvent = {
-            id: `user-event-${Date.now()}`,
-            date: new Date(state.selectedDate),
-            time,
-            title,
-            details,
-            category,
-            source: 'user'
-          };
-          state.calendarEvents.push(newEvent);
-        }
+        const submitBtn = eventForm.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
 
-        saveSharedEvents();
-        renderCalendarGrid();
-        renderCalendarDayDetail();
-        closeModal(eventEditorModal);
+        const isEditing = Boolean(currentEditingEvent);
+        const endpoint = isEditing ? `/${apiRole}/updateCalendarEvent` : `/${apiRole}/addCalendarEvent`;
+        const eventDateStr = formatIsoDate(isEditing ? (currentEditingEvent.date || state.selectedDate) : state.selectedDate);
+
+        const hiddenScopeType = document.getElementById('j-calendar-scope-type');
+        const hiddenScopeId = document.getElementById('j-calendar-scope-id');
+        const scopeTypeVal = hiddenScopeType ? hiddenScopeType.value : (defaultScopeType || 'schoolwide');
+        const scopeIdVal = hiddenScopeId && hiddenScopeId.value !== '' ? parseInt(hiddenScopeId.value, 10) : null;
+
+        const payload = isEditing ? {
+          _csrf_token: csrfToken,
+          id: currentEditingEvent.id,
+          title: title,
+          details: details,
+          category: category,
+          time: time,
+          time_range: time
+        } : {
+          _csrf_token: csrfToken,
+          title: title,
+          details: details,
+          category: category,
+          date: eventDateStr,
+          event_date: eventDateStr,
+          time: time,
+          time_range: time,
+          scope_type: scopeTypeVal,
+          scope_id: scopeIdVal
+        };
+
+        fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
+          },
+          body: JSON.stringify(payload)
+        })
+        .then(res => {
+          if (res.status === 401) {
+            window.location.reload();
+            return null;
+          }
+          return res.json().then(data => ({ status: res.status, data }));
+        })
+        .then(result => {
+          if (submitBtn) submitBtn.disabled = false;
+          if (!result) return;
+          const { status, data } = result;
+          if (data && data.success) {
+            closeModal(eventEditorModal);
+            refetchAndRender();
+            window.showFeedbackBanner?.('Saved.', 'success');
+          } else {
+            const banner = document.getElementById('j-event-form-error-banner');
+            if (banner) {
+              banner.textContent = data?.error || 'Could not save the event. Please try again.';
+              banner.classList.add('c-is-visible');
+            }
+          }
+        })
+        .catch(err => {
+          if (submitBtn) submitBtn.disabled = false;
+          console.error('[Calendar] Error persisting event:', err);
+          const banner = document.getElementById('j-event-form-error-banner');
+          if (banner) {
+            banner.textContent = 'A network error occurred. Please try again.';
+            banner.classList.add('c-is-visible');
+          }
+        });
       });
     }
 

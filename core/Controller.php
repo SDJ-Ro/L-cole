@@ -29,7 +29,10 @@ class Controller {
         extract($data);
         
         // Check if your UI file actually exists
-        if (file_exists('../app/Views/' . $viewName . '.php')) {
+        $viewFile = __DIR__ . '/../app/Views/' . $viewName . '.php';
+        if (file_exists($viewFile)) {
+            require_once $viewFile;
+        } elseif (file_exists('../app/Views/' . $viewName . '.php')) {
             require_once '../app/Views/' . $viewName . '.php';
         } else {
             echo "Error: The View file " . $viewName . ".php does not exist.";
