@@ -27,7 +27,7 @@ $isRequired  = !empty($required);
 $label       = $ariaLabel ?? $placeholder;
 ?>
 
-<div class="c-datepicker" id="<?= htmlspecialchars($dpId) ?>" data-tone="<?= htmlspecialchars($toneColor) ?>">
+<div class="c-datepicker" id="<?= htmlspecialchars($dpId) ?>" data-tone="<?= htmlspecialchars($toneColor) ?>" <?= $extraAttributes ?? '' ?>>
   <input 
     type="hidden" 
     class="j-dp-input" 

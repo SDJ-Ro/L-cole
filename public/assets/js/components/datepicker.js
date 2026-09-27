@@ -142,6 +142,35 @@
       popupEl = document.createElement('div');
       popupEl.className = 'c-dp-calendar';
 
+      const isUnlocked = rootEl.getAttribute('data-unlocked') === 'true';
+      const minAge = (!isUnlocked && rootEl.dataset.minAge) ? parseInt(rootEl.dataset.minAge, 10) : null;
+      const maxAge = (!isUnlocked && rootEl.dataset.maxAge) ? parseInt(rootEl.dataset.maxAge, 10) : null;
+
+      const now = new Date();
+      const thisYear = now.getFullYear();
+
+      let allowedMinYear = 1940;
+      let allowedMaxYear = thisYear + 5;
+
+      let minDateStr = rootEl.getAttribute('data-min-date') || '';
+      let maxDateStr = rootEl.getAttribute('data-max-date') || '';
+
+      if (maxAge !== null) {
+        allowedMinYear = thisYear - maxAge;
+        minDateStr = minDateStr || `${allowedMinYear}-01-01`;
+      }
+      if (minAge !== null) {
+        allowedMaxYear = thisYear - minAge;
+        maxDateStr = maxDateStr || `${allowedMaxYear}-12-31`;
+      }
+
+      // Ensure visibleMonth is within allowed years if constrained
+      if (visibleMonth.getFullYear() < allowedMinYear) {
+        visibleMonth.setFullYear(allowedMinYear);
+      } else if (visibleMonth.getFullYear() > allowedMaxYear) {
+        visibleMonth.setFullYear(allowedMaxYear);
+      }
+
       const days = calendarDays(visibleMonth);
       const selIso = currentValue || '';
       const todayIso = toIso(new Date());
@@ -152,10 +181,13 @@
         const inMonth = date.getMonth() === visibleMonth.getMonth();
         const isSel = iso === selIso;
         const isToday = iso === todayIso;
+        const isOutOfBounds = (minDateStr && iso < minDateStr) || (maxDateStr && iso > maxDateStr);
+
         daysHtml += `
           <button type="button" 
-            class="c-dp-day j-dp-day-btn ${isSel ? 'c-dp-selected-' + tone : 'c-dp-hover-' + tone} ${inMonth ? '' : 'c-dp-outside'} ${isToday ? 'is-today-day' : ''}" 
-            data-iso="${iso}">
+            class="c-dp-day j-dp-day-btn ${isSel ? 'c-dp-selected-' + tone : 'c-dp-hover-' + tone} ${inMonth ? '' : 'c-dp-outside'} ${isToday ? 'is-today-day' : ''} ${isOutOfBounds ? 'c-dp-disabled' : ''}" 
+            data-iso="${iso}"
+            ${isOutOfBounds ? 'disabled tabindex="-1"' : ''}>
             ${date.getDate()}
           </button>
         `;
@@ -163,6 +195,9 @@
 
       const currentYear = visibleMonth.getFullYear();
       const currentMonthIndex = visibleMonth.getMonth();
+      const yearCount = Math.max(1, allowedMaxYear - allowedMinYear + 1);
+      // List years descending (e.g. 2023, 2022, ... 2007) for optimal DOB UX
+      const yearList = Array.from({ length: yearCount }, (_, i) => allowedMaxYear - i);
 
       popupEl.innerHTML = `
         <div class="c-dp-header">
@@ -188,7 +223,7 @@
                 <svg class="c-icon" width="12" height="12"><use href="#icon-chevronDown"/></svg>
               </button>
               <div class="c-dp-header-menu c-dp-year-menu j-dp-year-menu" style="display: none;">
-                ${Array.from({ length: 86 }, (_, i) => 1950 + i).map(y => `
+                ${yearList.map(y => `
                   <button type="button" class="c-dp-menu-item ${y === currentYear ? 'is-selected' : ''}" data-year="${y}">${y}</button>
                 `).join('')}
               </div>
@@ -208,7 +243,7 @@
         </div>
 
         <div class="c-dp-footer">
-          <span class="c-dp-hint">Select a date</span>
+          <span class="c-dp-hint">${(minAge !== null || maxAge !== null) && !isUnlocked ? `Restricted to ${minAge || 0}–${maxAge} yrs` : 'Select a date'}</span>
           <button type="button" class="c-dp-today-btn j-dp-today">Today</button>
         </div>
       `;
@@ -320,6 +355,11 @@
     });
 
     updateTriggerLabel();
+
+    rootEl.refreshDatePicker = function () {
+      if (popupEl) renderPopup();
+    };
+    rootEl.closeDatePicker = closePopup;
   }
 
   // Auto-init on DOM ready
