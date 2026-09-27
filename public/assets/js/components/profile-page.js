@@ -148,7 +148,13 @@
   // -------------------------------------------------------------------------
   // 5. TOAST
   // -------------------------------------------------------------------------
-  function showToast(message) {
+  function showToast(message, type = 'success') {
+    if (typeof window.showToast === 'function') {
+      return window.showToast(message, type);
+    }
+    if (typeof window.showFeedbackBanner === 'function') {
+      return window.showFeedbackBanner(message, type);
+    }
     if (!toast) return;
     const textEl = toast.querySelector('.j-toast-text');
     if (textEl) textEl.textContent = message;

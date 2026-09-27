@@ -383,5 +383,9 @@ $isTeacherMode = ($dirContext === 'teacher');
   <!-- Teacher Handover & Inactivation Modal -->
   <?php require __DIR__ . '/_teacher_handover_modal.php'; ?>
 
+  <!-- Parent Deactivation Modal & Parent Picker Dialog -->
+  <?php require_once __DIR__ . '/_deactivate_parent_dialog.php'; ?>
+  <?php require_once __DIR__ . '/_parent_picker.php'; ?>
+
 </section>
 
