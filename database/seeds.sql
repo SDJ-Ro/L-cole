@@ -57,4 +57,29 @@ INSERT INTO student_parents (student_id, parent_id, is_primary)
 VALUES (1, 1, 1)
 ON DUPLICATE KEY UPDATE is_primary = 1;
 
+-- 7. EXTRACURRICULAR ACTIVITIES
+INSERT INTO extracurricular_activities (activity_id, activity_name, category, description, venue, meeting_schedule)
+VALUES
+('football', 'Varsity Football Club', 'SPORTS', 'Competitive league training and internal tournaments for senior grades.', 'Main Football Pitch', 'Mondays & Wednesdays, 3:30 - 5:30 PM'),
+('basketball', 'Senior Basketball Team', 'SPORTS', 'Inter-school championship training and tactical drills.', 'Indoor Gymnasium', 'Tuesdays & Thursdays, 3:30 - 5:00 PM'),
+('cricket', 'Cricket Academy', 'SPORTS', 'Net sessions, fielding practice, and weekend friendly fixtures.', 'School Cricket Grounds', 'Mondays, Wednesdays & Fridays, 3:00 - 5:30 PM'),
+('swimming', 'Aquatics & Swimming Team', 'SPORTS', 'Stroke mechanics, endurance conditioning, and relay time-trials.', 'School Swimming Pool', 'Tuesdays & Fridays, 6:00 - 7:30 AM'),
+('badminton', 'Badminton Club', 'SPORTS', 'Singles and doubles sparring and tournament preparation.', 'Sports Hall Courts', 'Wednesdays & Saturdays, 3:30 - 5:00 PM'),
+('robotics', 'Junior Robotics & STEM League', 'CLUBS', 'Hands-on Arduino programming, robot building, and Olympiad prep.', 'Innovation & Robotics Lab', 'Wednesdays, 3:30 - 5:00 PM'),
+('debate', 'Model UN & Debate Society', 'CLUBS', 'Parliamentary debate, speechcraft, and inter-school MUN conferences.', 'Audio-Visual Auditorium', 'Thursdays, 3:30 - 5:00 PM'),
+('drama', 'Drama & Theatrical Society', 'AESTHETIC', 'Stage acting, scriptwriting, voice modulation, and annual school play.', 'Main Auditorium Stage', 'Tuesdays, 3:30 - 5:30 PM'),
+('chess', 'Chess Club', 'CLUBS', 'Strategic masterclasses, rapid-fire chess puzzles, and tournaments.', 'Library Annex Room 2', 'Fridays, 3:30 - 4:45 PM')
+ON DUPLICATE KEY UPDATE activity_name = VALUES(activity_name);
+
+-- 8. STARTER NOTICES
+INSERT INTO notices (id, title, category, audience, body, author_name, author_role, author_account_id, pinned, target_class_section, target_club_id, created_at)
+VALUES
+(1, 'Term 2 Examination Schedule - June 2026', 'Academic', '["All"]', 'The official examination timetable for Grades 6 through 12 has been finalized. Morning sessions begin at 8:30 AM.', 'Academic Office', 'admin', 1, 1, NULL, NULL, NOW()),
+(2, 'Sports Day Rehearsal Schedule', 'Extracurricular', '["Students", "Teachers"]', 'Inter-house march past and track rehearsal times are posted. House captains must ensure full attendance.', 'Student Life Office', 'admin', 1, 0, NULL, NULL, NOW()),
+(3, 'Library Renovation Notice', 'General', '["All"]', 'The senior library annex will be closed for electrical upgrades this weekend. Digital resources remain accessible.', 'Admin Office', 'admin', 1, 0, NULL, NULL, NOW()),
+(4, 'Parent-Teacher Conference: Grade 10 & 11', 'Academic', '["Parents", "Teachers"]', 'Individual consultation slots are available for booking via the parent portal. Progress reports will be distributed.', 'Mrs. Perera', 'management', 2, 0, 'Grade 10', NULL, NOW()),
+(5, 'Annual Staff Leadership & Curriculum Review', 'Administrative', '["Teachers", "Management"]', 'Senior management and department heads will meet in the Boardroom for the annual academic audit.', 'Dr. Vance', 'management', 2, 0, NULL, NULL, NOW())
+ON DUPLICATE KEY UPDATE title = VALUES(title);
+
 SET FOREIGN_KEY_CHECKS = 1;
+
