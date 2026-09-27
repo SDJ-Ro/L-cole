@@ -55,11 +55,13 @@ CREATE TABLE IF NOT EXISTS classes (
 -- 5. CLASS TEACHERS (1 teacher to 1 class exclusively)
 CREATE TABLE IF NOT EXISTS class_teachers (
     class_id INT PRIMARY KEY,
-    teacher_name VARCHAR(150) NOT NULL,
-    teacher_id INT NULL,
+    teacher_id INT NOT NULL,
     assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_ct_class FOREIGN KEY (class_id) 
-        REFERENCES classes(id) ON DELETE CASCADE
+        REFERENCES classes(id) ON DELETE CASCADE,
+    CONSTRAINT fk_class_teacher_teacher FOREIGN KEY (teacher_id)
+        REFERENCES teachers(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_ct_teacher (teacher_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 6. CLASS SUBJECT TEACHERS
@@ -67,16 +69,21 @@ CREATE TABLE IF NOT EXISTS class_subject_teachers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     class_id INT NOT NULL,
     subject_name VARCHAR(100) NOT NULL,
-    teacher_name VARCHAR(150) NOT NULL,
-    teacher_id INT NULL,
+    teacher_id INT NOT NULL,
     assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_cst_class FOREIGN KEY (class_id) 
         REFERENCES classes(id) ON DELETE CASCADE,
-    UNIQUE KEY uq_class_subject (class_id, subject_name)
+    CONSTRAINT fk_cst_teacher FOREIGN KEY (teacher_id)
+        REFERENCES teachers(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_class_subject (class_id, subject_name),
+    INDEX idx_cst_teacher (teacher_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 7. Ensure students table columns grade and class_section allow NULL
+-- 7. Ensure students table columns grade and class_section allow NULL and link to classes(id)
 ALTER TABLE students MODIFY COLUMN grade VARCHAR(20) NULL;
 ALTER TABLE students MODIFY COLUMN class_section VARCHAR(20) NULL;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS class_id INT NULL AFTER birth_certificate_number;
+ALTER TABLE students ADD CONSTRAINT fk_students_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL;
+ALTER TABLE students ADD INDEX IF NOT EXISTS idx_students_class_id (class_id);
 
 SET FOREIGN_KEY_CHECKS = 1;
