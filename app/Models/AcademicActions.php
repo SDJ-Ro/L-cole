@@ -134,17 +134,18 @@ class AcademicActions extends Model {
             $sectionNames = array_column($classes, 'section_name');
 
             // 1. Unassign all students belonging to this grade or these classes
-            if (!empty($sectionNames)) {
-                $inSections = implode(',', array_fill(0, count($sectionNames), '?'));
+            $classIds = array_column($classes, 'id');
+            if (!empty($classIds)) {
+                $inClassIds = implode(',', array_fill(0, count($classIds), '?'));
                 $stmtUnassignStudents = $db->prepare("
                     UPDATE students 
-                    SET grade = NULL, class_section = NULL 
-                    WHERE grade = ? OR class_section IN ({$inSections})
+                    SET grade = NULL, class_section = NULL, class_id = NULL 
+                    WHERE class_id IN ({$inClassIds}) OR grade = ?
                 ");
-                $params = array_merge([$gradeName], $sectionNames);
+                $params = array_merge($classIds, [$gradeName]);
                 $stmtUnassignStudents->execute($params);
             } else {
-                $stmtUnassignStudents = $db->prepare("UPDATE students SET grade = NULL, class_section = NULL WHERE grade = ?");
+                $stmtUnassignStudents = $db->prepare("UPDATE students SET grade = NULL, class_section = NULL, class_id = NULL WHERE grade = ?");
                 $stmtUnassignStudents->execute([$gradeName]);
             }
 
@@ -225,26 +226,44 @@ class AcademicActions extends Model {
             $classId = (int)$db->lastInsertId();
 
             $reassignedFrom = null;
+            $teacherFullName = null;
             if (!empty($teacherName)) {
-                // Strict exclusivity rule: do NOT steal/reassign automatically. Reject if already assigned.
-                $stmtPrev = $db->prepare("
-                    SELECT c.section_name, c.id 
-                    FROM class_teachers ct 
-                    JOIN classes c ON ct.class_id = c.id 
-                    WHERE ct.teacher_name = ?
-                ");
-                $stmtPrev->execute([$teacherName]);
-                $prev = $stmtPrev->fetch(PDO::FETCH_ASSOC);
-                if ($prev) {
+                $teacher = self::resolveTeacher($teacherName, $db);
+                if ($teacher === false) {
                     $db->rollBack();
-                    return [
-                        'success' => false,
-                        'error'   => "Teacher '{$teacherName}' is already the class teacher of Class {$prev['section_name']}. Please unassign them from Class {$prev['section_name']} first."
-                    ];
+                    return ['success' => false, 'error' => "Teacher '{$teacherName}' does not exist in faculty records."];
                 }
 
-                $stmtAssign = $db->prepare("INSERT INTO class_teachers (class_id, teacher_name) VALUES (?, ?)");
-                $stmtAssign->execute([$classId, $teacherName]);
+                if ($teacher !== null) {
+                    $teacherId = (int)$teacher['id'];
+                    $teacherFullName = $teacher['full_name'];
+
+                    // Strict exclusivity rule: do NOT steal/reassign automatically. Reject if already assigned (Denial Auditing)
+                    $stmtPrev = $db->prepare("
+                        SELECT c.section_name, c.id 
+                        FROM class_teachers ct 
+                        JOIN classes c ON ct.class_id = c.id 
+                        WHERE ct.teacher_id = ?
+                    ");
+                    $stmtPrev->execute([$teacherId]);
+                    $prev = $stmtPrev->fetch(PDO::FETCH_ASSOC);
+                    if ($prev) {
+                        $db->rollBack();
+                        AuditModel::record(
+                            $actorId,
+                            $actorIdentifier,
+                            'SECURITY_CLASS_TEACHER_EXCLUSIVITY_BLOCKED',
+                            "Attempted assignment of {$teacherFullName} to Class {$sectionName} blocked: already assigned to Class {$prev['section_name']}."
+                        );
+                        return [
+                            'success' => false,
+                            'error'   => "Teacher '{$teacherFullName}' is already the class teacher of Class {$prev['section_name']}. Please unassign them from Class {$prev['section_name']} first."
+                        ];
+                    }
+
+                    $stmtAssign = $db->prepare("INSERT INTO class_teachers (class_id, teacher_id) VALUES (?, ?)");
+                    $stmtAssign->execute([$classId, $teacherId]);
+                }
             }
 
             $db->commit();
@@ -253,7 +272,7 @@ class AcademicActions extends Model {
                 $actorId,
                 $actorIdentifier,
                 'CLASS_CREATED',
-                "Added class {$sectionName} to {$gradeId} (students: {$studentCount}, teacher: " . ($teacherName ?: 'pending') . ($reassignedFrom ? " reassigned from {$reassignedFrom}" : "") . ")"
+                "Added class {$sectionName} to {$gradeId} (students: {$studentCount}, teacher: " . ($teacherFullName ?: 'pending') . ($reassignedFrom ? " reassigned from {$reassignedFrom}" : "") . ")"
             );
 
             return [
@@ -263,7 +282,7 @@ class AcademicActions extends Model {
                     'grade_id'        => $gradeId,
                     'section_name'    => $sectionName,
                     'student_count'   => $studentCount,
-                    'class_teacher'   => $teacherName ?: 'Assignment pending',
+                    'class_teacher'   => $teacherFullName ?: 'Assignment pending',
                     'reassigned_from' => $reassignedFrom
                 ]
             ];
@@ -315,41 +334,58 @@ class AcademicActions extends Model {
             $stmtUpdate = $db->prepare("UPDATE classes SET section_name = ?, student_count = ? WHERE id = ?");
             $stmtUpdate->execute([$newSectionName, $studentCount, $classId]);
 
-            // Cascade rename on student records
+            // Sync display column on student records linked via foreign key (students follow via class_id automatically)
             if (strcasecmp($oldSectionName, $newSectionName) !== 0) {
-                $stmtUpdateStudents = $db->prepare("UPDATE students SET class_section = ? WHERE class_section = ?");
-                $stmtUpdateStudents->execute([$newSectionName, $oldSectionName]);
+                $stmtUpdateStudents = $db->prepare("UPDATE students SET class_section = ? WHERE class_id = ?");
+                $stmtUpdateStudents->execute([$newSectionName, $classId]);
             }
 
             // Manage class teacher
             $reassignedFrom = null;
-            if (empty($teacherName)) {
+            $teacherFullName = null;
+
+            $teacher = self::resolveTeacher($teacherName, $db);
+            if ($teacher === false) {
+                $db->rollBack();
+                return ['success' => false, 'error' => "Teacher '{$teacherName}' does not exist in faculty records."];
+            }
+
+            if ($teacher === null) {
                 $stmtClearCt = $db->prepare("DELETE FROM class_teachers WHERE class_id = ?");
                 $stmtClearCt->execute([$classId]);
             } else {
-                // Strict exclusivity: reject if already assigned to a different class
+                $teacherId = (int)$teacher['id'];
+                $teacherFullName = $teacher['full_name'];
+
+                // Strict exclusivity: reject if already assigned to a different class (Denial Auditing)
                 $stmtPrev = $db->prepare("
                     SELECT c.section_name, c.id 
                     FROM class_teachers ct 
                     JOIN classes c ON ct.class_id = c.id 
-                    WHERE ct.teacher_name = ? AND c.id != ?
+                    WHERE ct.teacher_id = ? AND c.id != ?
                 ");
-                $stmtPrev->execute([$teacherName, $classId]);
+                $stmtPrev->execute([$teacherId, $classId]);
                 $prev = $stmtPrev->fetch(PDO::FETCH_ASSOC);
                 if ($prev) {
                     $db->rollBack();
+                    AuditModel::record(
+                        $actorId,
+                        $actorIdentifier,
+                        'SECURITY_CLASS_TEACHER_EXCLUSIVITY_BLOCKED',
+                        "Attempted reassignment of {$teacherFullName} to Class {$newSectionName} blocked: already assigned to Class {$prev['section_name']}."
+                    );
                     return [
                         'success' => false,
-                        'error'   => "Teacher '{$teacherName}' is already the class teacher of Class {$prev['section_name']}. Please unassign them from Class {$prev['section_name']} first."
+                        'error'   => "Teacher '{$teacherFullName}' is already the class teacher of Class {$prev['section_name']}. Please unassign them from Class {$prev['section_name']} first."
                     ];
                 }
 
                 $stmtUpsertCt = $db->prepare("
-                    INSERT INTO class_teachers (class_id, teacher_name) 
+                    INSERT INTO class_teachers (class_id, teacher_id) 
                     VALUES (?, ?) 
-                    ON DUPLICATE KEY UPDATE teacher_name = VALUES(teacher_name)
+                    ON DUPLICATE KEY UPDATE teacher_id = VALUES(teacher_id)
                 ");
-                $stmtUpsertCt->execute([$classId, $teacherName]);
+                $stmtUpsertCt->execute([$classId, $teacherId]);
             }
 
             $db->commit();
@@ -358,7 +394,7 @@ class AcademicActions extends Model {
                 $actorId,
                 $actorIdentifier,
                 'CLASS_UPDATED',
-                "Updated class {$oldSectionName} -> {$newSectionName} (students: {$studentCount}, teacher: " . ($teacherName ?: 'pending') . ")"
+                "Updated class {$oldSectionName} -> {$newSectionName} (students: {$studentCount}, teacher: " . ($teacherFullName ?: 'pending') . ")"
             );
 
             return [
@@ -368,7 +404,7 @@ class AcademicActions extends Model {
                     'old_section'     => $oldSectionName,
                     'section_name'    => $newSectionName,
                     'student_count'   => $studentCount,
-                    'class_teacher'   => $teacherName ?: 'Assignment pending',
+                    'class_teacher'   => $teacherFullName ?: 'Assignment pending',
                     'reassigned_from' => $reassignedFrom
                 ]
             ];
@@ -400,9 +436,9 @@ class AcademicActions extends Model {
 
         $db->beginTransaction();
         try {
-            // Set student class_section to NULL for all students in this class
-            $stmtUnassign = $db->prepare("UPDATE students SET class_section = NULL WHERE class_section = ?");
-            $stmtUnassign->execute([$sectionName]);
+            // Set student class_section to NULL for all students in this class (foreign key ON DELETE SET NULL also sets class_id to NULL)
+            $stmtUnassign = $db->prepare("UPDATE students SET class_section = NULL, class_id = NULL WHERE class_id = ? OR class_section = ?");
+            $stmtUnassign->execute([$classId, $sectionName]);
 
             // Explicitly delete teacher assignments before deleting class row
             $stmtCt = $db->prepare("DELETE FROM class_teachers WHERE class_id = ?");
@@ -460,8 +496,15 @@ class AcademicActions extends Model {
         $db->beginTransaction();
         try {
             $reassignedFrom = null;
+            $teacherFullName = null;
 
-            if (empty($teacherName)) {
+            $teacher = self::resolveTeacher($teacherName, $db);
+            if ($teacher === false) {
+                $db->rollBack();
+                return ['success' => false, 'error' => "Teacher '{$teacherName}' does not exist in faculty records."];
+            }
+
+            if ($teacher === null) {
                 $stmtClear = $db->prepare("DELETE FROM class_teachers WHERE class_id = ?");
                 $stmtClear->execute([$classId]);
 
@@ -472,35 +515,44 @@ class AcademicActions extends Model {
                     "Class teacher cleared for {$sectionName}"
                 );
             } else {
-                // Strict exclusivity: reject if already assigned to another class
+                $teacherId = (int)$teacher['id'];
+                $teacherFullName = $teacher['full_name'];
+
+                // Strict exclusivity: reject if already assigned to another class (Denial Auditing)
                 $stmtPrev = $db->prepare("
                     SELECT c.section_name, c.id 
                     FROM class_teachers ct 
                     JOIN classes c ON ct.class_id = c.id 
-                    WHERE ct.teacher_name = ? AND c.id != ?
+                    WHERE ct.teacher_id = ? AND c.id != ?
                 ");
-                $stmtPrev->execute([$teacherName, $classId]);
+                $stmtPrev->execute([$teacherId, $classId]);
                 $prev = $stmtPrev->fetch(PDO::FETCH_ASSOC);
                 if ($prev) {
                     $db->rollBack();
+                    AuditModel::record(
+                        $actorId,
+                        $actorIdentifier,
+                        'SECURITY_CLASS_TEACHER_EXCLUSIVITY_BLOCKED',
+                        "Attempted reassignment of {$teacherFullName} to Class {$sectionName} blocked: already assigned to Class {$prev['section_name']}."
+                    );
                     return [
                         'success' => false,
-                        'error'   => "Teacher '{$teacherName}' is already the class teacher of Class {$prev['section_name']}. Please unassign them from Class {$prev['section_name']} first."
+                        'error'   => "Teacher '{$teacherFullName}' is already the class teacher of Class {$prev['section_name']}. Please unassign them from Class {$prev['section_name']} first."
                     ];
                 }
 
                 $stmtUpsert = $db->prepare("
-                    INSERT INTO class_teachers (class_id, teacher_name) 
+                    INSERT INTO class_teachers (class_id, teacher_id) 
                     VALUES (?, ?) 
-                    ON DUPLICATE KEY UPDATE teacher_name = VALUES(teacher_name)
+                    ON DUPLICATE KEY UPDATE teacher_id = VALUES(teacher_id)
                 ");
-                $stmtUpsert->execute([$classId, $teacherName]);
+                $stmtUpsert->execute([$classId, $teacherId]);
 
                 AuditModel::record(
                     $actorId,
                     $actorIdentifier,
                     'CLASS_TEACHER_ASSIGNED',
-                    "Assigned {$teacherName} as class teacher for {$sectionName}"
+                    "Assigned {$teacherFullName} as class teacher for {$sectionName}"
                 );
             }
 
@@ -509,7 +561,7 @@ class AcademicActions extends Model {
             return [
                 'success'         => true,
                 'section_name'    => $sectionName,
-                'class_teacher'   => $teacherName ?: 'Assignment pending',
+                'class_teacher'   => $teacherFullName ?: 'Assignment pending',
                 'reassigned_from' => $reassignedFrom
             ];
         } catch (\Throwable $e) {
@@ -539,27 +591,44 @@ class AcademicActions extends Model {
             return ['success' => false, 'error' => "Class '{$sectionName}' not found."];
         }
 
-        // Workload Cap Guard: Max 5 subjects across the school
-        if (!empty($teacherName)) {
+        $teacher = self::resolveTeacher($teacherName, $db);
+        if ($teacher === false) {
+            return ['success' => false, 'error' => "Teacher '{$teacherName}' does not exist in faculty records."];
+        }
+
+        $teacherFullName = null;
+        $teacherId = null;
+
+        // Workload Cap Guard & Scope Shape: Max 5 subjects across the school
+        if ($teacher !== null) {
+            $teacherId = (int)$teacher['id'];
+            $teacherFullName = $teacher['full_name'];
+
             $stmtCount = $db->prepare("
                 SELECT COUNT(DISTINCT subject_name) 
                 FROM class_subject_teachers 
-                WHERE teacher_name = ? AND NOT (class_id = ? AND subject_name = ?)
+                WHERE teacher_id = ? AND NOT (class_id = ? AND subject_name = ?)
             ");
-            $stmtCount->execute([$teacherName, $classId, $subjectName]);
+            $stmtCount->execute([$teacherId, $classId, $subjectName]);
             $currentDistinctSubjects = (int)$stmtCount->fetchColumn();
 
             if ($currentDistinctSubjects >= 5) {
+                AuditModel::record(
+                    $actorId,
+                    $actorIdentifier,
+                    'SECURITY_WORKLOAD_LIMIT_BLOCKED',
+                    "Assignment of {$teacherFullName} to teach {$subjectName} in {$sectionName} blocked: teacher reached max workload cap of 5 subjects."
+                );
                 return [
                     'success' => false,
-                    'error'   => "Teacher '{$teacherName}' has already reached the maximum workload limit of 5 distinct subjects."
+                    'error'   => "Teacher '{$teacherFullName}' has already reached the maximum workload limit of 5 distinct subjects."
                 ];
             }
         }
 
         $db->beginTransaction();
         try {
-            if (empty($teacherName)) {
+            if ($teacher === null) {
                 $stmtDelete = $db->prepare("DELETE FROM class_subject_teachers WHERE class_id = ? AND subject_name = ?");
                 $stmtDelete->execute([$classId, $subjectName]);
 
@@ -571,17 +640,17 @@ class AcademicActions extends Model {
                 );
             } else {
                 $stmtUpsert = $db->prepare("
-                    INSERT INTO class_subject_teachers (class_id, subject_name, teacher_name) 
+                    INSERT INTO class_subject_teachers (class_id, subject_name, teacher_id) 
                     VALUES (?, ?, ?) 
-                    ON DUPLICATE KEY UPDATE teacher_name = VALUES(teacher_name)
+                    ON DUPLICATE KEY UPDATE teacher_id = VALUES(teacher_id)
                 ");
-                $stmtUpsert->execute([$classId, $subjectName, $teacherName]);
+                $stmtUpsert->execute([$classId, $subjectName, $teacherId]);
 
                 AuditModel::record(
                     $actorId,
                     $actorIdentifier,
                     'SUBJECT_TEACHER_ASSIGNED',
-                    "Assigned {$teacherName} to teach {$subjectName} in {$sectionName}"
+                    "Assigned {$teacherFullName} to teach {$subjectName} in {$sectionName}"
                 );
             }
 
@@ -591,7 +660,7 @@ class AcademicActions extends Model {
                 'success'      => true,
                 'section_name' => $sectionName,
                 'subject_name' => $subjectName,
-                'teacher_name' => $teacherName ?: 'Assignment pending'
+                'teacher_name' => $teacherFullName ?: 'Assignment pending'
             ];
         } catch (\Throwable $e) {
             $db->rollBack();
@@ -854,6 +923,12 @@ class AcademicActions extends Model {
 
         if (!empty($dependentGrades)) {
             $names = implode(', ', $dependentGrades);
+            AuditModel::record(
+                $actorId,
+                $actorIdentifier,
+                'SECURITY_CURRICULUM_DELETE_BLOCKED',
+                "Attempted deletion of curriculum stage '{$rangeLabel}' blocked: required by active grades: {$names}."
+            );
             return [
                 'success' => false,
                 'error'   => "Cannot delete curriculum stage '{$rangeLabel}'. It is currently required by: {$names}. Remove or reassign those grades first."
@@ -919,6 +994,55 @@ class AcademicActions extends Model {
         return null;
     }
 
+    /**
+     * Resolves a teacher identifier (id or full_name) to a valid teacher record [id, full_name].
+     * Returns null if empty/pending.
+     * Returns ['id' => int, 'full_name' => string] if found.
+     * Returns false if non-empty but not found in faculty records.
+     */
+    private static function resolveTeacher($teacherIdentifier, PDO $db) {
+        if ($teacherIdentifier === null) {
+            return null;
+        }
+        $teacherIdentifier = trim((string)$teacherIdentifier);
+        if ($teacherIdentifier === '' || $teacherIdentifier === 'Assignment pending') {
+            return null;
+        }
+
+        // 1. If numeric ID
+        if (ctype_digit($teacherIdentifier)) {
+            $stmt = $db->prepare("SELECT id, full_name FROM teachers WHERE id = ? LIMIT 1");
+            $stmt->execute([(int)$teacherIdentifier]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row) {
+                return ['id' => (int)$row['id'], 'full_name' => $row['full_name']];
+            }
+        }
+
+        // 2. Exact full_name match
+        $stmt = $db->prepare("SELECT id, full_name FROM teachers WHERE full_name = ? LIMIT 1");
+        $stmt->execute([$teacherIdentifier]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            return ['id' => (int)$row['id'], 'full_name' => $row['full_name']];
+        }
+
+        // 3. Prefix-stripped match for Mr. / Mrs. / Ms.
+        $cleanInput = trim(str_replace(['Mr. ', 'Mrs. ', 'Ms. '], '', $teacherIdentifier));
+        $stmt = $db->prepare("
+            SELECT id, full_name FROM teachers 
+            WHERE TRIM(REPLACE(REPLACE(REPLACE(full_name, 'Mr. ', ''), 'Mrs. ', ''), 'Ms. ', '')) = ? 
+            LIMIT 1
+        ");
+        $stmt->execute([$cleanInput]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            return ['id' => (int)$row['id'], 'full_name' => $row['full_name']];
+        }
+
+        return false;
+    }
+
     private static function getDefaultSubjectScores(): array {
         return [
             'Mathematics'     => [76, 82],
@@ -929,4 +1053,53 @@ class AcademicActions extends Model {
             'ICT'             => [84, 80],
         ];
     }
+
+    public static function assignClubTic(int $clubId, string $teacherName, int $actorAccountId, ?string $actorIdentifier): array {
+        $db = Database::getConnection();
+        $teacherLookup = $db->prepare("SELECT id FROM teachers WHERE full_name = ? LIMIT 1");
+        $teacherLookup->execute([$teacherName]);
+        $newTeacherId = $teacherLookup->fetchColumn();
+        if (!$newTeacherId) return ['success' => false, 'error' => 'No matching teacher found.'];
+
+        try {
+            $db->beginTransaction();
+            $db->prepare("UPDATE club_tic_history SET ended_at = NOW() WHERE club_id = ? AND ended_at IS NULL")->execute([$clubId]);
+            $db->prepare("INSERT INTO club_teachers (club_id, teacher_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE teacher_id = VALUES(teacher_id)")
+               ->execute([$clubId, $newTeacherId]);
+            $db->prepare("INSERT INTO club_tic_history (club_id, teacher_id, assigned_by) VALUES (?, ?, ?)")->execute([$clubId, $newTeacherId, $actorAccountId]);
+            $db->commit();
+
+            AuditModel::record($actorAccountId, $actorIdentifier ?? 'Admin', 'CLUB_TIC_ASSIGNED', "Assigned {$teacherName} as TIC of club #{$clubId}.");
+            return ['success' => true, 'message' => 'Teacher-in-Charge assigned successfully.'];
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            error_log('[AcademicActions] assignClubTic: ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Database error while assigning TIC.'];
+        }
+    }
+
+    public static function assignSportTic(int $sportId, string $teacherName, int $actorAccountId, ?string $actorIdentifier): array {
+        $db = Database::getConnection();
+        $teacherLookup = $db->prepare("SELECT id FROM teachers WHERE full_name = ? LIMIT 1");
+        $teacherLookup->execute([$teacherName]);
+        $newTeacherId = $teacherLookup->fetchColumn();
+        if (!$newTeacherId) return ['success' => false, 'error' => 'No matching teacher found.'];
+
+        try {
+            $db->beginTransaction();
+            $db->prepare("UPDATE sport_tic_history SET ended_at = NOW() WHERE sport_id = ? AND ended_at IS NULL")->execute([$sportId]);
+            $db->prepare("INSERT INTO sport_teachers (sport_id, teacher_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE teacher_id = VALUES(teacher_id)")
+               ->execute([$sportId, $newTeacherId]);
+            $db->prepare("INSERT INTO sport_tic_history (sport_id, teacher_id, assigned_by) VALUES (?, ?, ?)")->execute([$sportId, $newTeacherId, $actorAccountId]);
+            $db->commit();
+
+            AuditModel::record($actorAccountId, $actorIdentifier ?? 'Admin', 'SPORT_TIC_ASSIGNED', "Assigned {$teacherName} as TIC of sport #{$sportId}.");
+            return ['success' => true, 'message' => 'Teacher-in-Charge assigned successfully.'];
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            error_log('[AcademicActions] assignSportTic: ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Database error while assigning TIC.'];
+        }
+    }
 }
+
