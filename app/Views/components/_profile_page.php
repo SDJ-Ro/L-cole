@@ -48,6 +48,68 @@ $roleIconMap = [
   'teacher'    => ['icon' => 'icon-bookOpen',       'tint' => '--sunshine, #EA8913'],
 ];
 $ri = $roleIconMap[$role] ?? $roleIconMap['admin'];
+
+$roleToneMap = [
+  'student'    => 'sky',
+  'teacher'    => 'sunshine',
+  'parent'     => 'terracotta',
+  'management' => 'maroon',
+  'admin'      => 'midnight',
+];
+$roleTone = $roleToneMap[$role] ?? 'sky';
+
+$renderCardEditor = function(array $field, string $tone) {
+    $readonly  = $field['readonly'] ?? false;
+    if ($readonly) return;
+
+    $type      = $field['type'] ?? 'text';
+    $label     = $field['label'] ?? '';
+    $rawVal    = $field['value'] ?? '';
+    $cleanId   = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $label));
+    $cleanName = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '_', $label));
+
+    if ($type === 'date') {
+        $isoDate = '';
+        if ($rawVal && $rawVal !== '—') {
+            $ts = strtotime($rawVal);
+            if ($ts) $isoDate = date('Y-m-d', $ts);
+        }
+        $datepickerId    = 'j-field-dp-' . $cleanId;
+        $inputName       = $cleanName;
+        $selectedValue   = $isoDate;
+        $placeholder     = 'Select ' . strtolower($label);
+        $toneColor       = $tone;
+        echo '<div class="c-info-card-edit-wrap" style="display: none; margin-top: 0.35rem;">';
+        $datepickerId    = $datepickerId;
+        $inputName       = $inputName;
+        $selectedValue   = $selectedValue;
+        $placeholder     = $placeholder;
+        $tone            = $toneColor;
+        require __DIR__ . '/_datepicker.php';
+        echo '</div>';
+    } elseif ($type === 'select' && !empty($field['options'])) {
+        $dropdownId    = 'j-field-select-' . $cleanId;
+        $name          = $cleanName;
+        $options       = array_map(function($o) {
+            return is_array($o) ? $o : ['value' => $o, 'label' => $o];
+        }, $field['options']);
+        $selectedValue = $rawVal;
+        $placeholder   = 'Select ' . strtolower($label);
+        $dropdownLabel = $label;
+        $dropdownClass = 'c-dropdown--compact';
+        echo '<div class="c-info-card-edit-wrap" style="display: none; margin-top: 0.35rem;">';
+        require __DIR__ . '/_dropdown.php';
+        echo '</div>';
+    } else {
+        $inputType = match ($type) {
+            'email'  => 'email',
+            'phone'  => 'tel',
+            'number' => 'number',
+            default  => 'text'
+        };
+        echo '<input class="c-info-card-input" type="' . htmlspecialchars($inputType) . '" id="j-field-' . htmlspecialchars($cleanId) . '" value="' . htmlspecialchars($rawVal) . '" />';
+    }
+};
 ?>
 
 <div class="c-profile-page <?= $editable ? '' : 'c-profile-page--readonly' ?>" id="j-profile-page">
@@ -89,7 +151,6 @@ $ri = $roleIconMap[$role] ?? $roleIconMap['admin'];
       <?php foreach ($contact as $field): ?>
         <?php
           $readonly = $field['readonly'] ?? false;
-          $isEmail  = $field['type'] ?? '';
         ?>
         <div class="c-info-card <?= $readonly ? 'c-info-card--readonly' : '' ?>">
           <p class="c-info-card-label">
@@ -100,12 +161,7 @@ $ri = $roleIconMap[$role] ?? $roleIconMap['admin'];
             <?= htmlspecialchars($field['label']) ?>
           </p>
           <p class="c-info-card-value"><?= htmlspecialchars($field['value'] ?? '—') ?></p>
-          <?php if (!$readonly): ?>
-            <input class="c-info-card-input"
-                   type="<?= $isEmail === 'email' ? 'email' : 'text' ?>"
-                   id="j-field-<?= htmlspecialchars(strtolower(str_replace(' ', '-', $field['label']))) ?>"
-                   value="<?= htmlspecialchars($field['value'] ?? '') ?>" />
-          <?php endif; ?>
+          <?php $renderCardEditor($field, $roleTone); ?>
         </div>
       <?php endforeach; ?>
     </div>
@@ -143,12 +199,7 @@ $ri = $roleIconMap[$role] ?? $roleIconMap['admin'];
             <?= htmlspecialchars($field['label']) ?>
           </p>
           <p class="c-info-card-value"><?= htmlspecialchars($field['value'] ?? '—') ?></p>
-          <?php if (!$readonly): ?>
-            <input class="c-info-card-input"
-                   type="text"
-                   id="j-field-<?= htmlspecialchars(strtolower(str_replace(' ', '-', $field['label']))) ?>"
-                   value="<?= htmlspecialchars($field['value'] ?? '') ?>" />
-          <?php endif; ?>
+          <?php $renderCardEditor($field, $roleTone); ?>
         </div>
       <?php endforeach; ?>
     </div>
@@ -174,8 +225,11 @@ $ri = $roleIconMap[$role] ?? $roleIconMap['admin'];
     <div class="c-profile-tinted <?= htmlspecialchars($roleSection['tintClass'] ?? 'c-profile-tinted--sky') ?>">
       <div class="c-profile-grid c-cols-3">
         <?php foreach ($roleSection['items'] as $field): ?>
-          <?php $fullWidth = $field['fullWidth'] ?? false; ?>
-          <div class="c-info-card c-info-card--readonly" style="<?= $fullWidth ? 'grid-column: 1 / -1;' : '' ?>">
+          <?php 
+            $fullWidth = $field['fullWidth'] ?? false; 
+            $readonly  = $field['readonly'] ?? true;
+          ?>
+          <div class="c-info-card <?= $readonly ? 'c-info-card--readonly' : '' ?>" style="<?= $fullWidth ? 'grid-column: 1 / -1;' : '' ?>">
             <p class="c-info-card-label">
               <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -184,6 +238,7 @@ $ri = $roleIconMap[$role] ?? $roleIconMap['admin'];
               <?= htmlspecialchars($field['label']) ?>
             </p>
             <p class="c-info-card-value"><?= htmlspecialchars($field['value'] ?? '—') ?></p>
+            <?php $renderCardEditor($field, $roleTone); ?>
           </div>
         <?php endforeach; ?>
       </div>
@@ -223,12 +278,7 @@ $ri = $roleIconMap[$role] ?? $roleIconMap['admin'];
                 <?= htmlspecialchars($field['label']) ?>
               </p>
               <p class="c-info-card-value"><?= htmlspecialchars($field['value'] ?? '—') ?></p>
-              <?php if (!$readonly): ?>
-                <input class="c-info-card-input"
-                       type="text"
-                       id="j-field-<?= htmlspecialchars(strtolower(str_replace([' ', '/', '.'], '-', $field['label']))) ?>"
-                       value="<?= htmlspecialchars($field['value'] ?? '') ?>" />
-              <?php endif; ?>
+              <?php $renderCardEditor($field, $roleTone); ?>
             </div>
           <?php endforeach; ?>
         </div>
