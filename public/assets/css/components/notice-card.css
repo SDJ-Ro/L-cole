@@ -33,7 +33,7 @@
   background: #ffffff !important;
   padding: 1.25rem 1.25rem 0 1.25rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  cursor: pointer;
+  cursor: default;
   transition: box-shadow 150ms ease, transform 150ms ease;
 }
 
@@ -141,6 +141,7 @@
   color: rgba(15, 65, 74, 0.7);
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
