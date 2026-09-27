@@ -228,7 +228,7 @@ ob_start();
 ?>
   <div style="display: flex; justify-content: flex-end; gap: 0.75rem; width: 100%;">
     <button type="button" class="c-btn c-btn--ghost j-modal-close">Cancel</button>
-    <button type="submit" class="c-btn c-btn--solid c-btn--sky">Save programme</button>
+    <button type="submit" class="c-btn c-btn--solid">Save programme</button>
   </div>
 <?php
 $formFooterSlot = ob_get_clean();

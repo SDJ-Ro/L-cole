@@ -17,34 +17,32 @@
  * =========================================================================
  */
 
+require_once __DIR__ . '/../../Models/NoticeModel.php';
+
 $n_club     = $club ?? [];
 $n_clubName = $clubName ?? ($n_club['name'] ?? 'this club');
-$clubNotices = $n_club['notices'] ?? [];
+$clubId     = $n_club['activity_id'] ?? ($n_club['id'] ?? null);
+
+// Query real database notices for this club
+$liveNotices = [];
+if (!empty($clubId)) {
+    $clubKey = match((string)$clubId) {
+        '1' => 'football',
+        '2' => 'basketball',
+        '3' => 'cricket',
+        '4' => 'swimming',
+        '5' => 'badminton',
+        '6' => 'robotics',
+        default => (string)$clubId
+    };
+    $liveNotices = NoticeModel::getClubNotices($clubKey);
+}
+
+$clubNotices = !empty($liveNotices) ? $liveNotices : ($n_club['notices'] ?? []);
 
 // Fallback demo notices if none present
 if (empty($clubNotices)) {
-    $clubNotices = [
-        [
-            'id'       => 'cn-1',
-            'title'    => 'New Training Kit Distribution',
-            'body'     => 'Collect the new season kit from the sports office before Friday afternoon.',
-            'category' => 'Extracurricular',
-            'audience' => ['Students', 'Teachers'],
-            'author'   => 'Club Coach',
-            'date'     => '22 OCT 2024',
-            'pinned'   => true,
-        ],
-        [
-            'id'       => 'cn-2',
-            'title'    => 'Fitness Assessment Week',
-            'body'     => 'Mandatory fitness screening for all senior & junior players will take place next week.',
-            'category' => 'Extracurricular',
-            'audience' => ['Students'],
-            'author'   => 'Teacher in Charge',
-            'date'     => '18 OCT 2024',
-            'pinned'   => false,
-        ],
-    ];
+    $clubNotices = [];
 }
 
 // Sort pinned notices to the top

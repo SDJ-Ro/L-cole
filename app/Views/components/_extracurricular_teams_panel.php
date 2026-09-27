@@ -170,35 +170,39 @@ if (empty($tp_teams)) {
      ========================================================================= -->
 <div class="c-modal-layer" id="j-team-modal" role="presentation">
   <button type="button" class="c-modal-backdrop j-modal-backdrop" aria-label="Close modal"></button>
-  <section class="c-modal" role="dialog" aria-modal="true" aria-labelledby="j-team-modal-title" style="width: min(44rem, 94vw); max-width: 44rem; max-height: 90vh; padding: 0; overflow: visible; border: none; background: transparent; display: flex; flex-direction: column;">
-    <form class="c-form-card" id="j-team-modal-form" novalidate style="margin: 0; display: flex; flex-direction: column; max-height: 90vh; background: #ffffff; border-radius: var(--radius-2xl, 1.25rem); overflow: hidden; box-shadow: 0 20px 45px rgba(15, 65, 74, 0.22); border: 1px solid var(--color-border, #EFE8DF);">
+  <section class="c-modal c-form-card c-form-card--modal" role="dialog" aria-modal="true" aria-labelledby="j-team-modal-title" style="width: min(44rem, 94vw); max-width: 44rem; max-height: 90vh; border-radius: 1.25rem; overflow: hidden; display: flex; flex-direction: column;">
+    <form class="c-form-card" id="j-team-modal-form" novalidate style="margin: 0; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; background: #ffffff; border: none; box-shadow: none;">
       <!-- Universal Form Header (Sand Theme) -->
-      <header class="c-form-header c-form-header--sand" style="flex-shrink: 0;">
-        <div class="c-form-header-row">
-          <div>
-            <h2 class="c-form-header-title c-font-display" id="j-team-modal-title">Add <?= htmlspecialchars($tp_singTeam) ?></h2>
-            <p class="c-form-header-subtitle" id="j-team-modal-subtitle">Create a new <?= htmlspecialchars(strtolower($tp_singTeam)) ?> panel and assign initial members.</p>
+      <header class="c-form-header c-form-header--sand c-modal__header" style="flex-shrink: 0; background: #F7F3EC !important; border-bottom: 1px solid #E5DFD7; padding: 1.25rem 1.75rem; display: flex !important; flex-direction: row !important; align-items: flex-start !important; justify-content: space-between !important; gap: 1rem !important;">
+        <div class="c-modal__heading-group" style="display: flex; align-items: flex-start; gap: 0.875rem;">
+          <div class="c-modal__icon-badge" aria-hidden="true" style="flex-shrink: 0; width: 2.75rem; height: 2.75rem; border-radius: var(--radius-xl, 0.875rem); background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(184, 151, 108, 0.3); color: #8C5A24; display: flex; align-items: center; justify-content: center;">
+            <svg class="c-icon" width="20" height="20"><use href="#icon-users"/></svg>
           </div>
-          <button type="button" class="c-modal__close-btn j-modal-close" aria-label="Close" style="color: var(--midnight, #0F414A); background: rgba(255,255,255,0.6); border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 150ms ease;">
-            <svg class="c-icon" width="18" height="18"><use href="#icon-close"/></svg>
-          </button>
+          <div>
+            <p class="c-modal__eyebrow" style="margin: 0; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(15, 65, 74, 0.55);"><?= htmlspecialchars(strtoupper($tp_singTeam)) ?> &amp; ROSTER</p>
+            <h2 class="c-form-header-title c-modal__title c-font-display" id="j-team-modal-title" style="margin: 0.15rem 0 0 0; font-size: 1.25rem; font-weight: 800; color: #0F414A;">Add <?= htmlspecialchars($tp_singTeam) ?></h2>
+            <p class="c-form-header-subtitle c-modal__description" id="j-team-modal-subtitle" style="margin: 0.25rem 0 0 0; font-size: 0.8125rem; color: rgba(15, 65, 74, 0.7);">Create a new <?= htmlspecialchars(strtolower($tp_singTeam)) ?> panel and assign initial members.</p>
+          </div>
         </div>
+        <button type="button" class="c-modal__close-btn j-modal-close" aria-label="Close" style="background: none; border: none; padding: 0.25rem; cursor: pointer; color: rgba(15,65,74,0.6); display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 32px; height: 32px; transition: background-color 150ms ease;">
+          <svg class="c-icon" width="18" height="18"><use href="#icon-close"/></svg>
+        </button>
       </header>
 
       <!-- Clean White Form Body Surface with Auto-Scroll -->
-      <div class="c-form-body" style="padding: 1.5rem; overflow-y: auto; flex: 1 1 auto; max-height: calc(90vh - 140px); overscroll-behavior: contain;">
-        <div class="c-form-grid c-form-grid--2col">
+      <div class="c-form-body" style="padding: 1.5rem 1.75rem; overflow-y: auto; flex: 1 1 auto; min-height: 0; overscroll-behavior: contain;">
+        <div class="c-form-grid c-form-grid--2col" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem;">
           <!-- Left Column: Name & Age Group -->
           <div style="display: flex; flex-direction: column; gap: 1rem;">
-            <div class="c-form-field">
-              <label class="c-form-field__label" for="j-team-modal-name"><?= htmlspecialchars($tp_singTeam) ?> Name <span class="c-form-field__required">*</span></label>
-              <input type="text" class="c-text-input" id="j-team-modal-name" placeholder="e.g. Senior <?= htmlspecialchars($tp_singTeam) ?>" required />
+            <div class="c-field-group">
+              <label class="c-field-label" for="j-team-modal-name"><?= htmlspecialchars($tp_singTeam) ?> Name <span class="c-field-required" style="color:var(--terracotta,#AF5031);">*</span></label>
+              <input type="text" class="c-field-input" id="j-team-modal-name" placeholder="e.g. Senior <?= htmlspecialchars($tp_singTeam) ?>" required />
               <p class="c-field-error" id="j-team-modal-name-error" style="display:none; color:var(--terracotta,#AF5031); font-size:0.75rem; margin-top:0.25rem;"></p>
             </div>
 
             <!-- Age group custom dropdown -->
-            <div class="c-form-field">
-              <span class="c-form-field__label">Age Group</span>
+            <div class="c-field-group">
+              <label class="c-field-label">Age Group</label>
               <?php
               $dropdownId    = 'j-team-modal-age-group';
               $dropdownLabel = 'Age Group';
@@ -212,8 +216,8 @@ if (empty($tp_teams)) {
           </div>
 
           <!-- Right Column: Cover Image Upload Box -->
-          <div class="c-form-field">
-            <span class="c-form-field__label">Panel Cover</span>
+          <div class="c-field-group">
+            <label class="c-field-label">Panel Cover</label>
             <label class="c-cover-upload c-cover-upload--sand" for="j-team-modal-cover-input" id="j-team-modal-cover-preview" style="height: 135px; border-radius: var(--radius-lg, 0.75rem); border: 2px dashed rgba(15, 65, 74, 0.2); display: flex; align-items: center; justify-content: center; overflow: hidden; background: rgba(228, 203, 169, 0.12); cursor: pointer; transition: border-color 150ms ease;">
               <span class="c-cover-upload__placeholder" style="display: flex; flex-direction: column; align-items: center; gap: 0.35rem; color: rgba(15, 65, 74, 0.6); font-size: 0.8125rem; font-weight: 600;">
                 <svg class="c-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -233,7 +237,7 @@ if (empty($tp_teams)) {
               <h3 class="c-form-section__title" style="margin: 0; font-size: 0.9375rem; font-weight: 700; color: var(--midnight, #0F414A);">Roster</h3>
               <p class="c-form-section__hint" style="margin: 0.15rem 0 0; font-size: 0.75rem; color: rgba(15, 65, 74, 0.65);">Add, update, or remove <?= htmlspecialchars(strtolower($tp_memberW)) ?>.</p>
             </div>
-            <button type="button" class="c-btn c-btn--sky c-btn--sm" id="j-team-modal-add-member-btn"
+            <button type="button" class="c-btn c-btn--ghost c-btn--sm" id="j-team-modal-add-member-btn"
                     style="display:flex;align-items:center;gap:0.35rem;font-size:0.8125rem;flex-shrink:0;">
               <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <use href="#icon-plus"/>
@@ -247,7 +251,7 @@ if (empty($tp_teams)) {
       </div>
 
       <!-- Actions Footer -->
-      <footer class="c-form-footer" style="flex-shrink: 0; padding: 1rem 1.5rem; background: #FAF7F2; border-top: 1px solid var(--color-border, #EFE8DF); display: flex; justify-content: space-between; align-items: center;">
+      <footer class="c-form-footer" style="flex-shrink: 0; padding: 1.125rem 1.75rem; background: #FAF7F2; border-top: 1px solid var(--color-border, #EFE8DF); display: flex; justify-content: space-between; align-items: center; border-bottom-left-radius: 1.25rem; border-bottom-right-radius: 1.25rem;">
         <button type="button" class="c-btn c-btn--sm" id="j-team-modal-delete-btn"
                 style="display:none; background:rgba(127,3,3,0.08);color:#7f0303;border:1px solid rgba(127,3,3,0.25);align-items:center;gap:0.35rem;">
           <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -257,7 +261,7 @@ if (empty($tp_teams)) {
         </button>
         <div style="display:flex;gap:0.75rem;margin-left:auto;">
           <button type="button" class="c-btn c-btn--ghost j-modal-close">Cancel</button>
-          <button type="submit" class="c-btn c-btn--solid c-btn--sky" id="j-team-modal-submit-btn">Create <?= htmlspecialchars($tp_singTeam) ?></button>
+          <button type="submit" class="c-btn c-btn--solid" id="j-team-modal-submit-btn">Create <?= htmlspecialchars($tp_singTeam) ?></button>
         </div>
       </footer>
     </form>
@@ -360,9 +364,9 @@ if (empty($tp_teams)) {
       }
       rosterWrap.innerHTML = rosterState.map((m, idx) => `
         <div class="c-roster-row" data-row-index="${idx}" style="display:grid;grid-template-columns:1fr 100px 1fr 36px;gap:0.5rem;align-items:center;">
-          <input class="c-text-input" data-field="name" placeholder="Student name" value="${(m.name || '').replace(/"/g, '&quot;')}" />
-          <input class="c-text-input" data-field="grade" placeholder="Grade" value="${(m.grade || '').replace(/"/g, '&quot;')}" />
-          <input class="c-text-input" data-field="position" placeholder="Role / position" value="${(m.position || '').replace(/"/g, '&quot;')}" />
+          <input class="c-field-input" data-field="name" placeholder="Student name" value="${(m.name || '').replace(/"/g, '&quot;')}" />
+          <input class="c-field-input" data-field="grade" placeholder="Grade" value="${(m.grade || '').replace(/"/g, '&quot;')}" />
+          <input class="c-field-input" data-field="position" placeholder="Role / position" value="${(m.position || '').replace(/"/g, '&quot;')}" />
           <button type="button" class="c-roster-row__remove-btn j-remove-roster-row" data-index="${idx}" title="Remove entry" style="border:none;background:rgba(127,3,3,0.08);color:#7F0303;border-radius:var(--radius-sm,0.375rem);width:36px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
             <svg class="c-icon" width="16" height="16"><use href="#icon-close"/></svg>
           </button>

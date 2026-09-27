@@ -665,17 +665,21 @@ class ExtracurricularModel {
      * Includes enrolled status, enrollment date, and requested interest status.
      */
     public static function getForStudent(string $type = 'All', string $search = ''): array {
-        // Enrolled club IDs for student Jason Perera (Cricket Club & Digital Arts Collective)
-        $enrolledClubIds = [2, 3]; // Digital Arts Collective & Cricket Club
+        // Enrolled club IDs for student Jason Perera (Cricket Club)
+        $enrolledClubIds = [3]; // Cricket Club
+        // Pending approval club IDs (Approve / Reject cards)
+        $pendingClubIds = [2, 6]; // Digital Arts Collective & Junior Robotics & STEM League
         // Requested club IDs (e.g. Model UN)
-        $requestedClubIds = [4];
+        $requestedClubIds = [5];
 
         $items = self::$clubs;
 
-        // In student portal, pending unapproved clubs are hidden or shown as active activities
-        $items = array_map(function ($club) use ($enrolledClubIds, $requestedClubIds) {
+        $items = array_map(function ($club) use ($enrolledClubIds, $pendingClubIds, $requestedClubIds) {
             $c = $club;
-            if (in_array($c['id'], $enrolledClubIds)) {
+            if (in_array($c['id'], $pendingClubIds)) {
+                $c['status']   = 'Pending';
+                $c['enrolled'] = false;
+            } elseif (in_array($c['id'], $enrolledClubIds)) {
                 $c['status']        = 'Enrolled';
                 $c['enrolled']      = true;
                 $c['enrolledSince'] = ($c['id'] === 3) ? 'Grade 9' : 'Grade 8';
@@ -706,12 +710,12 @@ class ExtracurricularModel {
             });
         }
 
-        // Sort: Enrolled first (Cricket Club id 3 prioritized), then others
+        // Sort: Enrolled first (Cricket Club id 3 prioritized), then Pending cards, then others
         usort($items, function ($a, $b) {
             if ($a['id'] === 3 && !empty($a['enrolled'])) return -1;
             if ($b['id'] === 3 && !empty($b['enrolled'])) return 1;
-            $enrA = !empty($a['enrolled']) ? 1 : 0;
-            $enrB = !empty($b['enrolled']) ? 1 : 0;
+            $enrA = !empty($a['enrolled']) ? 2 : (($a['status'] ?? '') === 'Pending' ? 1 : 0);
+            $enrB = !empty($b['enrolled']) ? 2 : (($b['status'] ?? '') === 'Pending' ? 1 : 0);
             if ($enrA !== $enrB) {
                 return $enrB <=> $enrA;
             }
