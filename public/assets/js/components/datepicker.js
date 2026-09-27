@@ -340,7 +340,7 @@
       popupEl.style.position = 'fixed';
       popupEl.style.top   = calTop + 'px';
       popupEl.style.left  = calLeft + 'px';
-      popupEl.style.zIndex = '9999';
+      popupEl.style.zIndex = '99999';
 
       document.addEventListener('mousedown', onOutsideClick, true);
       document.addEventListener('keydown', onKeyDown, true);
@@ -355,6 +355,20 @@
     });
 
     updateTriggerLabel();
+
+    rootEl.setDateVal = function (newVal) {
+      currentValue = newVal || '';
+      if (hiddenInput) hiddenInput.value = currentValue;
+      if (currentValue) {
+        visibleMonth = startOfMonth(parseDate(currentValue));
+      }
+      updateTriggerLabel();
+      if (popupEl) renderPopup();
+    };
+
+    rootEl.getDateVal = function () {
+      return currentValue;
+    };
 
     rootEl.refreshDatePicker = function () {
       if (popupEl) renderPopup();
