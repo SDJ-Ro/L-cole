@@ -72,7 +72,11 @@
 
           <?php if (!empty($clubs)): ?>
             <?php foreach ($clubs as $club): ?>
-              <?php require __DIR__ . '/../components/_extracurricular_card.php'; ?>
+              <?php
+                $canModerate = false;
+                $currentRole = 'management';
+                require __DIR__ . '/../components/_extracurricular_card.php';
+              ?>
             <?php endforeach; ?>
           <?php else: ?>
             <p style="color: rgba(15,65,74,0.6); grid-column: 1 / -1; text-align: center; padding: 3rem 0;">No activities found.</p>

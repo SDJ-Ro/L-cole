@@ -90,7 +90,7 @@ class ProfileModel {
             'editable'     => true,
             'showPassword' => false,
             'contact' => [
-                ['label' => 'Student Email',       'icon' => 'icon-mail',  'type' => 'email', 'value' => $email, 'readonly' => false],
+                ['label' => 'Parent Email',        'icon' => 'icon-mail',  'type' => 'email', 'value' => $email, 'readonly' => false],
                 ['label' => 'Parent Contact',      'icon' => 'icon-phone', 'type' => 'phone', 'value' => $phone . ' (Mother)', 'readonly' => true],
                 ['label' => 'Emergency Line',      'icon' => 'icon-phone', 'type' => 'phone', 'value' => '+94 11 456 7890', 'readonly' => true],
             ],
@@ -312,16 +312,7 @@ class ProfileModel {
                 ['label' => 'Join Date',          'icon' => 'icon-calendar',    'type' => 'date', 'value' => $joinDate,                    'readonly' => false],
                 ['label' => 'Office Location',    'icon' => 'icon-building2',   'value' => $office,                                        'readonly' => false],
             ],
-            'roleSection' => [
-                'title'     => 'Executive Portfolios & Operational Oversight',
-                'tintClass' => 'c-profile-tinted--maroon',
-                'items' => [
-                    ['label' => 'Assigned Department', 'icon' => 'icon-building2',   'value' => 'Academic Operations & Governance', 'readonly' => true],
-                    ['label' => 'Approval Authority',  'icon' => 'icon-shieldCheck', 'value' => 'Financial Budgets, Leave Sanction, Curriculum Approvals', 'readonly' => true],
-                    ['label' => 'Committee Seat',      'icon' => 'icon-usersRound',   'value' => 'Board of Governors · Secretary', 'readonly' => true],
-                    ['label' => 'Audit Level',         'icon' => 'icon-lockKeyhole', 'value' => 'Level 3 Executive Audit Access', 'readonly' => true],
-                ],
-            ],
+            'roleSection' => null,
             'extraSections' => [
                 [
                     'title' => 'Emergency Contacts & Address',

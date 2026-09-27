@@ -29,6 +29,8 @@ $createdAt  = $c['createdAt'] ?? '15 Jan 2024';
 $image      = $c['image'] ?? null;
 $canEdit      = $canEdit ?? true;
 $showBackLink = $showBackLink ?? true;
+$currentUserRole = strtolower($userRole ?? ($currentRole ?? ($_SESSION['user']['role'] ?? 'admin')));
+$canEditStaff    = $canEdit && ($currentUserRole !== 'teacher');
 ?>
 
 <!-- Back Link to Main Extracurricular Grid (Optional for views without a parent grid) -->
@@ -156,6 +158,7 @@ ob_start();
     </div>
   </div>
 
+  <?php if ($canEditStaff): ?>
   <!-- Teacher in Charge Section -->
   <section class="c-form-section" style="margin-top: 1.25rem;">
     <div class="c-form-section__head">
@@ -215,6 +218,7 @@ ob_start();
       </div>
     </div>
   </section>
+  <?php endif; ?>
 
   <!-- Description -->
   <div style="margin-top: 1.25rem;">

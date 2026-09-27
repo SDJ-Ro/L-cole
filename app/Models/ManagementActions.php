@@ -10,6 +10,7 @@
 
 require_once __DIR__ . '/../../core/Model.php';
 require_once __DIR__ . '/../../core/Database.php';
+require_once __DIR__ . '/../../core/MailService.php';
 require_once __DIR__ . '/AuditModel.php';
 require_once __DIR__ . '/SqlJsMapper.php';
 
@@ -153,6 +154,27 @@ class ManagementActions extends Model {
             ]);
 
             $db->commit();
+
+            // Dispatch Management Onboarding Email to Personal Email (containing Staff Index Number and sign-up instructions)
+            try {
+                if (!empty($personalEmail)) {
+                    MailService::sendManagementOnboarding(
+                        $personalEmail,
+                        $fullName,
+                        $newStaffId,
+                        $instEmail,
+                        $title ?? 'Management Member'
+                    );
+                    AuditModel::record(
+                        $actorAccountId,
+                        $newStaffId,
+                        'MANAGEMENT_ONBOARDING_MAIL_DISPATCHED',
+                        "Management onboarding email with staff index number ({$newStaffId}) dispatched to personal email: {$personalEmail}."
+                    );
+                }
+            } catch (\Throwable $mailEx) {
+                error_log('[ManagementActions] Management onboarding mail dispatch error: ' . $mailEx->getMessage());
+            }
 
             AuditModel::record($actorAccountId, $actorIdentifier ?? 'Admin', 'MANAGEMENT_STAFF_REGISTERED',
                 "Registered new management staff '{$fullName}' ({$newStaffId}, {$title}) with email {$instEmail}.");

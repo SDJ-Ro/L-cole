@@ -10,6 +10,7 @@
 
 require_once __DIR__ . '/../../core/Model.php';
 require_once __DIR__ . '/../../core/Database.php';
+require_once __DIR__ . '/../../core/MailService.php';
 require_once __DIR__ . '/AuditModel.php';
 require_once __DIR__ . '/SqlJsMapper.php';
 
@@ -184,6 +185,27 @@ class TeacherActions extends Model {
             }
 
             $db->commit();
+
+            // Dispatch Faculty Onboarding Email to Personal Email (containing Staff Index Number and sign-up instructions)
+            try {
+                if (!empty($personalEmail)) {
+                    MailService::sendTeacherOnboarding(
+                        $personalEmail,
+                        $fullName,
+                        $newStaffId,
+                        $instEmail,
+                        $subjects ?? ''
+                    );
+                    AuditModel::record(
+                        $actorAccountId,
+                        $newStaffId,
+                        'TEACHER_ONBOARDING_MAIL_DISPATCHED',
+                        "Faculty onboarding email with staff index number ({$newStaffId}) dispatched to personal email: {$personalEmail}."
+                    );
+                }
+            } catch (\Throwable $mailEx) {
+                error_log('[TeacherActions] Teacher onboarding mail dispatch error: ' . $mailEx->getMessage());
+            }
 
             // 8. Immutable Audit Trail
             AuditModel::record($actorAccountId, $actorIdentifier ?? 'Staff', 'TEACHER_REGISTERED',

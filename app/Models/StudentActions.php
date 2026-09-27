@@ -20,6 +20,7 @@
  */
 
 require_once __DIR__ . '/../../core/Database.php';
+require_once __DIR__ . '/../../core/MailService.php';
 require_once __DIR__ . '/StudentModel.php';
 require_once __DIR__ . '/ParentModel.php';
 require_once __DIR__ . '/AcademicModel.php';
@@ -116,6 +117,14 @@ class StudentActions {
 
         if (!in_array($student['gender'], ['Male', 'Female', 'Prefer not to say'], true)) {
             throw new InvalidArgumentException("Select a valid gender.");
+        }
+
+        // Duplicate Birth Certificate check
+        $db = Database::getConnection();
+        $bcStmt = $db->prepare("SELECT id FROM students WHERE birth_certificate_number = ? LIMIT 1");
+        $bcStmt->execute([$student['birthCertificateNumber']]);
+        if ($bcStmt->fetch()) {
+            throw new InvalidArgumentException("A student with Birth Certificate number '{$student['birthCertificateNumber']}' is already registered.");
         }
 
         return $student;
@@ -323,9 +332,47 @@ class StudentActions {
 
             $db->commit();
 
+            // Dispatch Admission Notification Email to Parent (containing Student Index Number and instructions)
+            try {
+                if (!empty($parentEmail)) {
+                    if ($mode === 'new') {
+                        MailService::sendNewAdmissionWithGuardian(
+                            $parentEmail,
+                            $parentFullName,
+                            [
+                                'index'        => $indexNo,
+                                'name'         => $student['fullName'],
+                                'grade'        => $student['grade'],
+                                'classSection' => $student['classSection']
+                            ]
+                        );
+                    } else {
+                        MailService::sendSiblingAdmissionToExistingGuardian(
+                            $parentEmail,
+                            $parentFullName,
+                            [
+                                'index'        => $indexNo,
+                                'name'         => $student['fullName'],
+                                'grade'        => $student['grade'],
+                                'classSection' => $student['classSection']
+                            ]
+                        );
+                    }
+                    AuditModel::record(
+                        $actorId,
+                        $indexNo,
+                        'ADMISSION_MAIL_DISPATCHED',
+                        "Admission email with student index number ({$indexNo}) dispatched to parent email: {$parentEmail}."
+                    );
+                }
+            } catch (\Throwable $mailEx) {
+                error_log('[StudentActions] Admission mail dispatch error: ' . $mailEx->getMessage());
+            }
+
             return [
                 'success'      => true,
                 'studentId'    => $studentId,
+                'index'        => $indexNo,
                 'indexNo'      => $indexNo,
                 'studentName'  => $student['fullName'],
                 'grade'        => $student['grade'],

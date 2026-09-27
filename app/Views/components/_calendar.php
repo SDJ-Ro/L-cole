@@ -145,22 +145,33 @@ $scopeStructure = $calendarConfig['scopeStructure'] ?? ($canAddEvent ? CalendarE
         <div>
           <label class="c-field-label">Event category</label>
           <?php
+          $isTeacher = ($resolvedRole === 'teacher' || $calendarRole === 'teacher');
           $dropdownId    = 'j-field-category';
           $dropdownLabel = 'Event category';
           $placeholder   = 'Select category';
-          $options       = [
-              ['value' => 'General', 'label' => 'General / School-wide'],
-              ['value' => 'Academic', 'label' => 'Academic'],
-              ['value' => 'Extracurricular', 'label' => 'Extracurricular'],
-          ];
-          $selectedValue = 'General';
+          if ($isTeacher) {
+              // Teacher: strictly NO school-wide option; only teacher-relevant categories
+              $options = [
+                  ['value' => 'Academic', 'label' => 'Academic'],
+                  ['value' => 'Extracurricular', 'label' => 'Extracurricular'],
+              ];
+              $selectedValue = ($scopeType === 'club' || $scopeType === 'sport') ? 'Extracurricular' : 'Academic';
+          } else {
+              $options = [
+                  ['value' => 'General', 'label' => 'General / School-wide'],
+                  ['value' => 'Academic', 'label' => 'Academic'],
+                  ['value' => 'Extracurricular', 'label' => 'Extracurricular'],
+              ];
+              $selectedValue = 'General';
+          }
           $name          = 'category';
           require __DIR__ . '/_dropdown.php';
           ?>
         </div>
 
         <!-- Progressive Scope Level 2A: Academic Scope Section -->
-        <div id="j-scope-academic-section" style="display: none; padding: 1.125rem 1.25rem; border-radius: 0.625rem; background: #FAF7F2; border: 1px solid #EFE8DF;">
+        <div id="j-scope-academic-section" style="<?= ($isTeacher && $selectedValue === 'Academic') ? 'display: block;' : 'display: none;' ?> padding: 1.125rem 1.25rem; border-radius: 0.625rem; background: #FAF7F2; border: 1px solid #EFE8DF;">
+          <?php if (!$isTeacher): ?>
           <label class="c-field-label">Academic scope level</label>
           <div style="display: flex; gap: 1.5rem; margin-top: 0.45rem; margin-bottom: 0.95rem;">
             <label class="c-radio-label">
@@ -186,9 +197,14 @@ $scopeStructure = $calendarConfig['scopeStructure'] ?? ($canAddEvent ? CalendarE
               <div class="j-dropdown-hidden-inputs"></div>
             </div>
           </div>
+          <?php else: ?>
+            <input type="radio" name="academic_level" value="class" id="j-academic-level-class" checked style="display: none;">
+            <div id="j-academic-grades-container" style="display: none;"></div>
+          <?php endif; ?>
 
           <!-- Class Selection (Grade filter + Class multi-select) -->
-          <div id="j-academic-classes-container" style="display: none;">
+          <div id="j-academic-classes-container" style="<?= $isTeacher ? 'display: block;' : 'display: none;' ?>">
+            <?php if (!$isTeacher): ?>
             <div style="margin-bottom: 0.75rem;">
               <label class="c-field-label">Filter classes by grade</label>
               <div class="c-select c-dropdown" id="j-filter-class-grade" aria-label="Filter grade">
@@ -199,9 +215,10 @@ $scopeStructure = $calendarConfig['scopeStructure'] ?? ($canAddEvent ? CalendarE
                 <div class="c-select__menu c-dropdown__menu j-dropdown-menu" role="listbox" style="max-height: 180px; overflow-y: auto;"></div>
               </div>
             </div>
+            <?php endif; ?>
 
             <div>
-              <label class="c-field-label">Select class(es)</label>
+              <label class="c-field-label"><?= $isTeacher ? 'Select your class(es)' : 'Select class(es)' ?></label>
               <div class="c-select c-dropdown c-dropdown--multi" id="j-select-academic-classes" data-multi="true" data-name="classes[]" aria-label="Select classes">
                 <button type="button" class="c-select__trigger c-dropdown__trigger j-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false" style="width: 100%;">
                   <span class="j-dropdown-chips j-tag-chips"></span>
@@ -374,14 +391,24 @@ $scopeStructure = $calendarConfig['scopeStructure'] ?? ($canAddEvent ? CalendarE
         </div>
       </div>
 
-      <footer class="c-form-footer c-event-form__footer" style="flex-shrink: 0; background: #FAF7F2; border-top: 1px solid #EFE8DF; padding: 1.125rem 1.75rem; display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; border-bottom-left-radius: 1.25rem; border-bottom-right-radius: 1.25rem;">
-        <button type="button" class="c-btn c-btn--ghost j-modal-close">Cancel</button>
-        <button type="submit" class="c-btn c-btn--solid">
-          <svg class="c-icon" width="15" height="15"><use href="#icon-calendarPlus"/></svg>
-          <span id="j-event-form-submit-label">Save event</span>
-        </button>
+      <footer class="c-form-footer c-event-form__footer" style="flex-shrink: 0; background: #FAF7F2; border-top: 1px solid #EFE8DF; padding: 1.125rem 1.75rem; display: flex; justify-content: space-between; align-items: center; border-bottom-left-radius: 1.25rem; border-bottom-right-radius: 1.25rem;">
+        <div>
+          <button type="button" class="c-btn c-btn--danger-zone" id="j-event-editor-delete-btn" style="display: none; padding: 0.5rem 0.85rem; font-size: 0.8125rem; border-radius: 0.375rem; border: 1px solid rgba(185, 28, 28, 0.3); background: #fef2f2; color: #b91c1c; font-weight: 600; cursor: pointer;">
+            <svg class="c-icon" width="14" height="14" style="vertical-align: -2px; margin-right: 4px;"><use href="#icon-trash"/></svg>
+            Delete Event
+          </button>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <button type="button" class="c-btn c-btn--ghost j-modal-close">Cancel</button>
+          <button type="submit" class="c-btn c-btn--solid">
+            <svg class="c-icon" width="15" height="15"><use href="#icon-calendarPlus"/></svg>
+            <span id="j-event-form-submit-label">Save event</span>
+          </button>
+        </div>
       </footer>
     </form>
   </section>
 </div>
 <?php endif; ?>
+
+<?php require_once __DIR__ . '/_delete_modal.php'; ?>

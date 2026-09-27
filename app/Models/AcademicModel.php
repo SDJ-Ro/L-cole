@@ -24,7 +24,7 @@ class AcademicModel extends Model {
                 SELECT g.id, g.name, g.sort_order, g.group_id, c.section_name 
                 FROM grades g
                 LEFT JOIN classes c ON g.id = c.grade_id
-                ORDER BY g.sort_order ASC, g.id ASC, c.section_name ASC
+                ORDER BY g.sort_order ASC, g.id ASC, LENGTH(c.section_name) ASC, c.section_name ASC
             ");
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -282,7 +282,7 @@ class AcademicModel extends Model {
                 FROM class_subject_teachers cst
                 JOIN classes c ON cst.class_id = c.id
                 JOIN teachers t ON cst.teacher_id = t.id
-                ORDER BY cst.subject_name ASC, c.section_name ASC
+                ORDER BY cst.subject_name ASC, LENGTH(c.section_name) ASC, c.section_name ASC
             ");
             $cstMap = [];
             while ($row = $stmtCst->fetch(PDO::FETCH_ASSOC)) {

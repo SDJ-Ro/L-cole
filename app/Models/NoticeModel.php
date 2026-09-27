@@ -189,7 +189,7 @@ class NoticeModel {
     public static function getAcademicClasses(): array {
         try {
             $db = Database::getConnection();
-            $stmt = $db->query("SELECT section_name FROM classes ORDER BY section_name ASC");
+            $stmt = $db->query("SELECT c.section_name FROM classes c JOIN grades g ON g.id = c.grade_id ORDER BY g.sort_order ASC, LENGTH(c.section_name) ASC, c.section_name ASC");
             $rows = $stmt->fetchAll();
             $sections = array_column($rows, 'section_name');
 

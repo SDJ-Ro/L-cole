@@ -262,6 +262,126 @@ class MailService {
     }
 
     /**
+     * Teacher Onboarding: Dispatched to the teacher's personal email when registered by Admin or Management.
+     * Contains official Staff Index Number, institutional email, assigned subjects, and sign-up instructions.
+     */
+    public static function sendTeacherOnboarding(
+        string $toPersonalEmail,
+        string $name,
+        string $staffId,
+        string $instEmail,
+        string $subjects = ''
+    ): array {
+        $subject = "Welcome to L'École — Teacher Appointment & Portal Credentials (" . $staffId . ")";
+        $signupUrl = 'http://localhost:8040/auth/teacherSignup?identifier=' . urlencode($instEmail) . '&name=' . urlencode($name);
+
+        $body = '
+          <h2 style="margin-top:0;color:#0f414a;font-size:20px;">Official Faculty Appointment Confirmed</h2>
+          <p>Dear ' . htmlspecialchars($name) . ',</p>
+          <p>We are pleased to inform you that your teacher profile and academic information have been <strong>successfully added to the L\'École School Database</strong>. Below are your official staff credentials and portal activation instructions.</p>
+
+          <!-- Teacher Credentials Card -->
+          <div style="background:#eef6f6;padding:20px;border-radius:12px;margin:20px 0;border-left:4px solid #207c82;">
+            <h3 style="margin:0 0 12px 0;color:#0f414a;font-size:14px;text-transform:uppercase;letter-spacing:0.06em;">Official Faculty Credentials</h3>
+            <table class="meta-table" style="margin:0;width:100%;">
+              <tr><td class="label" style="width:160px;font-weight:600;color:#0f414a;padding:5px 0;">Teacher Full Name:</td><td style="padding:5px 0;"><strong>' . htmlspecialchars($name) . '</strong></td></tr>
+              <tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">Staff Index Number:</td><td style="padding:5px 0;"><strong style="font-size:15px;color:#0f414a;letter-spacing:0.04em;background:#e0f0f1;padding:2px 8px;border-radius:4px;">' . htmlspecialchars($staffId) . '</strong></td></tr>
+              <tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">Institutional Email:</td><td style="padding:5px 0;"><code>' . htmlspecialchars($instEmail) . '</code></td></tr>
+              ' . (!empty($subjects) ? '<tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">Assigned Subjects:</td><td style="padding:5px 0;">' . htmlspecialchars($subjects) . '</td></tr>' : '') . '
+              <tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">Personal Email:</td><td style="padding:5px 0;">' . htmlspecialchars($toPersonalEmail) . '</td></tr>
+            </table>
+          </div>
+
+          <!-- Sign-Up Instructions -->
+          <div style="background:#fdfaf6;padding:18px 20px;border-radius:12px;margin:20px 0;border:1px solid rgba(15,65,74,0.12);">
+            <h4 style="margin:0 0 8px 0;color:#0f414a;font-size:14px;">Next Steps — Account Activation &amp; Password Setup</h4>
+            <p style="margin:0 0 14px 0;font-size:13.5px;color:#233438;line-height:1.55;">
+              To activate your Teacher Workspace, please click the button below to set your permanent password. You may identify yourself using either your <strong>Institutional Email (' . htmlspecialchars($instEmail) . ')</strong> or your <strong>Staff Index Number (' . htmlspecialchars($staffId) . ')</strong>.
+            </p>
+            <div style="text-align:center;margin:16px 0;">
+              <a href="' . htmlspecialchars($signupUrl) . '" class="btn-primary" style="background:#0f414a;color:#ffffff;display:inline-block;padding:12px 26px;border-radius:8px;font-weight:700;text-decoration:none;">
+                Set Password &amp; Activate Teacher Account &rarr;
+              </a>
+            </div>
+            <p style="margin:8px 0 0 0;font-size:12px;color:rgba(15,65,74,0.7);text-align:center;">
+              Direct Portal Sign-In: <a href="http://localhost:8040/auth/teacher" style="color:#207c82;font-weight:600;">http://localhost:8040/auth/teacher</a>
+            </p>
+          </div>
+
+          <p style="font-size:12.5px;color:rgba(15,65,74,0.7);line-height:1.5;">
+            If you need assistance or believe this record was created in error, please contact the School Administration at <a href="mailto:office@lecole.edu" style="color:#0f414a;font-weight:600;">office@lecole.edu</a>.
+          </p>
+        ';
+
+        return self::send($toPersonalEmail, $subject, $body, [
+            'role'       => 'teacher',
+            'name'       => $name,
+            'staff_id'   => $staffId,
+            'inst_email' => $instEmail
+        ]);
+    }
+
+    /**
+     * Management Onboarding: Dispatched to the management member's personal email when registered by Admin.
+     * Contains official Staff Index Number, institutional email, executive title, and sign-up instructions.
+     */
+    public static function sendManagementOnboarding(
+        string $toPersonalEmail,
+        string $name,
+        string $staffId,
+        string $instEmail,
+        string $title = 'Management Member'
+    ): array {
+        $subject = "Welcome to L'École — Management Appointment & Portal Credentials (" . $staffId . ")";
+        $signupUrl = 'http://localhost:8040/auth/managementSignup?identifier=' . urlencode($instEmail) . '&name=' . urlencode($name);
+
+        $body = '
+          <h2 style="margin-top:0;color:#0f414a;font-size:20px;">Official Management Appointment Confirmed</h2>
+          <p>Dear ' . htmlspecialchars($name) . ',</p>
+          <p>We are pleased to inform you that your executive leadership profile and administrative credentials have been <strong>successfully added to the L\'École School Database</strong>. Below are your official staff credentials and portal activation instructions.</p>
+
+          <!-- Management Credentials Card -->
+          <div style="background:#f4ece1;padding:20px;border-radius:12px;margin:20px 0;border-left:4px solid #af5031;">
+            <h3 style="margin:0 0 12px 0;color:#af5031;font-size:14px;text-transform:uppercase;letter-spacing:0.06em;">Official Leadership Credentials</h3>
+            <table class="meta-table" style="margin:0;width:100%;">
+              <tr><td class="label" style="width:160px;font-weight:600;color:#0f414a;padding:5px 0;">Official Name:</td><td style="padding:5px 0;"><strong>' . htmlspecialchars($name) . '</strong></td></tr>
+              <tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">Staff Index Number:</td><td style="padding:5px 0;"><strong style="font-size:15px;color:#af5031;letter-spacing:0.04em;background:#f8ede7;padding:2px 8px;border-radius:4px;">' . htmlspecialchars($staffId) . '</strong></td></tr>
+              <tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">Executive Designation:</td><td style="padding:5px 0;"><strong>' . htmlspecialchars($title) . '</strong></td></tr>
+              <tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">Institutional Email:</td><td style="padding:5px 0;"><code>' . htmlspecialchars($instEmail) . '</code></td></tr>
+              <tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">Personal Email:</td><td style="padding:5px 0;">' . htmlspecialchars($toPersonalEmail) . '</td></tr>
+            </table>
+          </div>
+
+          <!-- Sign-Up Instructions -->
+          <div style="background:#fdfaf6;padding:18px 20px;border-radius:12px;margin:20px 0;border:1px solid rgba(15,65,74,0.12);">
+            <h4 style="margin:0 0 8px 0;color:#0f414a;font-size:14px;">Next Steps — Account Activation &amp; Password Setup</h4>
+            <p style="margin:0 0 14px 0;font-size:13.5px;color:#233438;line-height:1.55;">
+              To activate your Management Workspace, click the button below to configure your permanent password. You may identify yourself using either your <strong>Institutional Email (' . htmlspecialchars($instEmail) . ')</strong> or your <strong>Staff Index Number (' . htmlspecialchars($staffId) . ')</strong>.
+            </p>
+            <div style="text-align:center;margin:16px 0;">
+              <a href="' . htmlspecialchars($signupUrl) . '" class="btn-primary" style="background:#af5031;color:#ffffff;display:inline-block;padding:12px 26px;border-radius:8px;font-weight:700;text-decoration:none;">
+                Set Password &amp; Activate Management Account &rarr;
+              </a>
+            </div>
+            <p style="margin:8px 0 0 0;font-size:12px;color:rgba(15,65,74,0.7);text-align:center;">
+              Direct Portal Sign-In: <a href="http://localhost:8040/auth/management" style="color:#af5031;font-weight:600;">http://localhost:8040/auth/management</a>
+            </p>
+          </div>
+
+          <p style="font-size:12.5px;color:rgba(15,65,74,0.7);line-height:1.5;">
+            All leadership account operations are strictly audited. For platform assistance, contact <a href="mailto:admin@lecole.edu" style="color:#0f414a;font-weight:600;">admin@lecole.edu</a>.
+          </p>
+        ';
+
+        return self::send($toPersonalEmail, $subject, $body, [
+            'role'       => 'management',
+            'name'       => $name,
+            'staff_id'   => $staffId,
+            'inst_email' => $instEmail
+        ]);
+    }
+
+    /**
      * Case 1: Consolidated Admission Email (New Student + New Guardian)
      * Dispatches one email to the guardian containing instructions and credentials for both parties:
      * - Parent: Username = Email, instructions to activate and set password.
@@ -272,14 +392,14 @@ class MailService {
         string $parentName,
         array $studentData
     ): array {
-        $subject = "Welcome to L'École — Parent & Student Portal Credentials (" . $studentData['index'] . ")";
+        $subject = "Welcome to L'École — Admission Confirmed & Portal Credentials (" . $studentData['index'] . ")";
         $parentSignupUrl = 'http://localhost:8040/auth/parentSignup?identifier=' . urlencode($parentEmail) . '&name=' . urlencode($parentName);
         $studentSignupUrl = 'http://localhost:8040/auth/studentSignup?identifier=' . urlencode($studentData['index']) . '&name=' . urlencode($studentData['name']);
 
         $body = '
           <h2 style="margin-top:0;color:#0f414a;font-size:20px;">Welcome to L\'École International School</h2>
           <p>Dear ' . htmlspecialchars($parentName) . ',</p>
-          <p>Congratulations! Your child <strong>' . htmlspecialchars($studentData['name']) . '</strong> has been formally admitted to L\'École. Below are the official portal credentials and onboarding instructions for both your parent workspace and your child\'s student workspace.</p>
+          <p>Congratulations! Information for your child <strong>' . htmlspecialchars($studentData['name']) . '</strong> has been <strong>successfully registered into the L\'École School Database with official Index Number ' . htmlspecialchars($studentData['index']) . '</strong>. Below are the official portal credentials and onboarding instructions for both your parent workspace and your child\'s student workspace.</p>
           
           <!-- Parent Credentials Section -->
           <div style="background:#f4ece1;padding:18px 20px;border-radius:12px;margin:20px 0;border-left:4px solid #af5031;">
@@ -339,7 +459,7 @@ class MailService {
         $body = '
           <h2 style="margin-top:0;color:#0f414a;font-size:20px;">New Student Enrolled — Sibling Linkage Confirmed</h2>
           <p>Dear ' . htmlspecialchars($parentName) . ',</p>
-          <p>We are delighted to confirm that <strong>' . htmlspecialchars($studentData['name']) . '</strong> has been admitted to L\'École and successfully linked to your existing parent profile.</p>
+          <p>We are delighted to confirm that information for <strong>' . htmlspecialchars($studentData['name']) . '</strong> has been <strong>successfully registered into the L\'École School Database with official Index Number ' . htmlspecialchars($studentData['index']) . '</strong> and linked to your existing parent profile.</p>
 
           <!-- New Sibling Details Card -->
           <div style="background:#e8f4f5;padding:18px 20px;border-radius:12px;margin:20px 0;border-left:4px solid #207c82;">

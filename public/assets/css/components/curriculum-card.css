@@ -65,10 +65,16 @@
 .c-curriculum-card {
   flex: 1 1 calc(50% - 0.75rem);
   min-width: 280px;
-  border-radius: var(--radius-xl, 0.875rem);
+  border-radius: var(--radius-2xl, 1.25rem);
   border: 1px solid var(--alabaster, #EFE8DF);
   background: #fff;
-  padding: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(15, 65, 74, 0.04);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.c-curriculum-card:hover {
+  box-shadow: 0 6px 18px rgba(15, 65, 74, 0.07);
 }
 
 .c-curriculum-card__top {
@@ -147,27 +153,49 @@
 .c-removable-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.35rem;
   border-radius: var(--radius-lg, 0.625rem);
-  background: rgba(253, 171, 165, 0.25);
+  background: rgba(253, 171, 165, 0.3);
+  border: 1px solid rgba(127, 3, 3, 0.12);
   color: var(--midnight, #0F414A);
-  padding: 0.25rem 0.5rem;
-  font-size: 10px;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.75rem;
   font-weight: 700;
+  line-height: 1;
 }
 
 .c-removable-chip__remove {
   border: none;
   background: transparent;
-  border-radius: 4px;
-  padding: 1px;
-  color: rgba(127, 3, 3, 0.65);
+  border-radius: 50%;
+  padding: 2px;
+  margin-left: 2px;
+  color: var(--maroon, #7F0303);
   cursor: pointer;
-  display: flex;
-  transition: background 150ms ease, color 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 150ms ease, color 150ms ease, transform 120ms ease;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
-.c-removable-chip__remove:hover { background: #fff; color: var(--maroon, #7F0303); }
+.c-removable-chip__remove:hover {
+  background: rgba(127, 3, 3, 0.15);
+  color: #630202;
+  transform: scale(1.15);
+}
+
+.c-removable-chip__remove svg {
+  width: 10px;
+  height: 10px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 .c-curriculum-editor__add-row { display: flex; gap: 0.5rem; }
 
@@ -234,3 +262,82 @@
   font-style: italic;
   padding: 0.25rem 0;
 }
+
+/* -------------------------------------------------------------------------
+   3. CURRICULUM WARNING & FEEDBACK BANNERS
+   ------------------------------------------------------------------------- */
+.c-curriculum-warning-banner {
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-start;
+  padding: 0.6875rem 0.875rem;
+  border-radius: var(--radius-lg, 0.625rem);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  margin-bottom: 0.75rem;
+  box-sizing: border-box;
+  animation: c-fade-down 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.c-curriculum-warning-banner svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.c-curriculum-warning-banner__content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.c-curriculum-warning-banner__title {
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+/* Error / Blocked State (Maroon / Terracotta tone) */
+.c-curriculum-warning-banner--error {
+  border: 1px solid rgba(184, 80, 66, 0.35);
+  background: #FEF2F2;
+  color: #7F0303;
+}
+.c-curriculum-warning-banner--error svg {
+  color: #7F0303;
+  stroke: #7F0303;
+}
+
+/* Warning / Validation State (Amber / Ochre tone) */
+.c-curriculum-warning-banner--warning {
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  background: #FFFBEB;
+  color: #92400E;
+}
+.c-curriculum-warning-banner--warning svg {
+  color: #B45309;
+  stroke: #B45309;
+}
+
+/* Info / Overlap State (Deepsea / Skyblue tone) */
+.c-curriculum-warning-banner--info {
+  border: 1px solid rgba(127, 199, 204, 0.5);
+  background: rgba(127, 199, 204, 0.12);
+  color: var(--midnight, #0F414A);
+}
+.c-curriculum-warning-banner--info svg {
+  color: var(--deepsea, #0A525D);
+  stroke: var(--deepsea, #0A525D);
+}
+
+/* Disabled button appearance in curriculum editor and new curriculum card */
+.c-curriculum-editor__footer .c-btn-save:disabled,
+.c-curriculum-editor__footer .c-btn-danger:disabled,
+.c-curriculum-editor__footer button:disabled,
+.c-curriculum-card button.j-delete-curriculum-btn:disabled {
+  opacity: 0.42 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  filter: grayscale(0.3) !important;
+  box-shadow: none !important;
+}
+

@@ -552,15 +552,15 @@
           var actualRoleName = data.actual_role ? (data.actual_role.charAt(0).toUpperCase() + data.actual_role.slice(1)) : 'Designated';
           var destUrl = data.correct_url || ('/auth/' + (data.actual_role || ''));
           showAlert(
-            '<div style="padding:0.75rem 0.85rem;background:rgba(184,80,66,0.08);border:1.5px solid var(--maroon, #B85042);border-radius:0.5rem;text-align:left;color:var(--midnight,#0F414A);">' +
-              '<div style="font-weight:700;font-size:0.875rem;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.4rem;color:var(--maroon,#B85042);">' +
+            '<div class="c-role-mismatch-content" style="text-align:left;">' +
+              '<div style="font-weight:700;font-size:0.875rem;margin-bottom:0.35rem;display:flex;align-items:center;gap:0.45rem;color:var(--maroon,#7F0303);">' +
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
                 'Access Restricted: Role Mismatch' +
               '</div>' +
-              '<p style="font-size:0.8125rem;margin:0 0 0.65rem 0;line-height:1.45;color:rgba(15,65,74,0.85);">' +
-                escapeHtml(data.error || ('This account is registered as ' + actualRoleName + '. Please use the ' + actualRoleName + ' portal.')) +
+              '<p style="font-size:0.8125rem;margin:0 0 0.75rem 0;line-height:1.45;color:rgba(15,65,74,0.85);font-weight:500;">' +
+                escapeHtml(data.error || ('This account is registered as ' + actualRoleName + '. Please sign in via the ' + actualRoleName + ' portal.')) +
               '</p>' +
-              '<a href="' + destUrl + '" class="auth-submit-btn auth-submit-btn--block" style="display:inline-flex;align-items:center;justify-content:center;gap:0.35rem;padding:0.45rem 0.85rem;background:var(--midnight,#0F414A);color:#fff;border-radius:0.375rem;font-size:0.8125rem;font-weight:600;text-decoration:none;">' +
+              '<a href="' + destUrl + '" class="auth-submit-btn auth-submit-btn--block" style="display:flex;align-items:center;justify-content:center;gap:0.4rem;width:100%;padding:0.55rem 1rem;background:var(--maroon,#7F0303);color:#fff;border-radius:0.375rem;font-size:0.8125rem;font-weight:600;text-decoration:none;box-shadow:0 1px 3px rgba(127,3,3,0.25);transition:opacity 0.15s;" onmouseover="this.style.opacity=\'0.92\'" onmouseout="this.style.opacity=\'1\'">' +
                 'Go to ' + actualRoleName + ' Portal &rarr;' +
               '</a>' +
             '</div>'

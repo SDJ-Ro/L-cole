@@ -54,15 +54,7 @@
           <input type="text" class="c-search-field__input j-search-input" placeholder="Search notices..." autocomplete="off" />
         </label>
 
-        <!-- 2. Choice between two tabs -->
-        <div class="c-tablist" role="tablist" aria-label="Notice filter mode">
-          <button type="button" role="tab" class="c-tab-btn is-active-tab c-tone-sky j-notice-scope-tab" data-filter="all" aria-selected="true">
-            <span>All Notices</span>
-          </button>
-          <button type="button" role="tab" class="c-tab-btn j-notice-scope-tab" data-filter="my-posts" aria-selected="false">
-            <span>My Posts</span>
-          </button>
-        </div>
+
 
         <!-- 3. Right-most corner: Related dropdowns -->
         <div class="c-filter-bar__selects">

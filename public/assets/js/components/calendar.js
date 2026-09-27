@@ -108,7 +108,7 @@
       }
 
       // Role restriction: If teacher cannot create whole-grade events:
-      if (scopeStructure.can_grade === false) {
+      if (scopeStructure.can_grade === false || apiRole === 'teacher') {
         const gradeRadio = document.getElementById('j-academic-level-grade')?.closest('label');
         if (gradeRadio) gradeRadio.style.display = 'none';
         const classRadio = document.getElementById('j-academic-level-class');
@@ -854,10 +854,26 @@
     // Wire Event Editor Modal (if user can add events)
     const eventEditorModal = document.getElementById('j-modal-event-editor');
     const eventForm = document.getElementById('j-event-form');
+    const eventEditorDeleteBtn = document.getElementById('j-event-editor-delete-btn');
+    if (eventEditorDeleteBtn) {
+      eventEditorDeleteBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!currentEditingEvent) return;
+        const evId = currentEditingEvent.id;
+        const evTitle = currentEditingEvent.title || 'this event';
+        closeModal(eventEditorModal);
+        executeDeleteEvent(evId, evTitle);
+      });
+    }
 
     function openEventEditorModal(eventToEdit) {
       if (!eventEditorModal) return;
       currentEditingEvent = eventToEdit;
+
+      if (eventEditorDeleteBtn) {
+        eventEditorDeleteBtn.style.display = (eventToEdit && canUserModify(eventToEdit)) ? 'inline-flex' : 'none';
+      }
 
       const titleInput = document.getElementById('j-field-title');
       const timeInput = document.getElementById('j-field-time');
@@ -938,7 +954,9 @@
         }
         if (detailsInput) detailsInput.value = '';
 
-        const defaultCat = fixedScope ? (fixedScope.type === 'club' || fixedScope.type === 'sport' ? 'Extracurricular' : 'Academic') : 'General';
+        const defaultCat = fixedScope 
+          ? (fixedScope.type === 'club' || fixedScope.type === 'sport' ? 'Extracurricular' : 'Academic') 
+          : (apiRole === 'teacher' ? 'Academic' : 'General');
         if (window.setDropdownValue) {
           window.setDropdownValue('j-field-category', defaultCat);
         }
@@ -1058,7 +1076,7 @@
       // Find overlapping event on the same date
       const collidingEvent = (state.calendarEvents || []).find(ev => {
         if (excludeId && String(ev.id) === excludeId) return false;
-        if (ev.date !== activeDateStr) return false;
+        if (formatIsoDate(ev.date) !== activeDateStr) return false;
         const evRange = parseTimeRangeMinutes(ev.time);
         if (!evRange) return false;
         return range.start < evRange.end && range.end > evRange.start;
