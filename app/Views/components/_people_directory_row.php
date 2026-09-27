@@ -37,7 +37,7 @@ $getActStyle = function($act) {
 ?>
 
 <?php if ($userRole === 'student'): ?>
-  <tr class="c-row-hover-sky j-person-row" data-role="student" data-id="<?= htmlspecialchars($id) ?>" data-grade="<?= htmlspecialchars($p['gradeId'] ?? '') ?>" data-class="<?= htmlspecialchars($p['className'] ?? '') ?>" data-activities="<?= htmlspecialchars(implode(',', $p['activities'] ?? [])) ?>">
+  <tr class="c-row-hover-sky j-person-row" data-role="student" data-id="<?= htmlspecialchars($id) ?>" data-status="<?= htmlspecialchars($status) ?>" data-grade="<?= htmlspecialchars($p['gradeId'] ?? '') ?>" data-class="<?= htmlspecialchars($p['className'] ?? '') ?>" data-activities="<?= htmlspecialchars(implode(',', $p['activities'] ?? [])) ?>">
     <td>
       <div class="c-person-cell">
         <div class="c-avatar c-avatar-sm <?= htmlspecialchars($avatar) ?>"><?= htmlspecialchars($initials) ?></div>
@@ -108,7 +108,7 @@ $getActStyle = function($act) {
   </tr>
 
 <?php elseif ($userRole === 'teacher'): ?>
-  <tr class="c-row-hover-sunshine j-person-row" data-role="teacher" data-id="<?= htmlspecialchars($id) ?>" data-subject="<?= htmlspecialchars($p['subject'] ?? '') ?>" data-classes="<?= htmlspecialchars(implode(',', $p['classes'] ?? [])) ?>" data-tic="<?= htmlspecialchars($p['tic'] ?? '') ?>">
+  <tr class="c-row-hover-sunshine j-person-row" data-role="teacher" data-id="<?= htmlspecialchars($id) ?>" data-status="<?= htmlspecialchars($status) ?>" data-subject="<?= htmlspecialchars($p['subject'] ?? '') ?>" data-classes="<?= htmlspecialchars(implode(',', $p['classes'] ?? [])) ?>" data-tic="<?= htmlspecialchars($p['tic'] ?? '') ?>">
     <td>
       <div class="c-person-cell">
         <div class="c-avatar c-avatar-md <?= htmlspecialchars($avatar) ?>"><?= htmlspecialchars($initials) ?></div>
@@ -177,7 +177,7 @@ $getActStyle = function($act) {
   </tr>
 
 <?php elseif ($userRole === 'parent'): ?>
-  <tr class="c-row-hover-terracotta j-person-row" data-role="parent" data-id="<?= htmlspecialchars($id) ?>" data-relation="<?= htmlspecialchars($p['relation'] ?? '') ?>">
+  <tr class="c-row-hover-terracotta j-person-row" data-role="parent" data-id="<?= htmlspecialchars($id) ?>" data-status="<?= htmlspecialchars($status) ?>" data-relation="<?= htmlspecialchars($p['relation'] ?? '') ?>">
     <td>
       <div class="c-person-cell">
         <div class="c-avatar c-avatar-md <?= htmlspecialchars($avatar) ?>"><?= htmlspecialchars($initials) ?></div>
@@ -251,7 +251,7 @@ $getActStyle = function($act) {
   </tr>
 
 <?php elseif ($userRole === 'management'): ?>
-  <tr class="c-row-hover-maroon j-person-row" data-role="management" data-id="<?= htmlspecialchars($id) ?>">
+  <tr class="c-row-hover-maroon j-person-row" data-role="management" data-id="<?= htmlspecialchars($id) ?>" data-status="<?= htmlspecialchars($status) ?>">
     <td>
       <div class="c-person-cell">
         <div class="c-avatar c-avatar-md <?= htmlspecialchars($avatar) ?>"><?= htmlspecialchars($initials) ?></div>

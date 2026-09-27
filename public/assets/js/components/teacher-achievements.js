@@ -13,35 +13,47 @@
 
     // Grid & Filters
     const searchInput   = document.getElementById('j-search-student-achievements');
-    const cards         = Array.from(document.querySelectorAll('.j-student-achievement-card'));
     const emptyState    = document.getElementById('j-achievements-empty-state');
     const grid          = document.getElementById('j-view-student-grid');
 
     // Timeline Banner Elements
-    const bannerName    = document.getElementById('j-timeline-student-name');
-    const bannerIndex   = document.getElementById('j-timeline-student-index');
-    const bannerImg     = document.getElementById('j-timeline-avatar-img');
-    const bannerInitials= document.getElementById('j-timeline-initials');
+    const bannerName      = document.getElementById('j-timeline-student-name');
+    const bannerIndex     = document.getElementById('j-timeline-student-index');
+    const bannerImg       = document.getElementById('j-timeline-avatar-img');
+    const bannerInitials  = document.getElementById('j-timeline-initials');
     const bannerIssueWrap = document.getElementById('j-timeline-issue-action');
-    const btnViewIssue  = document.getElementById('j-btn-view-issue');
+    const btnTimelineRec  = document.getElementById('j-timeline-record-btn');
 
     // Modal Elements
-    const modalLayer    = document.getElementById('j-record-modal') || document.getElementById('j-record-modal-layer');
-    const modalTitle    = document.getElementById('j-record-modal-title');
-    const modalDesc     = document.getElementById('j-record-modal-desc');
-    const issueCallout  = document.getElementById('j-rec-issue-callout');
-    const form          = document.getElementById('j-record-achievement-form');
-    const inputTitle    = document.getElementById('j-rec-title');
-    const inputDate     = document.getElementById('j-rec-date');
-    const inputIssuer   = document.getElementById('j-rec-issuer');
-    const inputDesc     = document.getElementById('j-rec-desc');
+    const modalEl         = document.getElementById('j-record-modal');
+    const modalEyebrow    = document.getElementById('j-record-modal-eyebrow');
+    const modalTitle      = document.getElementById('j-record-modal-title');
+    const modalDesc       = document.getElementById('j-record-modal-desc');
+    const iconBadge       = document.getElementById('j-record-modal-icon-badge');
+    const iconAward       = document.getElementById('j-rec-icon-award');
+    const iconIssue       = document.getElementById('j-rec-icon-issue');
+    const issueCallout    = document.getElementById('j-rec-issue-callout');
+    const form            = document.getElementById('j-record-achievement-form');
+    const inputStudentName  = document.getElementById('j-rec-student-name');
+    const inputStudentIndex = document.getElementById('j-rec-student-index');
+    const displayAvatar   = document.getElementById('j-rec-display-avatar');
+    const displayName     = document.getElementById('j-rec-display-name');
+    const displayIndex    = document.getElementById('j-rec-display-index');
+    const displayType     = document.getElementById('j-rec-display-type');
+    const inputTitle      = document.getElementById('j-rec-title');
+    const inputIssuer     = document.getElementById('j-rec-issuer');
+    const inputDesc       = document.getElementById('j-rec-desc');
     const inputTypeHidden = document.getElementById('j-rec-type-hidden');
-    const submitBtn     = document.getElementById('j-rec-submit-btn');
+    const submitBtn       = document.getElementById('j-rec-submit-btn');
 
-    // Upload Box Elements
-    const uploadBox     = document.getElementById('j-rec-upload-box');
-    const fileInput     = document.getElementById('j-rec-file-input');
-    const filenameLabel = document.getElementById('j-rec-upload-filename');
+    // Evidence & Upload Box Elements
+    const previewModal    = document.getElementById('j-evidence-preview-modal');
+    const evidenceBtn     = document.getElementById('j-rec-evidence-link');
+    const uploadSection   = document.getElementById('j-rec-proof-upload-section');
+    const viewEvidenceSection = document.getElementById('j-rec-proof-view-section');
+    const uploadBox       = document.getElementById('j-rec-upload-box');
+    const fileInput       = document.getElementById('j-rec-file-input');
+    const filenameLabel   = document.getElementById('j-rec-upload-filename');
 
     let currentCategory = 'all';
     let currentSearch = '';
@@ -51,6 +63,7 @@
        1. LIVE SEARCH & CATEGORY FILTER ON STUDENT CARDS
        ----------------------------------------------------------------------- */
     function filterCards() {
+      const cards = Array.from(document.querySelectorAll('.j-student-achievement-card'));
       let visibleCount = 0;
       const q = currentSearch.trim().toLowerCase();
       const cat = currentCategory.toLowerCase();
@@ -94,89 +107,23 @@
     });
 
     /* -----------------------------------------------------------------------
-       2. TIMELINE VIEW TOGGLING (Clicking 'View' on any student card)
+       HELPER: EXTRACT STUDENT DATA FROM A CARD OR ACTIVE STUDENT
        ----------------------------------------------------------------------- */
-    document.addEventListener('click', function (e) {
-      const viewBtn = e.target.closest('.j-view-student');
-      if (!viewBtn) return;
-
-      e.preventDefault();
-      const card = viewBtn.closest('.j-student-achievement-card');
-      if (!card) return;
-
-      const name = card.getAttribute('data-student-name') || 'Student';
-      const index = card.getAttribute('data-student-index') || '';
+    function getStudentDataFromCard(card) {
+      if (!card) return null;
+      const name = card.getAttribute('data-student-name') || card.querySelector('.c-student-card__name')?.textContent?.trim() || 'Student';
+      const index = card.getAttribute('data-student-index') || card.querySelector('.c-student-card__index')?.textContent?.trim() || '';
       const avatarImg = card.querySelector('.c-student-card__avatar');
-      const avatarSrc = avatarImg ? avatarImg.getAttribute('src') : '';
-      const hasIssue = card.classList.contains('c-student-card--highlighted');
-
-      activeStudent = { name, index, avatarSrc, hasIssue };
-
-      // Update Timeline Banner
-      if (bannerName) bannerName.textContent = name;
-      if (bannerIndex) bannerIndex.textContent = index;
-
-      if (avatarSrc && bannerImg) {
-        bannerImg.src = avatarSrc;
-        bannerImg.style.display = 'block';
-        if (bannerInitials) bannerInitials.style.display = 'none';
-      } else if (bannerInitials) {
-        const parts = name.trim().split(' ');
-        bannerInitials.textContent = ((parts[0] || 'S')[0] + (parts[1] || '')[0]).toUpperCase();
-        bannerInitials.style.display = 'flex';
-        if (bannerImg) bannerImg.style.display = 'none';
+      const avatarSrc = avatarImg ? avatarImg.getAttribute('src') : (card.getAttribute('data-student-avatar') || '');
+      let initials = card.getAttribute('data-student-initials') || '';
+      if (!initials && name) {
+        const parts = name.trim().split(/\s+/);
+        initials = ((parts[0] || 'S')[0] + (parts[1] || '')[0]).toUpperCase();
       }
-
-      // Show/hide View Issue button based on student flag
-      if (bannerIssueWrap) {
-        bannerIssueWrap.style.display = hasIssue ? 'block' : 'none';
-      }
-
-      // Swap views
-      if (mainSection) mainSection.style.display = 'none';
-      if (timelineView) timelineView.style.display = 'block';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    // Back to Achievements Grid
-    if (backBtn) {
-      backBtn.addEventListener('click', function () {
-        if (timelineView) timelineView.style.display = 'none';
-        if (mainSection) mainSection.style.display = 'block';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-    }
-
-    /* -----------------------------------------------------------------------
-       3. MODAL CONTROLS: RECORD ACHIEVEMENT & REVIEW ISSUE
-       (Reuses universal dialogs-and-popups.js for open/close/escape/backdrop)
-       ----------------------------------------------------------------------- */
-    const modalEl = document.getElementById('j-record-modal') || modalLayer;
-    const previewModal = document.getElementById('j-evidence-preview-modal');
-    const evidenceBtn  = document.getElementById('j-rec-evidence-link');
-    const uploadSection = document.getElementById('j-rec-proof-upload-section');
-    const viewEvidenceSection = document.getElementById('j-rec-proof-view-section');
-
-    function openModal() {
-      if (!modalEl) return;
-      if (typeof window.openModal === 'function') {
-        window.openModal(modalEl);
-      } else {
-        modalEl.style.display = 'flex';
-        modalEl.classList.add('c-is-open');
-      }
-    }
-
-    function closeModal() {
-      if (!modalEl) return;
-      if (typeof window.closeModal === 'function') {
-        window.closeModal(modalEl);
-      } else {
-        modalEl.classList.remove('c-is-open');
-        modalEl.style.display = 'none';
-      }
-      if (form) form.reset();
-      if (filenameLabel) filenameLabel.style.display = 'none';
+      const hasIssue = card.getAttribute('data-has-issue') === '1' || card.classList.contains('c-student-card--highlighted');
+      const itemType = card.getAttribute('data-item-type') || 'Class';
+      const classTxt = card.getAttribute('data-student-class') || 'Class';
+      return { name, index, avatarSrc, initials, hasIssue, itemType, classTxt };
     }
 
     function setRecDatepicker(isoDate) {
@@ -195,37 +142,89 @@
       }
     }
 
-    if (evidenceBtn && previewModal) {
-      evidenceBtn.addEventListener('click', function (e) {
-        e.preventDefault();
-        if (typeof window.openModal === 'function') {
-          window.openModal(previewModal);
-        } else {
-          previewModal.style.display = 'flex';
-          previewModal.classList.add('c-is-open');
-        }
-      });
+    function syncModalStudentContext(student) {
+      const s = student || activeStudent || { name: 'Student', index: 'S0000/0000', initials: 'ST', itemType: 'Student' };
+      if (inputStudentName) inputStudentName.value = s.name || '';
+      if (inputStudentIndex) inputStudentIndex.value = s.index || '';
+      if (displayName) displayName.textContent = s.name || 'Student Name';
+      if (displayIndex) displayIndex.textContent = `Index: ${s.index || 'S0000/0000'}`;
+      if (displayAvatar) displayAvatar.textContent = s.initials || 'ST';
+      if (displayType) displayType.textContent = (s.itemType || 'Student').toUpperCase();
     }
 
-    // Header elements
-    const modalEyebrow  = document.getElementById('j-record-modal-eyebrow');
-    const iconAward     = document.getElementById('j-rec-icon-award');
-    const iconIssue     = document.getElementById('j-rec-icon-issue');
-    const iconBadge     = document.getElementById('j-record-modal-icon-badge');
+    /* -----------------------------------------------------------------------
+       2. TIMELINE VIEW TOGGLING (Clicking 'View' on any student card)
+       ----------------------------------------------------------------------- */
+    document.addEventListener('click', function (e) {
+      const viewBtn = e.target.closest('.j-view-student');
+      if (!viewBtn) return;
 
-    // Trigger A: Direct 'Record' button on student card
+      e.preventDefault();
+      const card = viewBtn.closest('.j-student-achievement-card');
+      const student = getStudentDataFromCard(card);
+      if (!student) return;
+
+      activeStudent = student;
+
+      // Update Timeline Banner
+      if (bannerName) bannerName.textContent = student.name;
+      if (bannerIndex) bannerIndex.textContent = student.index;
+
+      if (student.avatarSrc && bannerImg) {
+        bannerImg.src = student.avatarSrc;
+        bannerImg.style.display = 'block';
+        if (bannerInitials) bannerInitials.style.display = 'none';
+      } else if (bannerInitials) {
+        bannerInitials.textContent = student.initials;
+        bannerInitials.style.display = 'flex';
+        if (bannerImg) bannerImg.style.display = 'none';
+      }
+
+      // Update right actions in timeline banner
+      if (bannerIssueWrap) {
+        bannerIssueWrap.style.display = student.hasIssue ? 'block' : 'none';
+      }
+      if (btnTimelineRec) {
+        btnTimelineRec.setAttribute('data-name', student.name);
+        btnTimelineRec.setAttribute('data-index', student.index);
+      }
+
+      // Switch view: Hide grid, show timeline page
+      if (mainSection) mainSection.style.display = 'none';
+      if (timelineView) timelineView.style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Back to Achievements Grid
+    document.addEventListener('click', function (e) {
+      const backTrigger = e.target.closest('#j-back-to-grid, .j-back-to-grid');
+      if (!backTrigger) return;
+      e.preventDefault();
+      if (timelineView) timelineView.style.display = 'none';
+      if (mainSection) mainSection.style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    /* -----------------------------------------------------------------------
+       3. RECORD ACHIEVEMENT MODAL (Clicking 'Record' on card OR timeline view)
+       ----------------------------------------------------------------------- */
     document.addEventListener('click', function (e) {
       const recordBtn = e.target.closest('.j-record-student');
       if (!recordBtn) return;
 
       e.preventDefault();
       const card = recordBtn.closest('.j-student-achievement-card');
-      const name = card ? card.getAttribute('data-student-name') : '';
-      const index = card ? card.getAttribute('data-student-index') : '';
+      const student = card ? getStudentDataFromCard(card) : activeStudent;
+
+      if (student) {
+        activeStudent = student;
+      }
+
+      const s = activeStudent || { name: 'Student', index: 'S0000/0000', initials: 'ST', itemType: 'Student' };
 
       // Mode: Record Achievement
       if (modalEyebrow) modalEyebrow.textContent = 'Achievement Record';
-      if (modalTitle) modalTitle.textContent = 'Record Achievement' + (name ? ' — ' + name : '');
+      if (modalTitle) modalTitle.textContent = s.name ? `Record Achievement — ${s.name}` : 'Record Achievement';
       if (modalDesc) modalDesc.textContent = 'Add a new verified student honor, award, or recognition.';
       if (iconAward) iconAward.style.display = 'block';
       if (iconIssue) iconIssue.style.display = 'none';
@@ -240,66 +239,99 @@
       if (uploadSection) uploadSection.style.display = 'block';
       if (viewEvidenceSection) viewEvidenceSection.style.display = 'none';
 
-      // Reset fields
+      // Sync visible student context and hidden inputs
+      syncModalStudentContext(s);
+
+      // Reset form fields
       if (form) form.reset();
       if (typeof window.resetDropdown === 'function') {
-        window.resetDropdown('j-rec-type-dropdown', 'Select Type');
+        window.resetDropdown('j-rec-type-dropdown', 'Select an achievement type');
       }
+      if (inputTypeHidden) inputTypeHidden.value = 'Academic';
       if (inputTitle) inputTitle.value = '';
       setRecDatepicker(new Date().toISOString().split('T')[0]);
       if (inputIssuer) inputIssuer.value = '';
       if (inputDesc) inputDesc.value = '';
       if (filenameLabel) filenameLabel.style.display = 'none';
 
-      openModal();
+      if (typeof window.openModal === 'function') {
+        window.openModal('#j-record-modal');
+      } else if (modalEl) {
+        modalEl.style.display = 'flex';
+        modalEl.classList.add('c-is-open');
+      }
     });
 
-    // Trigger B: 'View Issue' button in Timeline Banner
-    if (btnViewIssue) {
-      btnViewIssue.addEventListener('click', function (e) {
+    /* -----------------------------------------------------------------------
+       4. REVIEW ISSUE MODAL (Clicking 'View Issue' in Timeline Banner)
+       ----------------------------------------------------------------------- */
+    document.addEventListener('click', function (e) {
+      const issueBtn = e.target.closest('.j-view-issue, #j-btn-view-issue');
+      if (!issueBtn) return;
+
+      e.preventDefault();
+      const s = activeStudent || { name: 'Student', index: 'S0000/0000', initials: 'ST', itemType: 'Student' };
+
+      // Mode: Review Issue
+      if (modalEyebrow) modalEyebrow.textContent = 'Issue Report';
+      if (modalTitle) modalTitle.textContent = s.name ? `Review Issue — ${s.name}` : 'Review Issue';
+      if (modalDesc) modalDesc.textContent = "Review the student's reported missing record and evidence.";
+      if (iconAward) iconAward.style.display = 'none';
+      if (iconIssue) iconIssue.style.display = 'block';
+      if (iconBadge) {
+        iconBadge.style.background = '#FEF2F2';
+        iconBadge.style.color = '#B91C1C';
+      }
+      if (issueCallout) issueCallout.style.display = 'block';
+      if (submitBtn) submitBtn.textContent = 'Approve & Record';
+
+      // Section display: Hide Upload Box, Show Student Evidence View
+      if (uploadSection) uploadSection.style.display = 'none';
+      if (viewEvidenceSection) viewEvidenceSection.style.display = 'block';
+
+      // Sync student context
+      syncModalStudentContext(s);
+
+      // Pre-fill student's submitted issue details
+      if (inputTitle) inputTitle.value = 'House Prefect — Teal House';
+      setRecDatepicker('2025-01-15');
+      if (inputIssuer) inputIssuer.value = 'Teal House Master';
+      if (inputDesc) inputDesc.value = 'Appointed House Prefect for Teal House, responsible for coordinating inter-house sports and events for the year.';
+
+      if (typeof window.setDropdownValue === 'function') {
+        window.setDropdownValue('j-rec-type-dropdown', 'Leadership');
+      } else {
+        if (inputTypeHidden) inputTypeHidden.value = 'Leadership';
+        const ddTrigger = document.querySelector('#j-rec-type-dropdown .c-dropdown__trigger');
+        if (ddTrigger) {
+          const ddVal = ddTrigger.querySelector('.c-dropdown__value') || ddTrigger;
+          ddVal.textContent = 'Leadership';
+        }
+      }
+
+      if (typeof window.openModal === 'function') {
+        window.openModal('#j-record-modal');
+      } else if (modalEl) {
+        modalEl.style.display = 'flex';
+        modalEl.classList.add('c-is-open');
+      }
+    });
+
+    // Evidence link preview
+    if (evidenceBtn && previewModal) {
+      evidenceBtn.addEventListener('click', function (e) {
         e.preventDefault();
-
-        // Mode: Review Issue
-        if (modalEyebrow) modalEyebrow.textContent = 'Issue Report';
-        if (modalTitle) modalTitle.textContent = 'Review Issue';
-        if (modalDesc) modalDesc.textContent = "Review the student's reported missing record and evidence.";
-        if (iconAward) iconAward.style.display = 'none';
-        if (iconIssue) iconIssue.style.display = 'block';
-        if (iconBadge) {
-          iconBadge.style.background = '#FEF2F2';
-          iconBadge.style.color = '#B91C1C';
-        }
-        if (issueCallout) issueCallout.style.display = 'block';
-        if (submitBtn) submitBtn.textContent = 'Approve & Record';
-
-        // Section display: Disable/Hide Upload Box, Show Student Evidence Preview Box
-        if (uploadSection) uploadSection.style.display = 'none';
-        if (viewEvidenceSection) viewEvidenceSection.style.display = 'block';
-
-        // Pre-fill student's submitted issue details
-        if (inputTitle) inputTitle.value = 'House Prefect — Teal House';
-        setRecDatepicker('2025-01-15');
-        if (inputIssuer) inputIssuer.value = 'Teal House Master';
-        if (inputDesc) inputDesc.value = 'Appointed House Prefect for Teal House, responsible for coordinating inter-house sports and events for the year.';
-        
-        if (typeof window.setDropdownValue === 'function') {
-          window.setDropdownValue('j-rec-type-dropdown', 'Leadership');
+        if (typeof window.openModal === 'function') {
+          window.openModal('#j-evidence-preview-modal');
         } else {
-          if (inputTypeHidden) inputTypeHidden.value = 'Leadership';
-          const ddTrigger = document.querySelector('#j-rec-type-dropdown .c-dropdown__trigger');
-          if (ddTrigger) {
-            const ddVal = ddTrigger.querySelector('.c-dropdown__value') || ddTrigger;
-            ddVal.textContent = 'Leadership';
-          }
+          previewModal.style.display = 'flex';
+          previewModal.classList.add('c-is-open');
         }
-
-        openModal();
       });
     }
 
-
     /* -----------------------------------------------------------------------
-       4. SUPPORTING PROOF UPLOAD INTERACTION
+       5. SUPPORTING PROOF UPLOAD INTERACTION
        ----------------------------------------------------------------------- */
     if (uploadBox && fileInput) {
       uploadBox.addEventListener('click', function () {
@@ -342,7 +374,7 @@
     }
 
     /* -----------------------------------------------------------------------
-       5. FORM SUBMISSION
+       6. FORM SUBMISSION
        ----------------------------------------------------------------------- */
     if (form) {
       form.addEventListener('submit', function (e) {
@@ -353,9 +385,16 @@
           submitBtn.disabled = true;
 
           setTimeout(function () {
-            closeModal();
+            if (typeof window.closeModal === 'function') {
+              window.closeModal('#j-record-modal');
+            } else if (modalEl) {
+              modalEl.classList.remove('c-is-open');
+              modalEl.style.display = 'none';
+            }
             submitBtn.disabled = false;
             submitBtn.textContent = originalText;
+            if (form) form.reset();
+            if (filenameLabel) filenameLabel.style.display = 'none';
             if (typeof window.showFeedbackBanner === 'function') {
               window.showFeedbackBanner('Achievement recorded successfully!', 'success');
             }

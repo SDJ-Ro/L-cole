@@ -49,7 +49,7 @@ class ManagementController extends Controller {
             'clubs'            => $clubs,
             'club'             => $selectedClub,
             'staffAssignments' => $staffAssignments,
-            'canModerate'      => true,
+            'canModerate'      => false,
             'canCreate'        => true,
             'canDelete'        => false,
             'selectedType'     => $type,

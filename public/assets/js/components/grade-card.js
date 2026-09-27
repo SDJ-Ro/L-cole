@@ -863,37 +863,48 @@
   // -------------------------------------------------------------------------
   function initGradeDeleteTriggers() {
     document.addEventListener('click', (e) => {
+      // 1. Delete Grade Card header button
       const delGradeBtn = e.target.closest('.j-delete-grade-btn');
       if (delGradeBtn) {
         const gradeCard = delGradeBtn.closest('.c-grade-card');
         const gradeId   = gradeCard.dataset.gradeId || delGradeBtn.dataset.gradeId;
         const gradeName = gradeCard.dataset.gradeName || 'Grade';
-        const classes   = Array.from(gradeCard.querySelectorAll('.c-class-details')).map(d => d.dataset.className);
-        const gradeWrap = document.getElementById('j-del-grade-pill-wrap');
-        const classWrap = document.getElementById('j-del-class-pill-wrap');
+        const classes   = Array.from(gradeCard.querySelectorAll('.c-class-details')).map(d => (d.dataset.className || d.getAttribute('data-class-name') || '').trim()).filter(Boolean);
 
         window.openUniversalDeleteModal?.({
           title: `Delete Academic Structures (${escapeHtml(gradeName)})`,
-          description: 'Select the entire grade or individual class sections you wish to remove.',
+          description: 'Select the entire grade or choose individual class sections you wish to remove.',
           buttonText: 'Delete Selected',
           customSlotRenderer: (slot, cBtn) => {
-            if (cBtn) cBtn.disabled = true;
-            if (gradeWrap) {
-              gradeWrap.innerHTML = `<button type="button" class="c-btn-plain j-del-pill" data-type="grade" data-grade-id="${escapeHtml(gradeId)}" style="border:1px solid var(--alabaster);border-radius:var(--radius-lg);background:#fff;padding:0.35rem 0.65rem;font-size:0.75rem;font-weight:700;">All of ${escapeHtml(gradeName)}</button>`;
+            if (cBtn) {
+              cBtn.disabled = true;
+              cBtn.textContent = 'Delete Selected';
             }
-            if (classWrap) {
-              classWrap.innerHTML = classes.map(c => `
-                <button type="button" class="c-btn-plain j-del-pill" data-type="class" data-class="${escapeHtml(c)}" style="border:1px solid var(--alabaster);border-radius:var(--radius-lg);background:#fff;padding:0.35rem 0.65rem;font-size:0.75rem;font-weight:700;">
-                  ${escapeHtml(c)}
+            slot.innerHTML = `
+              <p class="c-del-structure__label">Grade Option</p>
+              <div class="c-del-structure__pills" id="j-del-grade-pill-wrap">
+                <button type="button" class="c-del-pill j-del-pill" data-type="grade" data-grade-id="${escapeHtml(gradeId)}">
+                  <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-trash"/></svg>
+                  All of ${escapeHtml(gradeName)}
                 </button>
-              `).join('');
-            }
+              </div>
+              <p class="c-del-structure__label" style="margin-top: 1.15rem;">Class Sections (${classes.length})</p>
+              <div class="c-del-structure__pills" id="j-del-class-pill-wrap">
+                ${classes.length > 0 ? classes.map(c => `
+                  <button type="button" class="c-del-pill j-del-pill" data-type="class" data-class="${escapeHtml(c)}">
+                    Class ${escapeHtml(c)}
+                  </button>
+                `).join('') : '<span style="font-size:0.75rem;color:rgba(15,65,74,0.55);font-style:italic;">No classes currently in this grade.</span>'}
+              </div>
+            `;
           },
           onConfirm: async () => {
             const modal = document.getElementById('j-universal-delete-modal');
             if (!modal) return;
 
             const isGradeSelected = !!modal.querySelector('.j-del-pill[data-type="grade"].c-is-selected');
+            const selectedClasses = Array.from(modal.querySelectorAll('.j-del-pill[data-type="class"].c-is-selected')).map(p => p.dataset.class);
+
             if (isGradeSelected) {
               const res = await apiPost('deleteGrade', { grade_id: gradeId });
               if (!res.success) {
@@ -924,12 +935,14 @@
                 });
               }
               gradeCard.remove();
+              updateCurriculumCardDeleteTooltips();
               showToast(`${gradeName} and its classes removed successfully.`);
-            } else {
-              const selectedClasses = Array.from(modal.querySelectorAll('.j-del-pill[data-type="class"].c-is-selected')).map(p => p.dataset.class);
+            } else if (selectedClasses.length > 0) {
+              let deletedCount = 0;
               for (const c of selectedClasses) {
                 const res = await apiPost('deleteClass', { section_name: c });
                 if (res.success) {
+                  deletedCount++;
                   TEACHER_DIRECTORY.forEach(t => {
                     if (t.classTeacher === c) {
                       t.classTeacher = '';
@@ -959,65 +972,114 @@
                 }
               }
               updateGradeCardStats(gradeCard);
-              showToast(`Selected class sections removed.`);
+              if (deletedCount > 0) {
+                showToast(`${deletedCount} class section${deletedCount === 1 ? '' : 's'} removed.`);
+              }
             }
           }
         });
         return;
       }
 
-      // Delete curriculum group
+      // 2. Delete curriculum group
       const delCurrBtn = e.target.closest('.j-delete-curriculum-btn');
       if (delCurrBtn) {
         const currCard = delCurrBtn.closest('.c-curriculum-card');
         const range    = delCurrBtn.dataset.range || currCard?.dataset?.range || '';
+        const orphanGrades = getOrphanGradesForCurriculum(range);
 
-        window.openUniversalDeleteModal?.({
-          title: `Delete ${range} Curriculum Stage?`,
-          description: `This stage can only be removed if no active grades depend on it.`,
-          buttonText: 'Delete Stage',
-          onConfirm: async () => {
-            const res = await apiPost('deleteCurriculumGroup', { range_label: range });
-            if (!res.success) {
-              showToast(res.error || 'Cannot delete curriculum stage.', 'error');
-            } else {
-              currCard?.remove();
-              showToast(`Curriculum stage ${range} deleted.`);
-            }
+        const doDelete = async () => {
+          const res = await apiPost('deleteCurriculumGroup', { range_label: range });
+          if (!res.success) {
+            showToast(res.error || 'Cannot delete curriculum stage.', 'error');
+          } else {
+            currCard?.remove();
+            showToast(`Curriculum stage ${range} deleted.`);
+            updateCurriculumCardDeleteTooltips();
           }
-        });
+        };
+
+        if (typeof window.openUniversalDeleteModal === 'function') {
+          if (orphanGrades.length > 0) {
+            window.openUniversalDeleteModal({
+              title: `Delete ${range} Curriculum Stage Blocked`,
+              description: `This curriculum stage cannot be deleted because active grades depend solely on it.`,
+              buttonText: 'Deletion Blocked',
+              customSlotRenderer: (slotEl, btnEl) => {
+                slotEl.innerHTML = `
+                  <div class="c-curriculum-warning-banner c-curriculum-warning-banner--error">
+                    <svg class="c-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <div class="c-curriculum-warning-banner__content">
+                      <div class="c-curriculum-warning-banner__title">Deletion Blocked by Academic Policy</div>
+                      <div>Active grade(s) <strong>${escapeHtml(orphanGrades.join(', '))}</strong> depend solely on <strong>${escapeHtml(range)}</strong>. Every active grade must belong to an academic curriculum stage.</div>
+                      <div style="margin-top: 0.35rem; font-size: 0.75rem; opacity: 0.88;">To delete this stage, you must first assign those grades to another curriculum stage or delete the grades first.</div>
+                    </div>
+                  </div>
+                `;
+                btnEl.disabled = true;
+                btnEl.title = `Deletion is blocked: active grades (${orphanGrades.join(', ')}) depend on this stage`;
+              },
+              onConfirm: () => {}
+            });
+          } else {
+            window.openUniversalDeleteModal({
+              title: `Delete ${range} Curriculum Stage?`,
+              description: `Are you sure you want to permanently delete the ${range} curriculum stage? Any active grades covered by another curriculum will remain safely active.`,
+              buttonText: 'Delete Stage',
+              onConfirm: doDelete
+            });
+          }
+        } else if (orphanGrades.length > 0) {
+          showToast(`Cannot delete ${range}. Active grades (${orphanGrades.join(', ')}) depend solely on it.`, 'error');
+        } else if (confirm(`Delete ${range} curriculum stage?`)) {
+          doDelete();
+        }
         return;
       }
 
-      // Pill toggle in delete modal
+      // 4. Pill toggle in delete modal
       const pill = e.target.closest('.j-del-pill');
       if (pill) {
+        e.preventDefault();
+        e.stopPropagation();
         const modal = pill.closest('#j-universal-delete-modal');
         if (!modal) return;
 
-        // If selecting "All of Grade", unselect specific classes and vice-versa
-        if (pill.dataset.type === 'grade') {
+        const isGrade = pill.dataset.type === 'grade';
+
+        if (isGrade) {
           modal.querySelectorAll('.j-del-pill[data-type="class"]').forEach(p => {
             p.classList.remove('c-is-selected');
-            p.style.background = '#fff';
-            p.style.color = '';
           });
+          pill.classList.toggle('c-is-selected');
         } else {
           const allGradePill = modal.querySelector('.j-del-pill[data-type="grade"]');
           if (allGradePill) {
             allGradePill.classList.remove('c-is-selected');
-            allGradePill.style.background = '#fff';
-            allGradePill.style.color = '';
           }
+          pill.classList.toggle('c-is-selected');
         }
-
-        pill.classList.toggle('c-is-selected');
-        pill.style.background = pill.classList.contains('c-is-selected') ? '#7f0303' : '#fff';
-        pill.style.color      = pill.classList.contains('c-is-selected') ? '#fff' : '';
 
         const confirmBtn = modal.querySelector('#j-universal-delete-confirm');
         if (confirmBtn) {
-          confirmBtn.disabled = modal.querySelectorAll('.j-del-pill.c-is-selected').length === 0;
+          const selGrade = modal.querySelector('.j-del-pill[data-type="grade"].c-is-selected');
+          const selClasses = modal.querySelectorAll('.j-del-pill[data-type="class"].c-is-selected');
+
+          if (selGrade) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Delete Entire Grade';
+          } else if (selClasses.length === 1) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = `Delete Class ${selClasses[0].dataset.class}`;
+          } else if (selClasses.length > 1) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = `Delete ${selClasses.length} Classes`;
+          } else {
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Delete Selected';
+          }
         }
       }
     });
@@ -1026,7 +1088,296 @@
   // -------------------------------------------------------------------------
   // 4. CURRICULUM INLINE EDITOR & CREATOR (WITH REAL AJAX)
   // -------------------------------------------------------------------------
+  function buildYearOptions(selectedYear = 6) {
+    let html = '';
+    for (let y = 1; y <= 13; y++) {
+      html += `<option value="${y}" ${Number(selectedYear) === y ? 'selected' : ''}>Year ${y}</option>`;
+    }
+    return html;
+  }
+
+  function buildCustomYearDropdown(id, name, selectedYear = 6) {
+    const sel = parseInt(selectedYear, 10) || 6;
+    let optionsHtml = '';
+    for (let y = 1; y <= 13; y++) {
+      optionsHtml += `
+        <div class="c-select__option c-dropdown__option ${y === sel ? 'c-is-selected' : ''}" data-value="${y}" role="option" aria-selected="${y === sel ? 'true' : 'false'}">
+          Year ${y}
+        </div>
+      `;
+    }
+    const isStart = name === 'start_year';
+    return `
+      <div class="c-select c-dropdown c-dropdown--compact ${isStart ? 'j-curr-start-dropdown' : 'j-curr-end-dropdown'}" id="${id}" data-name="${name}" style="width: 100%;">
+        <input type="hidden" class="${isStart ? 'j-curr-start-year' : 'j-curr-end-year'}" name="${name}" value="${sel}" />
+        <button type="button" class="c-select__trigger c-dropdown__trigger has-value" aria-haspopup="listbox" aria-expanded="false" aria-label="${isStart ? 'Start Year' : 'End Year'}">
+          <span class="c-select-trigger-text" style="display:inline-flex;align-items:center;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            <span class="c-select__value c-dropdown__value j-select-value" style="font-size: 0.75rem; font-weight: 600; color: var(--midnight, #0F414A);">Year ${sel}</span>
+          </span>
+          <svg class="c-icon c-select__chevron c-dropdown__chevron" width="12" height="12" aria-hidden="true" style="color: rgba(15,65,74,0.5);"><use href="#icon-chevronDown"/></svg>
+        </button>
+        <div class="c-select__menu c-dropdown__menu" role="listbox" style="z-index: 9999;">
+          ${optionsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  function computeCurriculumRangeLabel(startYear, endYear) {
+    const s = parseInt(startYear, 10) || 6;
+    const e = parseInt(endYear, 10) || s;
+    if (s === e) {
+      return `Year ${s}`;
+    }
+    const min = Math.min(s, e);
+    const max = Math.max(s, e);
+    return `Years ${min}–${max}`;
+  }
+
+  function parseRangeToYears(rangeStr) {
+    const matches = String(rangeStr || '').match(/\d+/g);
+    if (!matches || matches.length === 0) return { start: 6, end: 9 };
+    if (matches.length === 1) return { start: parseInt(matches[0], 10), end: parseInt(matches[0], 10) };
+    return { start: parseInt(matches[0], 10), end: parseInt(matches[1], 10) };
+  }
+
+  function checkCurriculumOverlap(startYear, endYear, excludeCardEl = null) {
+    const s = Math.min(parseInt(startYear, 10), parseInt(endYear, 10));
+    const e = Math.max(parseInt(startYear, 10), parseInt(endYear, 10));
+    const currentYears = [];
+    for (let y = s; y <= e; y++) currentYears.push(y);
+
+    const overlappingYears = new Set();
+    const overlappingNames = [];
+
+    document.querySelectorAll('.c-curriculum-card').forEach(card => {
+      if (card === excludeCardEl || card.classList.contains('j-new-curriculum-card')) return;
+      const range = card.dataset.range || card.querySelector('.c-curriculum-card__range')?.textContent.trim() || '';
+      const bounds = parseRangeToYears(range);
+      const cardOverlaps = [];
+      for (let y = bounds.start; y <= bounds.end; y++) {
+        if (currentYears.includes(y)) {
+          overlappingYears.add(y);
+          cardOverlaps.push(y);
+        }
+      }
+      if (cardOverlaps.length > 0) {
+        overlappingNames.push(`${range} (Year ${cardOverlaps.join(', ')})`);
+      }
+    });
+
+    return {
+      hasOverlap: overlappingYears.size > 0,
+      overlappingYears: Array.from(overlappingYears).sort((a, b) => a - b),
+      overlappingNames
+    };
+  }
+
+  // Get active grades in the school that depend solely on a curriculum stage
+  function getOrphanGradesForCurriculum(rangeToDelete) {
+    const remainingCurriculumBounds = [];
+    document.querySelectorAll('.c-curriculum-card:not(.j-new-curriculum-card)').forEach(card => {
+      const r = card.dataset.range || card.querySelector('.c-curriculum-card__range')?.textContent.trim() || '';
+      if (r && r.trim().toLowerCase() !== rangeToDelete.trim().toLowerCase()) {
+        const b = parseRangeToYears(r);
+        if (b && b.start && b.end) remainingCurriculumBounds.push(b);
+      }
+    });
+
+    const orphanNames = [];
+    document.querySelectorAll('.c-grade-card').forEach(gCard => {
+      const name = gCard.dataset.gradeName || gCard.querySelector('.c-grade-card__name')?.textContent?.trim() || '';
+      const num = parseInt(name.replace(/\D/g, '') || gCard.dataset.gradeId?.replace(/\D/g, ''), 10);
+      if (!isNaN(num)) {
+        const isCovered = remainingCurriculumBounds.some(b => num >= b.start && num <= b.end);
+        if (!isCovered) {
+          orphanNames.push(name || `Grade ${num}`);
+        }
+      }
+    });
+
+    return orphanNames;
+  }
+
+  // Get active grades in the school that would be orphaned if an existing range is changed
+  function getOrphanGradesOnRangeChange(currentRange, newStart, newEnd) {
+    const otherCurriculumBounds = [];
+    document.querySelectorAll('.c-curriculum-card:not(.j-new-curriculum-card)').forEach(card => {
+      const r = card.dataset.range || card.querySelector('.c-curriculum-card__range')?.textContent.trim() || '';
+      if (r && r.trim().toLowerCase() !== currentRange.trim().toLowerCase()) {
+        const b = parseRangeToYears(r);
+        if (b && b.start && b.end) otherCurriculumBounds.push(b);
+      }
+    });
+
+    const orphanNames = [];
+    document.querySelectorAll('.c-grade-card').forEach(gCard => {
+      const name = gCard.dataset.gradeName || gCard.querySelector('.c-grade-card__name')?.textContent?.trim() || '';
+      const num = parseInt(name.replace(/\D/g, '') || gCard.dataset.gradeId?.replace(/\D/g, ''), 10);
+      if (!isNaN(num)) {
+        const coveredByOther = otherCurriculumBounds.some(b => num >= b.start && num <= b.end);
+        const coveredByNew   = (num >= newStart && num <= newEnd);
+        if (!coveredByOther && !coveredByNew) {
+          orphanNames.push(name || `Grade ${num}`);
+        }
+      }
+    });
+
+    return orphanNames;
+  }
+
+  // Live validator for Curriculum Editor (both New and Edit cards)
+  function updateCurriculumEditorValidation(container) {
+    if (!container) return;
+    const parentCard  = container.closest('.c-curriculum-card') || container;
+    const isNew       = parentCard.classList.contains('j-new-curriculum-card');
+    const warningSlot = parentCard.querySelector('.j-curr-warning-slot');
+    const saveBtn     = parentCard.querySelector('.j-new-curr-save-btn, .j-curr-save-btn');
+    if (!warningSlot) return;
+
+    const startInput = parentCard.querySelector('.j-curr-start-year');
+    const endInput   = parentCard.querySelector('.j-curr-end-year');
+    const s = parseInt(startInput?.value, 10) || 6;
+    const e = parseInt(endInput?.value, 10) || s;
+    const computedRange = computeCurriculumRangeLabel(s, e);
+    const chips = parentCard.querySelectorAll('.c-removable-chip');
+
+    // Priority 1: Minimum 1 Subject Requirement (Hard Block)
+    if (chips.length === 0) {
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.title = 'A curriculum stage must have at least one subject before it can be saved.';
+      }
+      warningSlot.innerHTML = `
+        <div class="c-curriculum-warning-banner c-curriculum-warning-banner--warning">
+          <svg class="c-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:2px;">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div class="c-curriculum-warning-banner__content">
+            <div class="c-curriculum-warning-banner__title">Subject Required to Save</div>
+            <div>A curriculum stage must have at least one subject before it can be saved. Please type a subject name below and click <strong>&ldquo;+ Add&rdquo;</strong> to enable saving.</div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // Priority 2: Orphan Grade Protection (on existing stage range edit)
+    if (!isNew) {
+      const oldRange = parentCard.dataset.range || '';
+      const orphanGrades = getOrphanGradesOnRangeChange(oldRange, s, e);
+      if (orphanGrades.length > 0) {
+        if (saveBtn) {
+          saveBtn.disabled = true;
+          saveBtn.title = `Changing range leaves active grade(s) (${orphanGrades.join(', ')}) without a curriculum`;
+        }
+        warningSlot.innerHTML = `
+          <div class="c-curriculum-warning-banner c-curriculum-warning-banner--error">
+            <svg class="c-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:2px;">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <div class="c-curriculum-warning-banner__content">
+              <div class="c-curriculum-warning-banner__title">Range Change Blocked: Orphaned Grade(s)</div>
+              <div>Changing range to <strong>${escapeHtml(computedRange)}</strong> leaves active grade(s) (<strong>${escapeHtml(orphanGrades.join(', '))}</strong>) without a curriculum stage. Every grade in the school must belong to a curriculum. Expand another stage to cover these grades first before reducing this range.</div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+    }
+
+    // Priority 3: Overlap Notice (Informative Notice, Saving Permitted)
+    const overlap = checkCurriculumOverlap(s, e, isNew ? null : parentCard);
+    if (overlap.hasOverlap) {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.removeAttribute('title');
+      }
+      warningSlot.innerHTML = `
+        <div class="c-curriculum-warning-banner c-curriculum-warning-banner--info">
+          <svg class="c-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:2px;">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div class="c-curriculum-warning-banner__content">
+            <div class="c-curriculum-warning-banner__title">Curriculum Overlap Notice</div>
+            <div>Year(s) <strong>${overlap.overlappingYears.join(', ')}</strong> are already covered by another curriculum (${escapeHtml(overlap.overlappingNames.join('; '))}). You can save this curriculum, but you may need to adjust one of the stages later.</div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // Priority 4: All Valid
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.removeAttribute('title');
+    }
+    warningSlot.innerHTML = '';
+  }
+
+  function updateCurriculumCardDeleteTooltips() {
+    document.querySelectorAll('.c-curriculum-card:not(.j-new-curriculum-card)').forEach(card => {
+      const range = card.dataset.range;
+      if (!range) return;
+      const orphans = getOrphanGradesForCurriculum(range);
+      const delBtn = card.querySelector('.j-delete-curriculum-btn');
+      if (delBtn) {
+        if (orphans.length > 0) {
+          delBtn.title = `Deletion blocked: active grade(s) (${orphans.join(', ')}) depend on this stage`;
+          delBtn.setAttribute('aria-label', `Deletion blocked: active grade(s) (${orphans.join(', ')}) depend on this stage`);
+        } else {
+          delBtn.title = `Delete ${range} curriculum stage`;
+          delBtn.setAttribute('aria-label', `Delete ${range} curriculum stage`);
+        }
+      }
+    });
+  }
+
+  function buildRemovableChipHtml(subject) {
+    const s = String(subject || '').trim();
+    return `<span class="c-removable-chip" data-subject="${escapeHtml(s)}">${escapeHtml(s)}<button type="button" class="c-removable-chip__remove j-remove-curr-chip" aria-label="Remove ${escapeHtml(s)}"><svg class="c-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></span>`;
+  }
+
   function initCurriculumEditors() {
+    updateCurriculumCardDeleteTooltips();
+
+    // Listen for Start/End Year dropdown changes (supports both custom .c-dropdown and native selects)
+    document.addEventListener('change', (e) => {
+      const dropdown = e.target.closest('.j-curr-start-dropdown, .j-curr-end-dropdown');
+      const directInput = e.target.matches('.j-curr-start-year, .j-curr-end-year') ? e.target : null;
+      if (dropdown || directInput) {
+        const container = (dropdown || directInput).closest('.j-new-curriculum-card') || (dropdown || directInput).closest('.j-curriculum-editor');
+        if (!container) return;
+        const startInput = container.querySelector('.j-curr-start-year');
+        const endInput   = container.querySelector('.j-curr-end-year');
+        if (!startInput || !endInput) return;
+
+        let s = parseInt(startInput.value, 10) || 6;
+        let endVal = parseInt(endInput.value, 10) || s;
+        if (endVal < s) {
+          endInput.value = s;
+          endVal = s;
+          const endDd = container.querySelector('.j-curr-end-dropdown');
+          if (endDd) {
+            const valEl = endDd.querySelector('.j-select-value');
+            if (valEl) valEl.textContent = `Year ${s}`;
+            endDd.querySelectorAll('.c-dropdown__option').forEach(opt => {
+              const matches = parseInt(opt.getAttribute('data-value'), 10) === s;
+              opt.classList.toggle('c-is-selected', matches);
+            });
+          }
+        }
+
+        const computed = computeCurriculumRangeLabel(s, endVal);
+        const preview = container.querySelector('.j-curr-range-preview');
+        if (preview) preview.textContent = computed;
+        const hiddenRange = container.querySelector('.j-curr-computed-range');
+        if (hiddenRange) hiddenRange.value = computed;
+
+        updateCurriculumEditorValidation(container);
+      }
+    });
+
     document.addEventListener('click', async (e) => {
       // 4.1 Add new curriculum stage button
       const addCurrBtn = e.target.closest('.j-add-curriculum-btn');
@@ -1034,18 +1385,39 @@
         const grid = document.querySelector('.j-curriculum-grid') || document.querySelector('.c-curriculum-grid');
         if (!grid) return;
         if (grid.querySelector('.j-new-curriculum-card')) {
-          grid.querySelector('.j-new-curr-range')?.focus();
+          grid.querySelector('.j-curr-start-year')?.focus();
           return;
         }
+
+        const defStart = 10;
+        const defEnd   = 11;
+        const defRange = computeCurriculumRangeLabel(defStart, defEnd);
 
         const newCardHtml = `
           <article class="c-curriculum-card j-curriculum-card j-new-curriculum-card" style="border: 2px dashed var(--skyblue, #7FC7CC); background: #fafaf8;">
             <div class="c-curriculum-card__top">
               <div style="width: 100%;">
-                <div style="margin-bottom: 0.5rem;">
-                  <label class="c-field-label-sm" style="font-size: 10px; margin-bottom: 0.25rem;">Curriculum Stage / Range</label>
-                  <input class="c-input-sm j-new-curr-range" placeholder="e.g. Years 12–13" style="font-weight: 700; font-size: 0.875rem;" required />
+                <div style="margin-bottom: 0.75rem;">
+                  <label class="c-field-label-sm" style="font-size: 10px; margin-bottom: 0.35rem; display: block; font-weight: 700;">Year Selection Range</label>
+                  <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 100px;">
+                      <span style="font-size: 10px; color: rgba(15,65,74,0.6); display: block; margin-bottom: 2px;">Start Year</span>
+                      ${buildCustomYearDropdown('j-new-curr-start-dd', 'start_year', defStart)}
+                    </div>
+                    <span style="color: rgba(15,65,74,0.5); font-size: 11px; margin-top: 14px; font-weight: 600;">to</span>
+                    <div style="flex: 1; min-width: 100px;">
+                      <span style="font-size: 10px; color: rgba(15,65,74,0.6); display: block; margin-bottom: 2px;">End Year</span>
+                      ${buildCustomYearDropdown('j-new-curr-end-dd', 'end_year', defEnd)}
+                    </div>
+                    <div style="display: flex; align-items: center; margin-top: 14px;">
+                      <span class="j-curr-range-preview" style="display: inline-block; font-weight: 700; font-size: 0.8125rem; color: var(--midnight, #0F414A); background: rgba(127, 199, 204, 0.25); padding: 0.35rem 0.65rem; border-radius: 6px;">${escapeHtml(defRange)}</span>
+                      <input type="hidden" class="j-curr-computed-range" value="${escapeHtml(defRange)}" />
+                    </div>
+                  </div>
                 </div>
+
+                <div class="j-curr-warning-slot"></div>
+
                 <div style="margin-bottom: 0.5rem;">
                   <label class="c-field-label-sm" style="font-size: 10px; margin-bottom: 0.25rem;">Description</label>
                   <input class="c-input-sm j-new-curr-desc" placeholder="e.g. Advanced level specialization curriculum." style="font-size: 0.75rem;" />
@@ -1071,7 +1443,10 @@
             </div>
           </article>`;
         grid.insertAdjacentHTML('beforeend', newCardHtml);
-        grid.querySelector('.j-new-curr-range')?.focus();
+        const insertedCard = grid.querySelector('.j-new-curriculum-card');
+        if (insertedCard) {
+          updateCurriculumEditorValidation(insertedCard);
+        }
         return;
       }
 
@@ -1080,14 +1455,15 @@
       if (saveNewBtn) {
         const card = saveNewBtn.closest('.j-new-curriculum-card');
         if (!card) return;
-        const rangeInput = card.querySelector('.j-new-curr-range');
-        const descInput  = card.querySelector('.j-new-curr-desc');
-        const range = rangeInput?.value.trim();
+        const hiddenRange = card.querySelector('.j-curr-computed-range');
+        const startSelect = card.querySelector('.j-curr-start-year');
+        const endSelect   = card.querySelector('.j-curr-end-year');
+        const descInput   = card.querySelector('.j-new-curr-desc');
+        const range = hiddenRange?.value.trim() || computeCurriculumRangeLabel(startSelect?.value, endSelect?.value);
         const desc  = descInput?.value.trim() || '';
 
         if (!range) {
-          rangeInput?.focus();
-          rangeInput?.classList.add('c-is-invalid');
+          startSelect?.focus();
           return;
         }
 
@@ -1096,16 +1472,17 @@
         if (addInput && addInput.value.trim()) {
           const val = addInput.value.trim();
           card.querySelector('.c-curr-empty-msg')?.remove();
-          card.querySelector('.j-curr-chips').insertAdjacentHTML('beforeend', `
-            <span class="c-removable-chip" data-subject="${escapeHtml(val)}">
-              ${escapeHtml(val)}
-              <button type="button" class="c-removable-chip__remove j-remove-curr-chip" aria-label="Remove ${escapeHtml(val)}"><svg width="10" height="10"><use href="#icon-close"/></svg></button>
-            </span>
-          `);
+          card.querySelector('.j-curr-chips').insertAdjacentHTML('beforeend', buildRemovableChipHtml(val));
           addInput.value = '';
         }
 
         const chips = Array.from(card.querySelectorAll('.c-removable-chip')).map(c => c.dataset.subject || c.textContent.trim());
+
+        if (chips.length === 0) {
+          showToast('Please add at least one subject before saving this curriculum.', 'error');
+          card.querySelector('.j-curr-add-input')?.focus();
+          return;
+        }
 
         saveNewBtn.disabled = true;
         const res = await apiPost('addCurriculumGroup', {
@@ -1120,19 +1497,21 @@
           return;
         }
 
+        const finalRange = res.group?.range || range;
+
         const permanentCard = `
-          <article class="c-curriculum-card j-curriculum-card" data-range="${escapeHtml(range)}">
+          <article class="c-curriculum-card j-curriculum-card" data-range="${escapeHtml(finalRange)}">
             <div class="c-curriculum-card__top">
               <div>
-                <h3 class="c-curriculum-card__range">${escapeHtml(range)}</h3>
+                <h3 class="c-curriculum-card__range">${escapeHtml(finalRange)}</h3>
                 ${desc ? `<p class="c-curriculum-card__desc">${escapeHtml(desc)}</p>` : ''}
               </div>
               <div class="c-curriculum-card__badges">
                 <span class="c-curriculum-card__count">${chips.length} Subjects</span>
-                <button type="button" class="c-curriculum-card__edit-btn j-edit-curriculum-btn" data-range="${escapeHtml(range)}" aria-label="Edit ${escapeHtml(range)} subjects">
+                <button type="button" class="c-curriculum-card__edit-btn j-edit-curriculum-btn" data-range="${escapeHtml(finalRange)}" aria-label="Edit ${escapeHtml(finalRange)} subjects">
                   <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-edit"/></svg>
                 </button>
-                <button type="button" class="c-curriculum-card__edit-btn j-delete-curriculum-btn" data-range="${escapeHtml(range)}" aria-label="Delete ${escapeHtml(range)}">
+                <button type="button" class="c-curriculum-card__edit-btn j-delete-curriculum-btn" data-range="${escapeHtml(finalRange)}" aria-label="Delete ${escapeHtml(finalRange)}">
                   <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-trash"/></svg>
                 </button>
               </div>
@@ -1147,8 +1526,9 @@
         card.remove();
 
         // Live DOM sync to matching grade cards on the page
-        syncCurriculumToGradeCards(range, chips);
-        showToast(`Curriculum stage ${range} created successfully.`);
+        syncCurriculumToGradeCards(finalRange, chips);
+        updateCurriculumCardDeleteTooltips();
+        showToast(`Curriculum stage ${finalRange} created successfully.`);
         return;
       }
 
@@ -1167,19 +1547,37 @@
         const subjectsWrap = card.querySelector('.j-curriculum-subjects');
         if (!subjectsWrap) return;
         const curRange     = card.dataset.range || '';
+        const bounds       = parseRangeToYears(curRange);
         const curSubjects  = Array.from(subjectsWrap.querySelectorAll('.c-subject-chip')).map(c => c.textContent.trim());
         subjectsWrap.style.display = 'none';
 
         const chipsHtml = curSubjects.length > 0
-          ? curSubjects.map(s => `<span class="c-removable-chip" data-subject="${escapeHtml(s)}">${escapeHtml(s)}<button type="button" class="c-removable-chip__remove j-remove-curr-chip" aria-label="Remove ${escapeHtml(s)}"><svg width="10" height="10"><use href="#icon-close"/></svg></button></span>`).join('')
+          ? curSubjects.map(buildRemovableChipHtml).join('')
           : '<p class="c-curr-empty-msg" style="font-size:11px; color:rgba(15,65,74,0.6); margin:0.25rem 0;">No subjects added yet. Type a subject below and click &ldquo;+ Add&rdquo;.</p>';
 
         card.insertAdjacentHTML('beforeend', `
           <div class="c-curriculum-editor j-curriculum-editor" style="margin-top:1rem;">
             <div style="margin-bottom:0.75rem;">
-              <label class="c-field-label-sm" style="font-size:10px;margin-bottom:0.25rem;">Curriculum Stage / Range</label>
-              <input class="c-input-sm j-curr-range-input" value="${escapeHtml(curRange)}" placeholder="e.g. Years 6–8" style="font-weight:700;font-size:0.875rem;" required />
+              <label class="c-field-label-sm" style="font-size: 10px; margin-bottom: 0.35rem; display: block; font-weight: 700;">Year Selection Range</label>
+              <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 100px;">
+                  <span style="font-size: 10px; color: rgba(15,65,74,0.6); display: block; margin-bottom: 2px;">Start Year</span>
+                  ${buildCustomYearDropdown('j-edit-curr-start-' + Math.random().toString(36).substr(2, 5), 'start_year', bounds.start)}
+                </div>
+                <span style="color: rgba(15,65,74,0.5); font-size: 11px; margin-top: 14px; font-weight: 600;">to</span>
+                <div style="flex: 1; min-width: 100px;">
+                  <span style="font-size: 10px; color: rgba(15,65,74,0.6); display: block; margin-bottom: 2px;">End Year</span>
+                  ${buildCustomYearDropdown('j-edit-curr-end-' + Math.random().toString(36).substr(2, 5), 'end_year', bounds.end)}
+                </div>
+                <div style="display: flex; align-items: center; margin-top: 14px;">
+                  <span class="j-curr-range-preview" style="display: inline-block; font-weight: 700; font-size: 0.8125rem; color: var(--midnight, #0F414A); background: rgba(127, 199, 204, 0.25); padding: 0.35rem 0.65rem; border-radius: 6px;">${escapeHtml(curRange)}</span>
+                  <input type="hidden" class="j-curr-computed-range" value="${escapeHtml(curRange)}" />
+                </div>
+              </div>
             </div>
+
+            <div class="j-curr-warning-slot"></div>
+
             <label class="c-field-label-sm" style="font-size:10px;margin-bottom:0.25rem;">Subjects</label>
             <div class="c-curriculum-editor__chips j-curr-chips">
               ${chipsHtml}
@@ -1193,7 +1591,11 @@
               <button type="button" class="c-btn-danger j-curr-save-btn" style="background:var(--maroon,#7F0303);">Save</button>
             </div>
           </div>`);
-        card.querySelector('.j-curr-add-input')?.focus();
+
+        const editorEl = card.querySelector('.j-curriculum-editor');
+        if (editorEl) {
+          updateCurriculumEditorValidation(editorEl);
+        }
         return;
       }
 
@@ -1201,10 +1603,14 @@
       const removeChip = e.target.closest('.j-remove-curr-chip');
       if (removeChip) {
         const chip = removeChip.closest('.c-removable-chip');
+        const editor = chip?.closest('.j-curriculum-editor') || chip?.closest('.j-new-curriculum-card');
         const chipsWrap = chip?.closest('.j-curr-chips');
         chip?.remove();
         if (chipsWrap && chipsWrap.querySelectorAll('.c-removable-chip').length === 0) {
           chipsWrap.innerHTML = '<p class="c-curr-empty-msg" style="font-size:11px; color:rgba(15,65,74,0.6); margin:0.25rem 0;">No subjects added yet. Type a subject below and click &ldquo;+ Add&rdquo;.</p>';
+        }
+        if (editor) {
+          updateCurriculumEditorValidation(editor);
         }
         return;
       }
@@ -1212,21 +1618,15 @@
       // 4.6 Add chip inside curriculum editor
       const addChipBtn = e.target.closest('.j-curr-add-btn');
       if (addChipBtn) {
-        const editor = addChipBtn.closest('.j-curriculum-editor');
+        const editor = addChipBtn.closest('.j-curriculum-editor') || addChipBtn.closest('.j-new-curriculum-card');
         const input  = editor?.querySelector('.j-curr-add-input');
         const val    = input?.value.trim();
         if (val) {
           editor.querySelector('.c-curr-empty-msg')?.remove();
-          editor.querySelector('.j-curr-chips').insertAdjacentHTML('beforeend', `
-            <span class="c-removable-chip" data-subject="${escapeHtml(val)}">
-              ${escapeHtml(val)}
-              <button type="button" class="c-removable-chip__remove j-remove-curr-chip" aria-label="Remove ${escapeHtml(val)}">
-                <svg width="10" height="10"><use href="#icon-close"/></svg>
-              </button>
-            </span>
-          `);
+          editor.querySelector('.j-curr-chips').insertAdjacentHTML('beforeend', buildRemovableChipHtml(val));
           input.value = '';
           input.focus();
+          updateCurriculumEditorValidation(editor);
         }
         return;
       }
@@ -1247,20 +1647,17 @@
         const card         = saveCurrBtn.closest('.c-curriculum-card');
         const editor       = saveCurrBtn.closest('.j-curriculum-editor');
         const oldRange     = card?.dataset.range || '';
-        const rangeInput   = editor?.querySelector('.j-curr-range-input');
-        const newRange     = rangeInput ? rangeInput.value.trim() : oldRange;
+        const hiddenRange  = editor?.querySelector('.j-curr-computed-range');
+        const startSelect  = editor?.querySelector('.j-curr-start-year');
+        const endSelect    = editor?.querySelector('.j-curr-end-year');
+        const newRange     = hiddenRange?.value.trim() || computeCurriculumRangeLabel(startSelect?.value, endSelect?.value) || oldRange;
 
         // Auto-capture any pending typed subject in add-input
         const addInput = editor?.querySelector('.j-curr-add-input');
         if (addInput && addInput.value.trim()) {
           const val = addInput.value.trim();
           editor.querySelector('.c-curr-empty-msg')?.remove();
-          editor.querySelector('.j-curr-chips').insertAdjacentHTML('beforeend', `
-            <span class="c-removable-chip" data-subject="${escapeHtml(val)}">
-              ${escapeHtml(val)}
-              <button type="button" class="c-removable-chip__remove j-remove-curr-chip" aria-label="Remove ${escapeHtml(val)}"><svg width="10" height="10"><use href="#icon-close"/></svg></button>
-            </span>
-          `);
+          editor.querySelector('.j-curr-chips').insertAdjacentHTML('beforeend', buildRemovableChipHtml(val));
           addInput.value = '';
         }
 
@@ -1268,7 +1665,13 @@
         const subjectsWrap = card?.querySelector('.j-curriculum-subjects');
 
         if (!newRange) {
-          rangeInput?.focus();
+          startSelect?.focus();
+          return;
+        }
+
+        if (chips.length === 0) {
+          showToast('A curriculum stage must have at least one subject. Please add at least one subject before saving.', 'error');
+          editor.querySelector('.j-curr-add-input')?.focus();
           return;
         }
 
@@ -1310,6 +1713,7 @@
         }
 
         editor.remove();
+        updateCurriculumCardDeleteTooltips();
         showToast(`Curriculum stage ${newRange} updated successfully.`);
       }
     });
@@ -1331,33 +1735,39 @@
   // 5. ADD GRADE MODAL (WITH REAL AJAX & CURRICULUM VALIDATION)
   // -------------------------------------------------------------------------
   function initAddGradeModal() {
-    const openBtn = document.getElementById('j-open-add-grade') || document.querySelector('.j-open-add-grade');
     const modal = document.getElementById('j-modal-add-grade');
-    if (!openBtn || !modal) return;
+    if (!modal) return;
 
     const form = modal.querySelector('#j-add-grade-form') || modal.querySelector('form');
     const nameInput = modal.querySelector('#j-add-grade-name') || modal.querySelector('input[type="text"]');
     const submitBtn = modal.querySelector('#j-add-grade-submit') || modal.querySelector('button[type="submit"]');
 
-    openBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (nameInput) {
-        nameInput.value = '';
-        if (submitBtn) submitBtn.disabled = true;
+    // Use document event delegation so "+ Add grade" button works across all view states
+    document.addEventListener('click', (e) => {
+      const openBtn = e.target.closest('#j-open-add-grade, .j-open-add-grade');
+      if (openBtn) {
+        e.preventDefault();
+        if (nameInput) {
+          nameInput.value = '';
+          if (submitBtn) submitBtn.disabled = true;
+        }
+        if (typeof openModal === 'function') {
+          openModal(modal);
+        } else {
+          modal.style.display = 'flex';
+          modal.classList.add('c-is-open');
+        }
+        setTimeout(() => nameInput?.focus(), 120);
       }
-      if (typeof openModal === 'function') {
-        openModal(modal);
-      } else {
-        modal.style.display = 'flex';
-        modal.classList.add('c-is-open');
-      }
-      setTimeout(() => nameInput?.focus(), 120);
     });
 
     if (nameInput && submitBtn) {
-      nameInput.addEventListener('input', () => {
+      const updateBtnState = () => {
         submitBtn.disabled = !nameInput.value.trim();
-      });
+      };
+      nameInput.addEventListener('input', updateBtnState);
+      nameInput.addEventListener('keyup', updateBtnState);
+      nameInput.addEventListener('change', updateBtnState);
     }
 
     if (form) {
@@ -1476,20 +1886,24 @@
           modal.style.display = 'none';
         }
 
+        updateCurriculumCardDeleteTooltips();
         showToast(`${gradeName} added successfully.`);
       });
     }
   }
 
-  // -------------------------------------------------------------------------
-  // INITIALIZATION
-  // -------------------------------------------------------------------------
-  document.addEventListener('DOMContentLoaded', () => {
+  function initAll() {
     initGradeClassEditors();
     initTeacherFields();
     initGradeDeleteTriggers();
     initCurriculumEditors();
     initAddGradeModal();
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAll);
+  } else {
+    initAll();
+  }
 
 })();

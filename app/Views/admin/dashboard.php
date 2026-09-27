@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/assets/css/components/bar-chart.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/dropdown.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/calendar.css?v=<?= time() ?>" />
+  <link rel="stylesheet" href="/assets/css/components/delete-modal.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/donut-chart.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/upcoming-events.css?v=<?= time() ?>" />
 </head>

@@ -107,11 +107,20 @@
               </div>
             </div>
 
-            <!-- View Issue Button: Dark Maroon #8A1515 (Conditionally displayed when student has issue) -->
-            <div id="j-timeline-issue-action" style="display: <?= !empty($students[0]['hasIssue']) ? 'block' : 'none' ?>;">
-              <button type="button" class="c-btn c-btn--issue j-view-issue" id="j-btn-view-issue" title="Review student reported issue">
-                <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-alertTriangle"/></svg>
-                <span>View Issue</span>
+            <!-- Timeline Banner Actions -->
+            <div class="c-timeline-banner__actions" style="display: flex; align-items: center; gap: 0.75rem;">
+              <!-- View Issue Button: Dark Maroon #8A1515 (Conditionally displayed when student has issue) -->
+              <div id="j-timeline-issue-action" style="display: <?= !empty($students[0]['hasIssue']) ? 'block' : 'none' ?>;">
+                <button type="button" class="c-btn c-btn--issue j-view-issue" id="j-btn-view-issue" title="Review student reported issue">
+                  <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-alertTriangle"/></svg>
+                  <span>View Issue</span>
+                </button>
+              </div>
+
+              <!-- Record Achievement Button directly on timeline view -->
+              <button type="button" class="c-student-btn c-student-btn--record j-record-student" id="j-timeline-record-btn" title="Record new achievement for this student">
+                <svg class="c-icon" width="14" height="14"><use href="#icon-edit"/></svg>
+                <span>Record Achievement</span>
               </button>
             </div>
           </div>

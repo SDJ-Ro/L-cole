@@ -81,7 +81,10 @@ $isTeacherMode = ($dirContext === 'teacher');
         <div style="min-width: 8.5rem;">
           <?php
           $dropdownId    = 'j-select-grade';
-          $options       = array_map(fn($g) => ['value' => $g['id'], 'label' => $g['name']], $allGrades);
+          $options       = array_merge(
+              [['value' => 'all', 'label' => 'All Grades']],
+              array_map(fn($g) => ['value' => $g['id'], 'label' => $g['name']], $allGrades)
+          );
           $selectedValue = $activeGradeId;
           $placeholder   = 'Select Grade';
           $labelPrefix   = 'Grade';
@@ -90,8 +93,11 @@ $isTeacherMode = ($dirContext === 'teacher');
           ?>
         </div>
 
-        <!-- Class Chips (6-A in Sky Blue) -->
+        <!-- Class Chips (All, 6-A, etc.) -->
         <div class="c-class-chip-row" id="j-class-chips">
+          <button type="button" class="c-class-chip j-class-chip <?= $activeClass === 'all' ? 'is-active-chip' : '' ?>" data-class="all">
+            All
+          </button>
           <?php
           $initialClasses = $allGrades[0]['classes'] ?? ['6-A', '6-B', '6-C', '6-D'];
           foreach ($initialClasses as $cls):
@@ -105,9 +111,11 @@ $isTeacherMode = ($dirContext === 'teacher');
                 return empty($s['className']) || $s['className'] === 'Unassigned' || empty($s['grade']) || $s['grade'] === 'Unassigned';
             }));
           ?>
+          <?php if ($unassignedCount > 0): ?>
           <button type="button" class="c-class-chip c-class-chip--unassigned j-class-chip <?= $activeClass === 'Unassigned' ? 'is-active-chip' : '' ?>" data-class="Unassigned" style="margin-left: 0.5rem; border-color: rgba(127, 3, 3, 0.3); color: var(--maroon, #7F0303);">
             Unassigned <span class="c-badge-pill j-unassigned-badge" style="margin-left: 0.25rem; background: var(--maroon, #7F0303); color: #fff; padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: 700;"><?= $unassignedCount ?></span>
           </button>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -138,6 +146,11 @@ $isTeacherMode = ($dirContext === 'teacher');
           require __DIR__ . '/_dropdown.php';
           ?>
         </div>
+        <div class="c-status-tab-group" data-role="teacher" role="tablist" aria-label="Teacher status filter">
+          <button type="button" class="c-status-tab-btn is-active" data-status-filter="all">All</button>
+          <button type="button" class="c-status-tab-btn" data-status-filter="active">Active</button>
+          <button type="button" class="c-status-tab-btn" data-status-filter="deactivated">Deactivated</button>
+        </div>
       </div>
 
       <button type="button" class="c-btn-accent c-tone-sunshine j-btn-add-account" data-role="teacher">
@@ -164,6 +177,11 @@ $isTeacherMode = ($dirContext === 'teacher');
           require __DIR__ . '/_dropdown.php';
           ?>
         </div>
+        <div class="c-status-tab-group" data-role="parent" role="tablist" aria-label="Parent status filter">
+          <button type="button" class="c-status-tab-btn is-active" data-status-filter="all">All</button>
+          <button type="button" class="c-status-tab-btn" data-status-filter="active">Active</button>
+          <button type="button" class="c-status-tab-btn" data-status-filter="deactivated">Deactivated</button>
+        </div>
       </div>
 
       <button type="button" class="c-btn-accent c-tone-terracotta j-btn-add-account" data-role="parent">
@@ -178,6 +196,11 @@ $isTeacherMode = ($dirContext === 'teacher');
         <div class="c-search-field" style="min-width: 14rem;">
           <svg class="c-icon c-search-field__icon" width="16" height="16" viewBox="0 0 24 24"><use href="#icon-search"/></svg>
           <input type="search" class="c-search-field__input j-role-search-input" id="j-management-search" placeholder="Search staff..." autocomplete="off" />
+        </div>
+        <div class="c-status-tab-group" data-role="management" role="tablist" aria-label="Staff status filter">
+          <button type="button" class="c-status-tab-btn is-active" data-status-filter="all">All</button>
+          <button type="button" class="c-status-tab-btn" data-status-filter="active">Active</button>
+          <button type="button" class="c-status-tab-btn" data-status-filter="deactivated">Deactivated</button>
         </div>
       </div>
 
@@ -216,6 +239,12 @@ $isTeacherMode = ($dirContext === 'teacher');
           require __DIR__ . '/_dropdown.php';
           ?>
         </div>
+
+        <div class="c-status-tab-group" data-role="student" role="tablist" aria-label="Student status filter">
+          <button type="button" class="c-status-tab-btn is-active" data-status-filter="all">All</button>
+          <button type="button" class="c-status-tab-btn" data-status-filter="active">Active</button>
+          <button type="button" class="c-status-tab-btn" data-status-filter="deactivated">Deactivated</button>
+        </div>
       </div>
     </div>
 
@@ -247,7 +276,7 @@ $isTeacherMode = ($dirContext === 'teacher');
             <th style="width: 22%; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">STUDENT NAME</th>
             <th style="width: 12%; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">REG. NUMBER</th>
             <th style="width: 20%; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">EXTRA-CURRICULAR ACTIVITIES</th>
-            <th style="width: 18%; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">STUDENT EMAIL</th>
+            <th style="width: 18%; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">PARENT EMAIL</th>
             <th style="width: 14%; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">PARENT'S NAME</th>
             <th style="width: 12%; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">CONTACT NUMBER</th>
             <th class="c-align-right" style="width: 6%; padding: 14px 16px; text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">VIEW</th>
@@ -257,7 +286,7 @@ $isTeacherMode = ($dirContext === 'teacher');
             <th style="width: 20%;">Student</th>
             <th style="width: 14%;">Reg. Number</th>
             <th style="width: 25%;">Extra-Curricular Activities</th>
-            <th style="width: 20%;">Student Email</th>
+            <th style="width: 20%;">Parent Email</th>
             <th style="width: 11%;">Account access</th>
             <th class="c-align-right" style="width: 10%;">Actions</th>
           </tr>

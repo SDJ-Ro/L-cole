@@ -54,6 +54,7 @@
   let selectedActivity = 'all';
   let selectedSubject = 'all';
   let selectedRelation = 'all';
+  let selectedStatus = 'all';
   let searchQuery = '';
 
   // Cached DOM elements
@@ -80,10 +81,26 @@
       activeTabName = initialActiveTabBtn.getAttribute('data-tab') || 'Students';
     }
 
+    // Restore persistent grade and class selection if available
+    try {
+      const savedGrade = sessionStorage.getItem('lecole_people_grade');
+      const savedClass = sessionStorage.getItem('lecole_people_class');
+      if (savedGrade) {
+        activeGradeId = savedGrade;
+        if (typeof window.setDropdownValue === 'function') {
+          window.setDropdownValue('j-select-grade', savedGrade);
+        }
+      }
+      if (savedClass) {
+        activeClassName = savedClass;
+      }
+    } catch (e) {}
+
     bindEvents();
     renderClassChips(activeGradeId);
     updateContextCard(activeClassName);
     applyFilters();
+    ['student', 'teacher', 'management', 'parent'].forEach(r => updateSavedDraftsUI(r));
   }
 
   function bindEvents() {
@@ -108,6 +125,7 @@
         const cls = chip.getAttribute('data-class');
         if (cls && cls !== activeClassName) {
           activeClassName = cls;
+          try { sessionStorage.setItem('lecole_people_class', activeClassName); } catch (e) {}
           classChipsWrapEl.querySelectorAll('.j-class-chip').forEach(c => c.classList.remove('is-active-chip'));
           chip.classList.add('is-active-chip');
           updateContextCard(activeClassName);
@@ -123,6 +141,7 @@
         const val = e.detail?.value;
         if (val && val !== activeGradeId) {
           activeGradeId = val;
+          try { sessionStorage.setItem('lecole_people_grade', activeGradeId); } catch (e) {}
           renderClassChips(activeGradeId);
           applyFilters();
         }
@@ -156,7 +175,20 @@
       });
     }
 
-    // 7. Live Search Inputs across all role toolbars & white context section
+    // 7. Status Filter Tabs (All / Active / Deactivated) across all role toolbars
+    document.addEventListener('click', function (e) {
+      const btn = e.target.closest('.c-status-tab-btn');
+      if (!btn) return;
+      const group = btn.closest('.c-status-tab-group');
+      if (!group) return;
+      const st = (btn.getAttribute('data-status-filter') || btn.getAttribute('data-status') || 'all').toLowerCase();
+      selectedStatus = st;
+      group.querySelectorAll('.c-status-tab-btn').forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      applyFilters();
+    });
+
+    // 8. Live Search Inputs across all role toolbars & white context section
     document.addEventListener('input', function (e) {
       if (e.target.matches('.j-role-search-input')) {
         searchQuery = e.target.value.trim().toLowerCase();
@@ -164,7 +196,7 @@
       }
     });
 
-    // 8. Row Status Dropdown style update & persistence
+    // 9. Row Status Dropdown style update & persistence
     if (panelEl) {
       panelEl.addEventListener('dropdown:change', function (e) {
         const statusWrap = e.target.closest('.c-dropdown--status');
@@ -178,6 +210,11 @@
           }
 
           const row = statusWrap.closest('.j-person-row');
+          if (row) {
+            row.setAttribute('data-status', val);
+            applyFilters();
+          }
+
           const role = row?.getAttribute('data-role');
           const id = row?.getAttribute('data-id');
 
@@ -300,12 +337,102 @@
         return;
       }
 
-      // Save Draft button
+      // 9a. Save Draft button (top-right header, footer, or dropdown foot)
       const draftBtn = e.target.closest('.j-btn-save-draft');
       if (draftBtn) {
-        const form = draftBtn.closest('form');
-        if (form) saveEnrollmentDraft(form);
+        e.preventDefault();
+        const role = draftBtn.getAttribute('data-role') ||
+                     draftBtn.closest('.j-saved-drafts-wrap')?.getAttribute('data-role') ||
+                     (draftBtn.closest('form')?.id === 'j-enrollment-form' ? 'student' :
+                      draftBtn.closest('form')?.id === 'j-add-teacher-form' ? 'teacher' :
+                      draftBtn.closest('form')?.id === 'j-add-management-form' ? 'management' : 'student');
+        const form = draftBtn.closest('form') || document.querySelector(`#j-page-add-${role} form`);
+        if (form) savePersonDraft(form, role);
         return;
+      }
+
+      // 9b. Saved Drafts Dropdown Toggle button
+      const draftsToggle = e.target.closest('.j-saved-drafts-toggle');
+      if (draftsToggle) {
+        e.preventDefault();
+        e.stopPropagation();
+        const wrap = draftsToggle.closest('.j-saved-drafts-wrap');
+        if (!wrap) return;
+        const role = wrap.getAttribute('data-role') || 'student';
+        const dropdown = wrap.querySelector('.j-saved-drafts-dropdown');
+        const isCurrentlyOpen = wrap.classList.contains('is-open');
+
+        // Close any other open draft dropdowns
+        document.querySelectorAll('.j-saved-drafts-wrap.is-open').forEach(w => {
+          if (w !== wrap) {
+            w.classList.remove('is-open');
+            const d = w.querySelector('.j-saved-drafts-dropdown');
+            if (d) d.style.display = 'none';
+            const t = w.querySelector('.j-saved-drafts-toggle');
+            if (t) t.setAttribute('aria-expanded', 'false');
+          }
+        });
+
+        if (isCurrentlyOpen) {
+          wrap.classList.remove('is-open');
+          if (dropdown) dropdown.style.display = 'none';
+          draftsToggle.setAttribute('aria-expanded', 'false');
+        } else {
+          wrap.classList.add('is-open');
+          if (dropdown) dropdown.style.display = 'flex';
+          draftsToggle.setAttribute('aria-expanded', 'true');
+          updateSavedDraftsUI(role);
+        }
+        return;
+      }
+
+      // 9c. Delete Draft item inside dropdown
+      const delDraftBtn = e.target.closest('.j-btn-delete-draft');
+      if (delDraftBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const draftId = delDraftBtn.getAttribute('data-id');
+        const role = delDraftBtn.getAttribute('data-role') || 'student';
+        if (draftId) deletePersonDraft(draftId, role);
+        return;
+      }
+
+      // 9d. Click Draft Item to restore
+      const draftItem = e.target.closest('.j-saved-draft-item');
+      if (draftItem) {
+        e.preventDefault();
+        e.stopPropagation();
+        const draftId = draftItem.getAttribute('data-id');
+        const role = draftItem.getAttribute('data-role') || 'student';
+        const form = draftItem.closest('form') || document.querySelector(`#j-page-add-${role} form`);
+        if (form && draftId) {
+          loadPersonDraft(form, draftId, role);
+        }
+        return;
+      }
+
+      // 9e. Outside Click - Close all open draft dropdowns
+      if (!e.target.closest('.j-saved-drafts-wrap')) {
+        document.querySelectorAll('.j-saved-drafts-wrap.is-open').forEach(w => {
+          w.classList.remove('is-open');
+          const d = w.querySelector('.j-saved-drafts-dropdown');
+          if (d) d.style.display = 'none';
+          const t = w.querySelector('.j-saved-drafts-toggle');
+          if (t) t.setAttribute('aria-expanded', 'false');
+        });
+      }
+    });
+
+    // Close open draft dropdowns on Escape key
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.j-saved-drafts-wrap.is-open').forEach(w => {
+          w.classList.remove('is-open');
+          const d = w.querySelector('.j-saved-drafts-dropdown');
+          if (d) d.style.display = 'none';
+          const t = w.querySelector('.j-saved-drafts-toggle');
+          if (t) t.setAttribute('aria-expanded', 'false');
+        });
       }
     });
 
@@ -630,144 +757,17 @@
 
       if (form.id === 'j-enrollment-form') {
         if (form.dataset.saving === 'true') return;
+        clearAllFieldErrors(form);
 
-        // 1. Ensure phone synchronization
-        syncPhone();
+        const validation = validatePersonForm(form, 'student');
+        if (!validation.isValid) {
+          showFormNotice(form, validation.error, 'error', validation.targetInput);
+          return;
+        }
 
-        // 2. Validate Student Required Fields
         const fullNameInput = form.querySelector('input[name="fullName"]');
         const firstNameInput = form.querySelector('input[name="firstName"]');
         const lastNameInput = form.querySelector('input[name="lastName"]');
-        const studentDobInput = form.querySelector('input[name="dateOfBirth"]');
-        const birthCertInput = form.querySelector('input[name="birthCertificateNumber"]');
-        const addressInput = form.querySelector('textarea[name="homeAddress"]');
-
-        if (!fullNameInput || !fullNameInput.value.trim()) {
-          showFormNotice(form, 'Please enter the student\'s Full Name (with initials).', 'error', fullNameInput);
-          return;
-        }
-        if (!firstNameInput || !firstNameInput.value.trim()) {
-          showFormNotice(form, 'Please enter the student\'s First Name.', 'error', firstNameInput);
-          return;
-        }
-        if (!lastNameInput || !lastNameInput.value.trim()) {
-          showFormNotice(form, 'Please enter the student\'s Last Name.', 'error', lastNameInput);
-          return;
-        }
-        if (!studentDobInput || !studentDobInput.value.trim()) {
-          showFormNotice(form, 'Please select the student\'s Date of Birth.', 'error', studentDobInput);
-          return;
-        }
-
-        // Student Age Verification (3–19 years)
-        const studentDobVal = studentDobInput.value;
-        const studentDobRoot = document.getElementById('j-student-dob');
-        const isStudentUnlocked = studentDobRoot?.getAttribute('data-unlocked') === 'true';
-        if (studentDobVal) {
-          const birthDate = new Date(studentDobVal + 'T00:00:00');
-          const today = new Date();
-          let age = today.getFullYear() - birthDate.getFullYear();
-          const m = today.getMonth() - birthDate.getMonth();
-          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-          }
-          if ((age < 3 || age > 19) && !isStudentUnlocked) {
-            showFormNotice(form, `Student age (${age} years) is outside standard enrollment range (3–19 years). Click "Unlock range" above if this is an approved exception.`, 'error', studentDobInput);
-            return;
-          }
-        }
-
-        if (!birthCertInput || !birthCertInput.value.trim()) {
-          showFormNotice(form, 'Please enter the student\'s Birth Certificate Number.', 'error', birthCertInput);
-          return;
-        }
-        if (!addressInput || !addressInput.value.trim()) {
-          showFormNotice(form, 'Please enter the student\'s Residential Address.', 'error', addressInput);
-          return;
-        }
-
-        // 3. Validate Guardian Mode & Fields
-        const guardianMode = form.querySelector('input[name="guardianMode"]:checked')?.value || 'existing';
-        if (guardianMode === 'existing') {
-          const parentIdVal = document.getElementById('existing-parent-id')?.value;
-          if (!parentIdVal) {
-            const searchBox = document.getElementById('j-inline-parent-search');
-            showFormNotice(form, 'Please search and select an existing parent, or switch to "Create New Guardian".', 'error', searchBox);
-            return;
-          }
-        } else {
-          // Guardian Age Verification: (18–80 years)
-          const guardianDobInput = form.querySelector('input[name="guardian[dateOfBirth]"]');
-          const guardianDobVal = guardianDobInput?.value;
-          const guardianDobRoot = document.getElementById('j-guardian-dob');
-          const isGuardianUnlocked = guardianDobRoot?.getAttribute('data-unlocked') === 'true';
-          if (guardianDobVal) {
-            const birthDate = new Date(guardianDobVal + 'T00:00:00');
-            const today = new Date();
-            let gAge = today.getFullYear() - birthDate.getFullYear();
-            const m = today.getMonth() - birthDate.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-              gAge--;
-            }
-            if ((gAge < 18 || gAge > 80) && !isGuardianUnlocked) {
-              showFormNotice(form, `Guardian age (${gAge} years) is outside standard adult range (18–80 years). Click "Unlock range" above if this is an approved exception.`, 'error', guardianDobInput);
-              return;
-            }
-          }
-
-          const requiredNew = [
-            { name: 'guardian[fullName]', label: 'Guardian Full Name' },
-            { name: 'guardian[firstName]', label: 'Guardian First Name' },
-            { name: 'guardian[lastName]', label: 'Guardian Last Name' },
-            { name: 'guardian[dateOfBirth]', label: 'Guardian Date of Birth' },
-            { name: 'guardian[occupation]', label: 'Guardian Occupation' },
-            { name: 'guardian[mobileNumber]', label: 'Guardian Mobile Number' },
-            { name: 'guardian[email]', label: 'Guardian Email' },
-            { name: 'guardian[emergencyName]', label: 'Secondary Emergency Contact Name' },
-            { name: 'guardian[emergencyContact]', label: 'Secondary Emergency Contact Phone' }
-          ];
-
-          for (const item of requiredNew) {
-            const el = form.querySelector(`[name="${item.name}"]`);
-            if (!el || !el.value.trim()) {
-              showFormNotice(form, `Please fill out required guardian field: ${item.label} (*).`, 'error', el);
-              return;
-            }
-          }
-
-          // Secondary emergency contact cannot be the parent/guardian
-          const pName = form.querySelector('[name="guardian[fullName]"]')?.value.trim().toLowerCase();
-          const emName = form.querySelector('[name="guardian[emergencyName]"]')?.value.trim().toLowerCase();
-          const pPhone = (form.querySelector('[name="guardian[mobileNumber]"]')?.value || '').replace(/\D/g, '').slice(-7);
-          const emPhone = (form.querySelector('[name="guardian[emergencyContact]"]')?.value || '').replace(/\D/g, '').slice(-7);
-
-          if (emName && pName && emName === pName) {
-            showFormNotice(form, 'Secondary emergency contact cannot have the same name as the parent/guardian.', 'error', form.querySelector('[name="guardian[emergencyName]"]'));
-            return;
-          }
-          if (emPhone && pPhone && emPhone === pPhone) {
-            showFormNotice(form, 'Secondary emergency contact phone cannot be the same as the parent\'s contact number.', 'error', form.querySelector('[name="guardian[emergencyContact]"]'));
-            return;
-          }
-
-          // Check NIC or Passport
-          const nicInput = form.querySelector('input[name="guardian[nic]"]');
-          const passportInput = form.querySelector('input[name="guardian[passport]"]');
-          if ((!nicInput || !nicInput.value.trim()) && (!passportInput || !passportInput.value.trim())) {
-            showFormNotice(form, 'Please provide either a National ID (NIC) or Passport number for the guardian.', 'error', nicInput || passportInput);
-            return;
-          }
-
-          if (nicInput && nicInput.value.trim()) {
-            const nv = nicInput.value.trim();
-            const is12 = /^[0-9]{12}$/.test(nv);
-            const is9v = /^[0-9]{9}[vVxX]$/.test(nv);
-            if (!is12 && !is9v) {
-              showFormNotice(form, `Entered NIC has ${nv.length} characters. A modern Sri Lankan NIC must have exactly 12 digits (e.g. 198012345678) or 9 digits followed by V/X (e.g. 801234567V).`, 'error', nicInput);
-              return;
-            }
-          }
-        }
 
         // 4. In-Flight Submission State
         form.dataset.saving = 'true';
@@ -801,22 +801,31 @@
           }
 
           // Clear local draft upon successful admission
-          try { localStorage.removeItem('lecole_enrollment_draft'); } catch(e) {}
+          try {
+            localStorage.removeItem('lecole_enrollment_draft');
+            const admittedName = fullNameInput ? fullNameInput.value.trim() : '';
+            let sDrafts = getSavedDrafts('student').filter(d => d.title !== admittedName && d.id !== 'legacy_enrollment_draft');
+            localStorage.setItem('lecole_saved_drafts_student', JSON.stringify(sDrafts));
+            updateSavedDraftsUI('student');
+          } catch(e) {}
 
           const gradeVal = form.querySelector('input[name="grade"]')?.value || 'Grade 6';
           const classVal = form.querySelector('input[name="classSection"]')?.value || '6-A';
           const gradeIdMap = { 'Grade 6': 'g6', 'Grade 7': 'g7', 'Grade 8': 'g8', 'Grade 9': 'g9', 'Grade 10': 'g10', 'Grade 11': 'g11' };
           const gradeId = gradeIdMap[gradeVal] || 'g6';
 
+          const studentIndex = result.indexNo || result.index || result.studentIndex || 'STU-NEW';
+
           const newStudentData = {
-            id: result.index,
+            id: studentIndex,
             name: fullNameInput.value.trim(),
             firstName: firstNameInput.value.trim(),
             lastName: lastNameInput.value.trim(),
             grade: gradeVal,
             gradeId: gradeId,
             className: classVal,
-            email: `${result.index.toLowerCase()}@lecole.com`,
+            email: form.querySelector('input[name="guardian[email]"]')?.value.trim() || result.parentEmail || 'Not recorded',
+            parentEmail: form.querySelector('input[name="guardian[email]"]')?.value.trim() || result.parentEmail || 'Not recorded',
             parentName: result.parentName || '',
             parentPhone: form.querySelector('input[name="guardian[mobile]"]')?.value || form.querySelector('input[name="guardian[mobileNumber]"]')?.value || '',
             avatar: 'bg-sky-subtle text-sky',
@@ -826,20 +835,24 @@
           // 1. Immediately Close the Add Person Page
           closeAddPersonForm();
 
-          // 2. Switch to Students tab & configure active class/grade filters
+          // 2. Switch to Students tab without isolating view to that single class
           switchRoleTab('Students');
-          activeGradeId = gradeId;
-          activeClassName = classVal;
+          activeGradeId = 'all';
+          activeClassName = 'all';
+          try {
+            sessionStorage.setItem('lecole_people_grade', 'all');
+            sessionStorage.setItem('lecole_people_class', 'all');
+          } catch (e) {}
           if (typeof window.setDropdownValue === 'function') {
-            window.setDropdownValue('j-select-grade', gradeId);
+            window.setDropdownValue('j-select-grade', 'all');
           }
-          renderClassChips(activeGradeId);
-          updateContextCard(activeClassName);
+          renderClassChips('all');
+          updateContextCard('all');
 
           // 3. Prepend newly admitted row to the table
           const newRow = insertNewStudentRow(newStudentData);
 
-          // 4. Re-apply filters so row is immediately visible
+          // 4. Re-apply filters so row and all students are visible
           applyFilters();
 
           // 5. Scroll smoothly to new row with highlight pulse
@@ -853,10 +866,12 @@
           form.reset();
 
           // 7. Show persistent toast banner
-          showToast(`Student ${newStudentData.name} (${result.index}) enrolled successfully!`, 'success');
+          showToast(`Student ${newStudentData.name} (${studentIndex}) enrolled successfully!`, 'success');
 
         } catch (err) {
-          showFormNotice(form, err.message, 'error');
+          refreshAdmissionKey(form);
+          const targetField = findFieldFromErrorMessage(form, err.message);
+          showFormNotice(form, err.message, 'error', targetField);
         } finally {
           form.dataset.saving = 'false';
           if (submitBtn) {
@@ -872,103 +887,11 @@
 
       if (form.id === 'j-add-teacher-form') {
         if (form.dataset.saving === 'true') return;
+        clearAllFieldErrors(form);
 
-        const fullNameInput = form.querySelector('input[name="fullName"]');
-        const firstNameInput = form.querySelector('input[name="firstName"]');
-        const lastNameInput = form.querySelector('input[name="lastName"]');
-        const nicInput = form.querySelector('input[name="nic"]');
-        const dobInput = form.querySelector('input[name="dateOfBirth"]');
-        const phoneInput = form.querySelector('input[name="phone"]');
-        const emailInput = form.querySelector('input[name="personalEmail"]');
-        const subjectsInput = form.querySelector('input[name="subjects"]');
-        const expInput = form.querySelector('input[name="experience"]');
-        const joinDateInput = form.querySelector('input[name="joinDate"]');
-        const emNameInput = form.querySelector('input[name="emergencyName"]');
-        const emPhoneInput = form.querySelector('input[name="emergencyPhone"]');
-
-        if (!fullNameInput || !fullNameInput.value.trim()) {
-          showFormNotice(form, 'Please enter the teacher\'s Full Name.', 'error', fullNameInput);
-          return;
-        }
-        if (!firstNameInput || !firstNameInput.value.trim()) {
-          showFormNotice(form, 'Please enter the teacher\'s First Name.', 'error', firstNameInput);
-          return;
-        }
-        if (!lastNameInput || !lastNameInput.value.trim()) {
-          showFormNotice(form, 'Please enter the teacher\'s Last Name.', 'error', lastNameInput);
-          return;
-        }
-        if (!nicInput || !nicInput.value.trim()) {
-          showFormNotice(form, 'Please enter the teacher\'s National Identity Card (NIC) number.', 'error', nicInput);
-          return;
-        }
-
-        const nicVal = nicInput.value.trim();
-        const is12 = /^[0-9]{12}$/.test(nicVal);
-        const is9v = /^[0-9]{9}[vVxX]$/.test(nicVal);
-        if (!is12 && !is9v) {
-          showFormNotice(form, 'Please enter a valid Sri Lankan NIC (12 digits modern, or 9 digits followed by V/X).', 'error', nicInput);
-          return;
-        }
-
-        if (!dobInput || !dobInput.value.trim()) {
-          showFormNotice(form, 'Please select the teacher\'s Date of Birth.', 'error', dobInput);
-          return;
-        }
-
-        // Age bounds verification (21–65 years)
-        const birthDate = new Date(dobInput.value.trim() + 'T00:00:00');
-        const today = new Date();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const m = today.getMonth() - birthDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-          age--;
-        }
-        if (age < 21 || age > 65) {
-          showFormNotice(form, `Teacher age (${age} years) is outside acceptable faculty employment range (21–65 years).`, 'error', dobInput);
-          return;
-        }
-
-        if (!phoneInput || !phoneInput.value.trim()) {
-          showFormNotice(form, 'Please enter the teacher\'s Mobile Number.', 'error', phoneInput);
-          return;
-        }
-        if (!emailInput || !emailInput.value.trim()) {
-          showFormNotice(form, 'Please enter the teacher\'s Personal Email.', 'error', emailInput);
-          return;
-        }
-        if (!subjectsInput || !subjectsInput.value.trim()) {
-          showFormNotice(form, 'Please enter the subjects qualified to teach.', 'error', subjectsInput);
-          return;
-        }
-        if (!expInput || expInput.value === '') {
-          showFormNotice(form, 'Please enter years of experience.', 'error', expInput);
-          return;
-        }
-        if (!joinDateInput || !joinDateInput.value.trim()) {
-          showFormNotice(form, 'Please select the Join Date.', 'error', joinDateInput);
-          return;
-        }
-        if (!emNameInput || !emNameInput.value.trim()) {
-          showFormNotice(form, 'Please enter an Emergency Contact Name.', 'error', emNameInput);
-          return;
-        }
-        if (!emPhoneInput || !emPhoneInput.value.trim()) {
-          showFormNotice(form, 'Please enter an Emergency Contact Number.', 'error', emPhoneInput);
-          return;
-        }
-
-        // Anti-self-reference validation
-        const tName = fullNameInput.value.trim().toLowerCase();
-        const emName = emNameInput.value.trim().toLowerCase();
-        const tDigits = phoneInput.value.replace(/\D/g, '').slice(-7);
-        const emDigits = emPhoneInput.value.replace(/\D/g, '').slice(-7);
-        if (emName && tName && emName === tName) {
-          showFormNotice(form, 'Emergency contact person cannot be the same as the staff member.', 'error', emNameInput);
-          return;
-        }
-        if (emDigits && tDigits && emDigits === tDigits) {
-          showFormNotice(form, 'Emergency contact phone number cannot be the same as the staff member\'s mobile number.', 'error', emPhoneInput);
+        const validation = validatePersonForm(form, 'teacher');
+        if (!validation.isValid) {
+          showFormNotice(form, validation.error, 'error', validation.targetInput);
           return;
         }
 
@@ -1001,6 +924,14 @@
             throw new Error(result.error || 'Failed to complete teacher registration.');
           }
 
+          // Clear local draft upon successful registration
+          try {
+            const registeredName = result.teacher?.name || form.querySelector('input[name="fullName"]')?.value.trim() || '';
+            let tDrafts = getSavedDrafts('teacher').filter(d => d.title !== registeredName);
+            localStorage.setItem('lecole_saved_drafts_teacher', JSON.stringify(tDrafts));
+            updateSavedDraftsUI('teacher');
+          } catch(e) {}
+
           closeAddPersonForm();
           switchRoleTab('Teachers');
           const newRow = insertNewTeacherRow(result.teacher);
@@ -1015,7 +946,8 @@
           form.reset();
           showToast(`Teacher ${result.teacher.name} (${result.teacher.id}) registered successfully!`, 'success');
         } catch (err) {
-          showFormNotice(form, err.message, 'error');
+          const targetField = findFieldFromErrorMessage(form, err.message);
+          showFormNotice(form, err.message, 'error', targetField);
         } finally {
           form.dataset.saving = 'false';
           if (submitBtn) {
@@ -1031,74 +963,11 @@
 
       if (form.id === 'j-add-management-form') {
         if (form.dataset.saving === 'true') return;
+        clearAllFieldErrors(form);
 
-        const fullNameInput = form.querySelector('input[name="fullName"]');
-        const firstNameInput = form.querySelector('input[name="firstName"]');
-        const lastNameInput = form.querySelector('input[name="lastName"]');
-        const nicInput = form.querySelector('input[name="nic"]');
-        const phoneInput = form.querySelector('input[name="phone"]');
-        const emailInput = form.querySelector('input[name="personalEmail"]');
-        const joinDateInput = form.querySelector('input[name="joinDate"]');
-        const emNameInput = form.querySelector('input[name="emergencyName"]');
-        const emPhoneInput = form.querySelector('input[name="emergencyPhone"]');
-
-        if (!fullNameInput || !fullNameInput.value.trim()) {
-          showFormNotice(form, 'Please enter the staff member\'s Full Name.', 'error', fullNameInput);
-          return;
-        }
-        if (!firstNameInput || !firstNameInput.value.trim()) {
-          showFormNotice(form, 'Please enter the staff member\'s First Name.', 'error', firstNameInput);
-          return;
-        }
-        if (!lastNameInput || !lastNameInput.value.trim()) {
-          showFormNotice(form, 'Please enter the staff member\'s Last Name.', 'error', lastNameInput);
-          return;
-        }
-        if (!nicInput || !nicInput.value.trim()) {
-          showFormNotice(form, 'Please enter the National Identity Card (NIC) number.', 'error', nicInput);
-          return;
-        }
-
-        const nicVal = nicInput.value.trim();
-        const is12 = /^[0-9]{12}$/.test(nicVal);
-        const is9v = /^[0-9]{9}[vVxX]$/.test(nicVal);
-        if (!is12 && !is9v) {
-          showFormNotice(form, 'Please enter a valid Sri Lankan NIC (12 digits modern, or 9 digits followed by V/X).', 'error', nicInput);
-          return;
-        }
-
-        if (!phoneInput || !phoneInput.value.trim()) {
-          showFormNotice(form, 'Please enter the Contact Number.', 'error', phoneInput);
-          return;
-        }
-        if (!emailInput || !emailInput.value.trim()) {
-          showFormNotice(form, 'Please enter the Personal Email.', 'error', emailInput);
-          return;
-        }
-        if (!joinDateInput || !joinDateInput.value.trim()) {
-          showFormNotice(form, 'Please select the Join Date.', 'error', joinDateInput);
-          return;
-        }
-        if (!emNameInput || !emNameInput.value.trim()) {
-          showFormNotice(form, 'Please enter an Emergency Contact Name.', 'error', emNameInput);
-          return;
-        }
-        if (!emPhoneInput || !emPhoneInput.value.trim()) {
-          showFormNotice(form, 'Please enter an Emergency Contact Number.', 'error', emPhoneInput);
-          return;
-        }
-
-        // Anti-self-reference validation
-        const mName = fullNameInput.value.trim().toLowerCase();
-        const emName = emNameInput.value.trim().toLowerCase();
-        const mDigits = phoneInput.value.replace(/\D/g, '').slice(-7);
-        const emDigits = emPhoneInput.value.replace(/\D/g, '').slice(-7);
-        if (emName && mName && emName === mName) {
-          showFormNotice(form, 'Emergency contact person cannot be the same as the staff member.', 'error', emNameInput);
-          return;
-        }
-        if (emDigits && mDigits && emDigits === mDigits) {
-          showFormNotice(form, 'Emergency contact phone number cannot be the same as the staff member\'s contact number.', 'error', emPhoneInput);
+        const validation = validatePersonForm(form, 'management');
+        if (!validation.isValid) {
+          showFormNotice(form, validation.error, 'error', validation.targetInput);
           return;
         }
 
@@ -1131,6 +1000,14 @@
             throw new Error(result.error || 'Failed to complete management registration.');
           }
 
+          // Clear local draft upon successful registration
+          try {
+            const registeredName = result.management?.name || form.querySelector('input[name="fullName"]')?.value.trim() || '';
+            let mDrafts = getSavedDrafts('management').filter(d => d.title !== registeredName);
+            localStorage.setItem('lecole_saved_drafts_management', JSON.stringify(mDrafts));
+            updateSavedDraftsUI('management');
+          } catch(e) {}
+
           closeAddPersonForm();
           switchRoleTab('Management Panel');
           const newRow = insertNewManagementRow(result.management);
@@ -1145,7 +1022,8 @@
           form.reset();
           showToast(`Staff member ${result.management.name} (${result.management.id}) registered successfully!`, 'success');
         } catch (err) {
-          showFormNotice(form, err.message, 'error');
+          const targetField = findFieldFromErrorMessage(form, err.message);
+          showFormNotice(form, err.message, 'error', targetField);
         } finally {
           form.dataset.saving = 'false';
           if (submitBtn) {
@@ -1199,6 +1077,7 @@
         initInlineParentPicker();
         checkAndRestoreEnrollmentDraft(document.getElementById('j-enrollment-form'));
       }
+      updateSavedDraftsUI(role);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
@@ -1215,6 +1094,62 @@
 
   window.openAddPersonForm = openAddPersonForm;
   window.closeAddPersonForm = closeAddPersonForm;
+
+  function clearAllFieldErrors(form) {
+    if (!form) return;
+    form.querySelectorAll('.c-field-inline-error').forEach(el => el.remove());
+    form.querySelectorAll('.c-input-invalid').forEach(el => el.classList.remove('c-input-invalid'));
+  }
+
+  function refreshAdmissionKey(form) {
+    if (!form) return;
+    const keyInput = form.querySelector('input[name="admissionKey"]');
+    if (keyInput) {
+      const bytes = new Uint8Array(16);
+      if (window.crypto && window.crypto.getRandomValues) {
+        window.crypto.getRandomValues(bytes);
+        keyInput.value = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+      } else {
+        keyInput.value = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+      }
+    }
+  }
+
+  function findFieldFromErrorMessage(form, msg) {
+    if (!form || !msg) return null;
+    const m = msg.toLowerCase();
+    if (m.includes('birth certificate') || m.includes('birth cert')) {
+      return form.querySelector('[name="birthCertificateNumber"]');
+    }
+    if (m.includes('emergency contact') || m.includes('emergency')) {
+      return form.querySelector('[name="guardian[emergencyContact]"]') || form.querySelector('[name="emergencyPhone"]') || form.querySelector('[name="guardian[emergencyName]"]') || form.querySelector('[name="emergencyName"]');
+    }
+    if (m.includes('nic') || m.includes('national id') || m.includes('passport')) {
+      return form.querySelector('[name="guardian[nic]"]') || form.querySelector('[name="nic"]') || form.querySelector('[name="guardian[passport]"]');
+    }
+    if (m.includes('mobile') || m.includes('phone') || m.includes('contact number')) {
+      return form.querySelector('[name="guardian[mobileNumber]"]') || form.querySelector('[name="guardian[mobile]"]') || form.querySelector('[name="phone"]');
+    }
+    if (m.includes('date of birth') || m.includes('dob') || m.includes('age')) {
+      return form.querySelector('[name="dateOfBirth"]') || form.querySelector('[name="guardian[dateOfBirth]"]');
+    }
+    if (m.includes('first name')) {
+      return form.querySelector('[name="firstName"]');
+    }
+    if (m.includes('last name')) {
+      return form.querySelector('[name="lastName"]');
+    }
+    if (m.includes('full name') || m.includes('name')) {
+      return form.querySelector('[name="fullName"]') || form.querySelector('[name="guardian[fullName]"]');
+    }
+    if (m.includes('address') || m.includes('residential')) {
+      return form.querySelector('[name="homeAddress"]') || form.querySelector('[name="address"]') || form.querySelector('[name="guardian[address]"]');
+    }
+    if (m.includes('email')) {
+      return form.querySelector('[name="personalEmail"]') || form.querySelector('[name="guardian[email]"]') || form.querySelector('[name="email"]');
+    }
+    return null;
+  }
 
   function showFormNotice(form, message, type, targetInput = null) {
     if (!form) return;
@@ -1244,72 +1179,731 @@
     updateEl(noticeEl);
     updateEl(footerNoticeEl);
 
+    if (type !== 'error') {
+      clearAllFieldErrors(form);
+    }
+
     if (targetInput) {
+      const formGroup = targetInput.closest('.c-form-group') || targetInput.parentElement;
+      if (formGroup) {
+        const oldInline = formGroup.querySelector('.c-field-inline-error');
+        if (oldInline) oldInline.remove();
+      }
+
+      if (type === 'error' && formGroup) {
+        const badge = document.createElement('div');
+        badge.className = 'c-field-inline-error';
+        badge.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>${escapeHtml(message)}</span>
+        `;
+        const insertRef = targetInput.closest('.c-input-wrap') || targetInput.closest('.c-select') || targetInput;
+        if (insertRef && insertRef.parentNode) {
+          insertRef.parentNode.insertBefore(badge, insertRef.nextSibling);
+        } else {
+          formGroup.appendChild(badge);
+        }
+
+        const clearHandler = () => {
+          badge.remove();
+          targetInput.classList.remove('c-input-invalid');
+          targetInput.removeEventListener('input', clearHandler);
+          targetInput.removeEventListener('change', clearHandler);
+        };
+        targetInput.addEventListener('input', clearHandler);
+        targetInput.addEventListener('change', clearHandler);
+      }
+
       targetInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
       targetInput.classList.add('c-input-invalid');
       targetInput.focus();
-      setTimeout(() => targetInput.classList.remove('c-input-invalid'), 4000);
     } else if (type === 'error' && noticeEl) {
       noticeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
 
-  function saveEnrollmentDraft(form) {
-    if (!form) return;
-    syncPhone();
-    const draftBtn = form.querySelector('#j-enrollment-save-draft') || form.querySelector('.j-btn-save-draft');
-    const draftPill = document.getElementById('j-enrollment-draft-pill');
+  function validatePersonForm(form, role) {
+    if (!form) return { isValid: false, error: 'Form element not found.' };
+    clearAllFieldErrors(form);
 
+    if (role === 'student' || form.id === 'j-enrollment-form') {
+      syncPhone();
+
+      const fullNameInput = form.querySelector('input[name="fullName"]');
+      const firstNameInput = form.querySelector('input[name="firstName"]');
+      const lastNameInput = form.querySelector('input[name="lastName"]');
+      const studentDobInput = form.querySelector('input[name="dateOfBirth"]');
+      const birthCertInput = form.querySelector('input[name="birthCertificateNumber"]');
+      const addressInput = form.querySelector('textarea[name="homeAddress"]');
+
+      if (!fullNameInput || !fullNameInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the student\'s Full Name (with initials).', targetInput: fullNameInput };
+      }
+      if (!firstNameInput || !firstNameInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the student\'s First Name.', targetInput: firstNameInput };
+      }
+      if (!lastNameInput || !lastNameInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the student\'s Last Name.', targetInput: lastNameInput };
+      }
+      if (!studentDobInput || !studentDobInput.value.trim()) {
+        return { isValid: false, error: 'Please select the student\'s Date of Birth.', targetInput: studentDobInput };
+      }
+
+      // Student Age Verification (3–19 years)
+      const studentDobVal = studentDobInput.value;
+      const studentDobRoot = document.getElementById('j-student-dob');
+      const isStudentUnlocked = studentDobRoot?.getAttribute('data-unlocked') === 'true';
+      if (studentDobVal) {
+        const birthDate = new Date(studentDobVal + 'T00:00:00');
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        if ((age < 3 || age > 19) && !isStudentUnlocked) {
+          return { isValid: false, error: `Student age (${age} years) is outside standard enrollment range (3–19 years). Click "Unlock range" above if this is an approved exception.`, targetInput: studentDobInput };
+        }
+      }
+
+      if (!birthCertInput || !birthCertInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the student\'s Birth Certificate Number.', targetInput: birthCertInput };
+      }
+      if (!addressInput || !addressInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the student\'s Residential Address.', targetInput: addressInput };
+      }
+
+      // Guardian Validation
+      const guardianMode = form.querySelector('input[name="guardianMode"]:checked')?.value || 'existing';
+      if (guardianMode === 'existing') {
+        const parentIdVal = document.getElementById('existing-parent-id')?.value;
+        if (!parentIdVal) {
+          const searchBox = document.getElementById('j-inline-parent-search');
+          return { isValid: false, error: 'Please search and select an existing parent, or switch to "Create New Guardian".', targetInput: searchBox };
+        }
+      } else {
+        // Guardian Age Verification: (18–80 years)
+        const guardianDobInput = form.querySelector('input[name="guardian[dateOfBirth]"]');
+        const guardianDobVal = guardianDobInput?.value;
+        const guardianDobRoot = document.getElementById('j-guardian-dob');
+        const isGuardianUnlocked = guardianDobRoot?.getAttribute('data-unlocked') === 'true';
+        if (guardianDobVal) {
+          const birthDate = new Date(guardianDobVal + 'T00:00:00');
+          const today = new Date();
+          let gAge = today.getFullYear() - birthDate.getFullYear();
+          const m = today.getMonth() - birthDate.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            gAge--;
+          }
+          if ((gAge < 18 || gAge > 80) && !isGuardianUnlocked) {
+            return { isValid: false, error: `Guardian age (${gAge} years) is outside standard adult range (18–80 years). Click "Unlock range" above if this is an approved exception.`, targetInput: guardianDobInput };
+          }
+        }
+
+        const requiredNew = [
+          { name: 'guardian[fullName]', label: 'Guardian Full Name' },
+          { name: 'guardian[firstName]', label: 'Guardian First Name' },
+          { name: 'guardian[lastName]', label: 'Guardian Last Name' },
+          { name: 'guardian[dateOfBirth]', label: 'Guardian Date of Birth' },
+          { name: 'guardian[occupation]', label: 'Guardian Occupation' },
+          { name: 'guardian[mobileNumber]', label: 'Guardian Mobile Number' },
+          { name: 'guardian[email]', label: 'Guardian Email' },
+          { name: 'guardian[emergencyName]', label: 'Secondary Emergency Contact Name' },
+          { name: 'guardian[emergencyContact]', label: 'Secondary Emergency Contact Phone' }
+        ];
+
+        for (const item of requiredNew) {
+          const el = form.querySelector(`[name="${item.name}"]`);
+          if (!el || !el.value.trim()) {
+            return { isValid: false, error: `Please fill out required guardian field: ${item.label} (*).`, targetInput: el };
+          }
+        }
+
+        // Secondary emergency contact cannot be the parent/guardian
+        const pName = form.querySelector('[name="guardian[fullName]"]')?.value.trim().toLowerCase();
+        const emName = form.querySelector('[name="guardian[emergencyName]"]')?.value.trim().toLowerCase();
+        const pPhone = (form.querySelector('[name="guardian[mobileNumber]"]')?.value || '').replace(/\D/g, '').slice(-7);
+        const emPhone = (form.querySelector('[name="guardian[emergencyContact]"]')?.value || '').replace(/\D/g, '').slice(-7);
+
+        if (emName && pName && emName === pName) {
+          return { isValid: false, error: 'Secondary emergency contact cannot have the same name as the parent/guardian.', targetInput: form.querySelector('[name="guardian[emergencyName]"]') };
+        }
+        if (emPhone && pPhone && emPhone === pPhone) {
+          return { isValid: false, error: 'Secondary emergency contact phone cannot be the same as the parent\'s contact number.', targetInput: form.querySelector('[name="guardian[emergencyContact]"]') };
+        }
+
+        // Check NIC or Passport
+        const nicInput = form.querySelector('input[name="guardian[nic]"]');
+        const passportInput = form.querySelector('input[name="guardian[passport]"]');
+        if ((!nicInput || !nicInput.value.trim()) && (!passportInput || !passportInput.value.trim())) {
+          return { isValid: false, error: 'Please provide either a National ID (NIC) or Passport number for the guardian.', targetInput: nicInput || passportInput };
+        }
+
+        if (nicInput && nicInput.value.trim()) {
+          const nv = nicInput.value.trim();
+          const is12 = /^[0-9]{12}$/.test(nv);
+          const is9v = /^[0-9]{9}[vVxX]$/.test(nv);
+          if (!is12 && !is9v) {
+            return { isValid: false, error: `Entered NIC has ${nv.length} characters. A modern Sri Lankan NIC must have exactly 12 digits (e.g. 198012345678) or 9 digits followed by V/X (e.g. 801234567V).`, targetInput: nicInput };
+          }
+        }
+      }
+
+      return { isValid: true };
+    }
+
+    if (role === 'teacher' || form.id === 'j-add-teacher-form') {
+      const fullNameInput = form.querySelector('input[name="fullName"]');
+      const firstNameInput = form.querySelector('input[name="firstName"]');
+      const lastNameInput = form.querySelector('input[name="lastName"]');
+      const nicInput = form.querySelector('input[name="nic"]');
+      const dobInput = form.querySelector('input[name="dateOfBirth"]');
+      const phoneInput = form.querySelector('input[name="phone"]');
+      const emailInput = form.querySelector('input[name="personalEmail"]');
+      const subjectsInput = form.querySelector('input[name="subjects"]');
+      const expInput = form.querySelector('input[name="experience"]');
+      const joinDateInput = form.querySelector('input[name="joinDate"]');
+      const emNameInput = form.querySelector('input[name="emergencyName"]');
+      const emPhoneInput = form.querySelector('input[name="emergencyPhone"]');
+
+      if (!fullNameInput || !fullNameInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the teacher\'s Full Name.', targetInput: fullNameInput };
+      }
+      if (!firstNameInput || !firstNameInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the teacher\'s First Name.', targetInput: firstNameInput };
+      }
+      if (!lastNameInput || !lastNameInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the teacher\'s Last Name.', targetInput: lastNameInput };
+      }
+      if (!nicInput || !nicInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the teacher\'s National Identity Card (NIC) number.', targetInput: nicInput };
+      }
+
+      const nicVal = nicInput.value.trim();
+      const is12 = /^[0-9]{12}$/.test(nicVal);
+      const is9v = /^[0-9]{9}[vVxX]$/.test(nicVal);
+      if (!is12 && !is9v) {
+        return { isValid: false, error: 'Please enter a valid Sri Lankan NIC (12 digits modern, or 9 digits followed by V/X).', targetInput: nicInput };
+      }
+
+      if (!dobInput || !dobInput.value.trim()) {
+        return { isValid: false, error: 'Please select the teacher\'s Date of Birth.', targetInput: dobInput };
+      }
+
+      // Age bounds verification (21–65 years)
+      const birthDate = new Date(dobInput.value.trim() + 'T00:00:00');
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      if (age < 21 || age > 65) {
+        return { isValid: false, error: `Teacher age (${age} years) is outside acceptable faculty employment range (21–65 years).`, targetInput: dobInput };
+      }
+
+      if (!phoneInput || !phoneInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the teacher\'s Mobile Number.', targetInput: phoneInput };
+      }
+      if (!emailInput || !emailInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the teacher\'s Personal Email.', targetInput: emailInput };
+      }
+      if (!subjectsInput || !subjectsInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the subjects qualified to teach.', targetInput: subjectsInput };
+      }
+      if (!expInput || expInput.value === '') {
+        return { isValid: false, error: 'Please enter years of experience.', targetInput: expInput };
+      }
+      if (!joinDateInput || !joinDateInput.value.trim()) {
+        return { isValid: false, error: 'Please select the Join Date.', targetInput: joinDateInput };
+      }
+      if (!emNameInput || !emNameInput.value.trim()) {
+        return { isValid: false, error: 'Please enter an Emergency Contact Name.', targetInput: emNameInput };
+      }
+      if (!emPhoneInput || !emPhoneInput.value.trim()) {
+        return { isValid: false, error: 'Please enter an Emergency Contact Number.', targetInput: emPhoneInput };
+      }
+
+      // Anti-self-reference validation
+      const tName = fullNameInput.value.trim().toLowerCase();
+      const emName = emNameInput.value.trim().toLowerCase();
+      const tDigits = phoneInput.value.replace(/\D/g, '').slice(-7);
+      const emDigits = emPhoneInput.value.replace(/\D/g, '').slice(-7);
+      if (emName && tName && emName === tName) {
+        return { isValid: false, error: 'Emergency contact person cannot be the same as the staff member.', targetInput: emNameInput };
+      }
+      if (emDigits && tDigits && emDigits === tDigits) {
+        return { isValid: false, error: 'Emergency contact phone number cannot be the same as the staff member\'s mobile number.', targetInput: emPhoneInput };
+      }
+
+      return { isValid: true };
+    }
+
+    if (role === 'management' || form.id === 'j-add-management-form') {
+      const fullNameInput = form.querySelector('input[name="fullName"]');
+      const firstNameInput = form.querySelector('input[name="firstName"]');
+      const lastNameInput = form.querySelector('input[name="lastName"]');
+      const nicInput = form.querySelector('input[name="nic"]');
+      const phoneInput = form.querySelector('input[name="phone"]');
+      const emailInput = form.querySelector('input[name="personalEmail"]');
+      const joinDateInput = form.querySelector('input[name="joinDate"]');
+      const emNameInput = form.querySelector('input[name="emergencyName"]');
+      const emPhoneInput = form.querySelector('input[name="emergencyPhone"]');
+
+      if (!fullNameInput || !fullNameInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the staff member\'s Full Name.', targetInput: fullNameInput };
+      }
+      if (!firstNameInput || !firstNameInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the staff member\'s First Name.', targetInput: firstNameInput };
+      }
+      if (!lastNameInput || !lastNameInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the staff member\'s Last Name.', targetInput: lastNameInput };
+      }
+      if (!nicInput || !nicInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the National Identity Card (NIC) number.', targetInput: nicInput };
+      }
+
+      const nicVal = nicInput.value.trim();
+      const is12 = /^[0-9]{12}$/.test(nicVal);
+      const is9v = /^[0-9]{9}[vVxX]$/.test(nicVal);
+      if (!is12 && !is9v) {
+        return { isValid: false, error: 'Please enter a valid Sri Lankan NIC (12 digits modern, or 9 digits followed by V/X).', targetInput: nicInput };
+      }
+
+      if (!phoneInput || !phoneInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the Contact Number.', targetInput: phoneInput };
+      }
+      if (!emailInput || !emailInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the Personal Email.', targetInput: emailInput };
+      }
+      if (!joinDateInput || !joinDateInput.value.trim()) {
+        return { isValid: false, error: 'Please select the Join Date.', targetInput: joinDateInput };
+      }
+      if (!emNameInput || !emNameInput.value.trim()) {
+        return { isValid: false, error: 'Please enter an Emergency Contact Name.', targetInput: emNameInput };
+      }
+      if (!emPhoneInput || !emPhoneInput.value.trim()) {
+        return { isValid: false, error: 'Please enter an Emergency Contact Number.', targetInput: emPhoneInput };
+      }
+
+      // Anti-self-reference validation
+      const mName = fullNameInput.value.trim().toLowerCase();
+      const emName = emNameInput.value.trim().toLowerCase();
+      const mDigits = phoneInput.value.replace(/\D/g, '').slice(-7);
+      const emDigits = emPhoneInput.value.replace(/\D/g, '').slice(-7);
+      if (emName && mName && emName === mName) {
+        return { isValid: false, error: 'Emergency contact person cannot be the same as the staff member.', targetInput: emNameInput };
+      }
+      if (emDigits && mDigits && emDigits === mDigits) {
+        return { isValid: false, error: 'Emergency contact phone number cannot be the same as the staff member\'s contact number.', targetInput: emPhoneInput };
+      }
+
+      return { isValid: true };
+    }
+
+    if (role === 'parent' || form.id === 'j-add-parent-form') {
+      const fullNameInput = form.querySelector('input[name="fullName"]');
+      if (fullNameInput && !fullNameInput.value.trim()) {
+        return { isValid: false, error: 'Please enter the parent\'s Full Name.', targetInput: fullNameInput };
+      }
+      return { isValid: true };
+    }
+
+    return { isValid: true };
+  }
+
+  function escapeDraftHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function getSavedDrafts(role) {
+    if (!role) role = 'student';
+    let drafts = [];
+    try {
+      const raw = localStorage.getItem('lecole_saved_drafts_' + role);
+      if (raw) drafts = JSON.parse(raw);
+    } catch (e) {
+      drafts = [];
+    }
+
+    // Auto-migrate legacy single student draft if exists and not present in array
+    if (role === 'student') {
+      try {
+        const legacyRaw = localStorage.getItem('lecole_enrollment_draft');
+        if (legacyRaw) {
+          const legacyObj = JSON.parse(legacyRaw);
+          if (legacyObj && legacyObj.fields) {
+            const hasLegacy = drafts.some(d => d.id === 'legacy_enrollment_draft');
+            if (!hasLegacy && Object.keys(legacyObj.fields).length > 0) {
+              const f = legacyObj.fields;
+              const name = f.fullName || (f.firstName ? f.firstName + ' ' + (f.lastName || '') : 'Presaved Student Draft');
+              drafts.push({
+                id: 'legacy_enrollment_draft',
+                role: 'student',
+                title: name,
+                subtitle: f.grade ? `${f.grade} • ${f.classSection || ''}` : 'Restored draft',
+                dateStr: 'Recent',
+                timeStr: 'Previous session',
+                timestamp: Date.now() - 3600000,
+                fields: f,
+                customState: {
+                  existingParentId: f._existingParentId || '',
+                  gender: f.gender || '',
+                  grade: f.grade || '',
+                  classSection: f.classSection || '',
+                  religion: f.religion || ''
+                }
+              });
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    return Array.isArray(drafts) ? drafts : [];
+  }
+
+  function updateSavedDraftsUI(role) {
+    if (!role) return;
+    const wraps = document.querySelectorAll(`.j-saved-drafts-wrap[data-role="${role}"]`);
+    const drafts = getSavedDrafts(role);
+    const count = drafts.length;
+
+    wraps.forEach(wrap => {
+      const badge = wrap.querySelector('.j-drafts-count');
+      if (badge) {
+        badge.textContent = count;
+      }
+      if (count > 0) {
+        wrap.classList.add('has-drafts');
+      } else {
+        wrap.classList.remove('has-drafts');
+      }
+
+      const countLabel = wrap.querySelector('.j-drafts-count-label');
+      if (countLabel) {
+        countLabel.textContent = `${count} ${count === 1 ? 'draft' : 'drafts'}`;
+      }
+
+      const listEl = wrap.querySelector('.j-saved-drafts-list');
+      if (listEl) {
+        if (count === 0) {
+          listEl.innerHTML = `
+            <div class="c-saved-drafts-empty">
+              <svg class="c-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.35; margin: 0 auto 0.5rem auto; display: block;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+              <p style="font-weight: 600; font-size: 0.75rem; color: var(--midnight, #0F414A);">No presaved drafts yet</p>
+              <p style="font-size: 0.6875rem; color: #64748B; margin-top: 0.25rem;">Complete all required fields and click "Save Draft" to store one.</p>
+            </div>
+          `;
+        } else {
+          listEl.innerHTML = drafts.map(draft => {
+            const safeTitle = escapeDraftHtml(draft.title || 'Untitled Draft');
+            const safeSubtitle = escapeDraftHtml(draft.subtitle || '');
+            const timeLabel = draft.timeStr ? `${draft.dateStr ? draft.dateStr + ', ' : ''}${draft.timeStr}` : '';
+            return `
+              <div class="c-saved-draft-item j-saved-draft-item" data-id="${draft.id}" data-role="${role}" role="button" tabindex="0" title="Click to load draft into form">
+                <div class="c-saved-draft-item__icon">
+                  <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                </div>
+                <div class="c-saved-draft-item__content">
+                  <div class="c-saved-draft-item__title">${safeTitle}</div>
+                  <div class="c-saved-draft-item__meta">${safeSubtitle ? safeSubtitle + ' • ' : ''}${timeLabel}</div>
+                </div>
+                <button type="button" class="c-saved-draft-item__delete j-btn-delete-draft" data-id="${draft.id}" data-role="${role}" title="Delete this draft" aria-label="Delete draft">
+                  <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-trash"/></svg>
+                </button>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+    });
+  }
+
+  function savePersonDraft(form, role) {
+    if (!form) return false;
+    if (!role) {
+      if (form.id === 'j-enrollment-form') role = 'student';
+      else if (form.id === 'j-add-teacher-form') role = 'teacher';
+      else if (form.id === 'j-add-management-form') role = 'management';
+      else if (form.id === 'j-add-parent-form') role = 'parent';
+      else role = 'student';
+    }
+
+    // MANDATORY REQUIREMENT: All validations must be met before saving a draft!
+    const validation = validatePersonForm(form, role);
+    if (!validation.isValid) {
+      showFormNotice(form, 'Cannot save draft: ' + validation.error, 'error', validation.targetInput);
+      if (typeof showFeedbackBanner === 'function') {
+        showFeedbackBanner('Draft not saved: ' + validation.error, 'error', 4000);
+      } else {
+        showToast('Draft not saved: ' + validation.error, 'error');
+      }
+      return false;
+    }
+
+    // Gather form field data
     const formData = new FormData(form);
-    const draft = {};
+    const fields = {};
     for (const [k, v] of formData.entries()) {
-      if (k !== '_csrf_token' && k !== 'admissionKey') {
-        draft[k] = v;
+      if (k !== '_csrf_token' && k !== 'admissionKey' && !k.endsWith('[]')) {
+        fields[k] = v;
       }
     }
-    draft['_existingParentId'] = document.getElementById('existing-parent-id')?.value || '';
+
+    // Custom state
+    const customState = {};
+    if (role === 'student') {
+      customState.existingParentId = document.getElementById('existing-parent-id')?.value || '';
+      customState.gender = form.querySelector('input[name="gender"]')?.value || '';
+      customState.grade = form.querySelector('input[name="grade"]')?.value || '';
+      customState.classSection = form.querySelector('input[name="classSection"]')?.value || '';
+      customState.religion = form.querySelector('input[name="religion"]')?.value || '';
+    } else if (role === 'teacher') {
+      const qualRows = form.querySelectorAll('#j-teacher-qual-fields .j-qual-row');
+      const quals = [];
+      qualRows.forEach(row => {
+        const title = row.querySelector('input[name="qualTitle[]"]')?.value || '';
+        const inst = row.querySelector('input[name="qualInstitution[]"]')?.value || '';
+        const yr = row.querySelector('input[name="qualYear[]"]')?.value || '';
+        if (title || inst || yr) {
+          quals.push({ title, inst, yr });
+        }
+      });
+      customState.qualifications = quals;
+    }
+
+    const fullName = form.querySelector('input[name="fullName"]')?.value.trim() || '';
+    const firstName = form.querySelector('input[name="firstName"]')?.value.trim() || '';
+    const lastName = form.querySelector('input[name="lastName"]')?.value.trim() || '';
+    const title = fullName || (firstName + ' ' + lastName).trim() || (role.charAt(0).toUpperCase() + role.slice(1) + ' Draft');
+
+    let subtitle = '';
+    if (role === 'student') {
+      const g = customState.grade || form.querySelector('input[name="grade"]')?.value || '';
+      const c = customState.classSection || form.querySelector('input[name="classSection"]')?.value || '';
+      subtitle = (g && c) ? `${g} • ${c}` : (g || 'Student record');
+    } else if (role === 'teacher') {
+      const subj = form.querySelector('input[name="subjects"]')?.value.trim() || '';
+      subtitle = subj ? `Subjects: ${subj}` : 'Teacher account';
+    } else if (role === 'management') {
+      const nic = form.querySelector('input[name="nic"]')?.value.trim() || '';
+      subtitle = nic ? `NIC: ${nic}` : 'Staff account';
+    } else {
+      subtitle = 'Draft record';
+    }
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+    const newDraft = {
+      id: 'draft_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      role: role,
+      title: title,
+      subtitle: subtitle,
+      dateStr: dateStr,
+      timeStr: timeStr,
+      timestamp: Date.now(),
+      fields: fields,
+      customState: customState
+    };
+
+    const drafts = getSavedDrafts(role);
+    drafts.unshift(newDraft);
+    if (drafts.length > 15) drafts.pop();
 
     try {
-      localStorage.setItem('lecole_enrollment_draft', JSON.stringify({
-        savedAt: new Date().toISOString(),
-        fields: draft
-      }));
+      localStorage.setItem('lecole_saved_drafts_' + role, JSON.stringify(drafts));
 
-      if (draftBtn) {
-        const originalHTML = draftBtn.innerHTML;
-        draftBtn.innerHTML = `
-          <svg class="c-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      if (role === 'student') {
+        localStorage.setItem('lecole_enrollment_draft', JSON.stringify({
+          savedAt: new Date().toISOString(),
+          fields: Object.assign({}, fields, { _existingParentId: customState.existingParentId })
+        }));
+      }
+
+      // Visual feedback on save buttons
+      const draftBtns = form.querySelectorAll('.j-btn-save-draft');
+      draftBtns.forEach(btn => {
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = `
+          <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           <span style="font-weight:700;">Draft Saved!</span>
         `;
-        draftBtn.style.borderColor = 'var(--sky, #207C82)';
-        draftBtn.style.color = 'var(--sky, #207C82)';
         setTimeout(() => {
-          draftBtn.innerHTML = originalHTML;
-          draftBtn.style.borderColor = '';
-          draftBtn.style.color = '';
-        }, 2500);
-      }
+          btn.innerHTML = originalHTML;
+        }, 2200);
+      });
 
-      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      updateSavedDraftsUI(role);
+
+      const draftPill = form.querySelector('.j-form-draft-pill') || document.getElementById('j-enrollment-draft-pill');
       if (draftPill) {
-        draftPill.textContent = `Draft saved at ${timeStr}`;
+        draftPill.textContent = `Draft: ${title} (${timeStr})`;
       }
 
-      // Pop-up banner notification matching the UI, auto-dismisses after 3 seconds
       if (typeof showFeedbackBanner === 'function') {
-        showFeedbackBanner('Draft successfully saved', 'success', 3000);
+        showFeedbackBanner(`Draft for "${title}" successfully saved!`, 'success', 3000);
       } else {
-        showToast('Draft successfully saved', 'success');
+        showToast(`Draft for "${title}" successfully saved!`, 'success');
       }
 
-      showFormNotice(form, `Draft progress saved locally at ${timeStr}. You can safely return and continue anytime.`, 'success');
+      showFormNotice(form, `Draft for "${title}" saved locally at ${timeStr}. All validations were met. You can load it anytime from Saved Drafts.`, 'success');
+      return true;
     } catch (err) {
       if (typeof showFeedbackBanner === 'function') {
         showFeedbackBanner('Could not save draft: ' + err.message, 'error', 4000);
       } else {
         showToast('Could not save draft: ' + err.message, 'error');
       }
-      showFormNotice(form, 'Could not save draft to local storage: ' + err.message, 'error');
+      showFormNotice(form, 'Could not save draft: ' + err.message, 'error');
+      return false;
+    }
+  }
+
+  function saveEnrollmentDraft(form) {
+    return savePersonDraft(form, 'student');
+  }
+
+  function loadPersonDraft(form, draftId, role) {
+    if (!form) return;
+    const drafts = getSavedDrafts(role);
+    const draft = drafts.find(d => d.id === draftId);
+    if (!draft) {
+      showToast('Draft not found.', 'error');
+      return;
+    }
+
+    const fields = draft.fields || {};
+
+    // 1. Populate text, email, tel, number, textarea, and select fields
+    for (const [key, val] of Object.entries(fields)) {
+      if (!key.startsWith('_')) {
+        const input = form.querySelector(`[name="${key}"]`);
+        if (input && input.type !== 'file' && input.type !== 'radio') {
+          input.value = val;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+    }
+
+    // 2. Populate radio buttons
+    const radios = form.querySelectorAll('input[type="radio"]');
+    radios.forEach(radio => {
+      const fieldVal = fields[radio.name];
+      if (fieldVal !== undefined && radio.value === fieldVal) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+
+    // 3. Custom dropdowns & Role specifics
+    if (role === 'student') {
+      const cs = draft.customState || {};
+      const gender = cs.gender || fields.gender;
+      const grade = cs.grade || fields.grade;
+      const classSection = cs.classSection || fields.classSection;
+      const religion = cs.religion || fields.religion;
+
+      if (gender && typeof window.setDropdownValue === 'function') {
+        window.setDropdownValue('j-student-gender', gender);
+      }
+      if (grade && typeof window.setDropdownValue === 'function') {
+        window.setDropdownValue('j-student-grade', grade);
+        updateStudentFormClasses(grade);
+      }
+      if (classSection && typeof window.setDropdownValue === 'function') {
+        window.setDropdownValue('j-student-class', classSection);
+      }
+      if (religion && typeof window.setDropdownValue === 'function') {
+        window.setDropdownValue('j-student-religion', religion);
+      }
+
+      const guardianMode = fields.guardianMode || (cs.existingParentId ? 'existing' : 'new');
+      const gRadio = form.querySelector(`input[name="guardianMode"][value="${guardianMode}"]`);
+      if (gRadio) {
+        gRadio.checked = true;
+        gRadio.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      const existingParentId = cs.existingParentId || fields._existingParentId;
+      if (existingParentId) {
+        const parentIdInput = document.getElementById('existing-parent-id');
+        if (parentIdInput) parentIdInput.value = existingParentId;
+      }
+    } else if (role === 'teacher') {
+      const cs = draft.customState || {};
+      if (Array.isArray(cs.qualifications) && cs.qualifications.length > 0) {
+        const container = form.querySelector('#j-teacher-qual-fields');
+        if (container) {
+          const existingRows = container.querySelectorAll('.j-qual-row');
+          existingRows.forEach(r => r.remove());
+
+          const addBtn = container.querySelector('.j-qual-add');
+          cs.qualifications.forEach(q => {
+            const div = document.createElement('div');
+            div.className = 'j-qual-row';
+            div.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 100px auto; gap: 0.75rem; align-items: end;';
+            div.innerHTML = `
+              <div class="c-form-field">
+                <label class="c-form-field-label">Title / Degree</label>
+                <input type="text" class="c-form-input j-qual-input" name="qualTitle[]" value="${escapeDraftHtml(q.title || '')}" />
+              </div>
+              <div class="c-form-field">
+                <label class="c-form-field-label">Institution</label>
+                <input type="text" class="c-form-input j-qual-input" name="qualInstitution[]" value="${escapeDraftHtml(q.inst || '')}" />
+              </div>
+              <div class="c-form-field">
+                <label class="c-form-field-label">Year</label>
+                <input type="text" class="c-form-input j-qual-input" name="qualYear[]" value="${escapeDraftHtml(q.yr || '')}" />
+              </div>
+              <button type="button" class="c-btn-solid-tone c-tone-maroon j-qual-remove" style="margin-bottom: 0.25rem; padding: 0.625rem 0.875rem;">Remove</button>
+            `;
+            if (addBtn) container.insertBefore(div, addBtn);
+            else container.appendChild(div);
+          });
+        }
+      }
+    }
+
+    // Close open draft dropdown
+    const wrap = form.querySelector('.j-saved-drafts-wrap') || document.querySelector(`.j-saved-drafts-wrap[data-role="${role}"]`);
+    if (wrap) {
+      wrap.classList.remove('is-open');
+      const dd = wrap.querySelector('.j-saved-drafts-dropdown');
+      if (dd) dd.style.display = 'none';
+      const toggle = wrap.querySelector('.j-saved-drafts-toggle');
+      if (toggle) toggle.setAttribute('aria-expanded', 'false');
+    }
+
+    const draftPill = form.querySelector('.j-form-draft-pill') || document.getElementById('j-enrollment-draft-pill');
+    if (draftPill) {
+      draftPill.textContent = `Draft: ${draft.title}`;
+    }
+
+    showToast(`Presaved draft for "${draft.title}" restored!`, 'success');
+    showFormNotice(form, `Presaved draft for "${draft.title}" restored successfully. All field data has been loaded.`, 'info');
+  }
+
+  function deletePersonDraft(draftId, role) {
+    let drafts = getSavedDrafts(role);
+    drafts = drafts.filter(d => d.id !== draftId);
+    try {
+      localStorage.setItem('lecole_saved_drafts_' + role, JSON.stringify(drafts));
+      if (role === 'student' && draftId === 'legacy_enrollment_draft') {
+        localStorage.removeItem('lecole_enrollment_draft');
+      }
+      updateSavedDraftsUI(role);
+      showToast('Draft removed successfully.', 'info');
+    } catch (e) {
+      showToast('Could not delete draft: ' + e.message, 'error');
     }
   }
 
@@ -1372,6 +1966,7 @@
     tr.dataset.id = studentData.id;
     tr.dataset.grade = studentData.gradeId || 'g6';
     tr.dataset.class = studentData.className || '6-A';
+    tr.dataset.status = 'Active';
     tr.dataset.activities = '';
 
     const viewBtn = `
@@ -1460,6 +2055,7 @@
     tr.className = 'c-row-hover-sunshine j-person-row c-row-newly-added';
     tr.dataset.role = 'teacher';
     tr.dataset.id = teacherData.id;
+    tr.dataset.status = 'Active';
     tr.dataset.subject = teacherData.subject || teacherData.subjects || 'General';
     tr.dataset.classes = (teacherData.classes || []).join(',');
     tr.dataset.tic = teacherData.tic || '';
@@ -1545,6 +2141,7 @@
     tr.className = 'c-row-hover-maroon j-person-row c-row-newly-added';
     tr.dataset.role = 'management';
     tr.dataset.id = mgmtData.id;
+    tr.dataset.status = 'Active';
 
     tr.innerHTML = `
       <td>
@@ -1731,11 +2328,32 @@
       inp.value = '';
     });
 
+    // Reset status filter to 'All'
+    selectedStatus = 'all';
+    document.querySelectorAll('.c-status-tab-group').forEach(grp => {
+      grp.querySelectorAll('.c-status-tab-btn').forEach(btn => {
+        const filter = (btn.getAttribute('data-status-filter') || btn.getAttribute('data-status') || '').toLowerCase();
+        btn.classList.toggle('is-active', filter === 'all');
+      });
+    });
+
     applyFilters();
   }
 
   function renderClassChips(gradeId) {
     if (!classChipsWrapEl) return;
+
+    // When 'All Grades' is selected, do not show class chips on the right
+    if (gradeId === 'all' || !gradeId) {
+      classChipsWrapEl.style.display = 'none';
+      classChipsWrapEl.innerHTML = '';
+      activeClassName = 'all';
+      updateContextCard('all');
+      return;
+    }
+
+    classChipsWrapEl.style.display = 'flex';
+
     const gradesData = window.__PEOPLE_DATA__?.grades || [
       { id: 'g6', name: 'Grade 6', classes: ['6-A', '6-B', '6-C', '6-D'] },
       { id: 'g7', name: 'Grade 7', classes: ['7-A', '7-B', '7-C'] },
@@ -1746,10 +2364,18 @@
     ];
 
     const targetGrade = gradesData.find(g => g.id === gradeId) || gradesData[0];
-    const classes = targetGrade?.classes || [];
+    let classes = targetGrade?.classes ? [...targetGrade.classes] : [];
 
-    if (!classes.includes(activeClassName) && activeClassName !== 'Unassigned') {
-      activeClassName = classes[0] || '';
+    // Natural sort: numeric grade first (6, 7, 8, 9, 10, 11), then section letter (A, B, C...)
+    classes.sort((a, b) => {
+      const numA = parseInt(String(a).replace(/\D/g, ''), 10) || 0;
+      const numB = parseInt(String(b).replace(/\D/g, ''), 10) || 0;
+      if (numA !== numB) return numA - numB;
+      return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
+    });
+
+    if (activeClassName !== 'all' && !classes.includes(activeClassName) && activeClassName !== 'Unassigned') {
+      activeClassName = 'all';
     }
 
     const unassignedCount = Array.from(document.querySelectorAll('#j-table-student .j-person-row')).filter(r => {
@@ -1757,17 +2383,25 @@
       return !c || c === 'Unassigned';
     }).length;
 
-    let chipsHtml = classes.map(cls => `
+    let chipsHtml = `
+      <button type="button" class="c-class-chip j-class-chip ${activeClassName === 'all' ? 'is-active-chip' : ''}" data-class="all">
+        All
+      </button>
+    `;
+
+    chipsHtml += classes.map(cls => `
       <button type="button" class="c-class-chip j-class-chip ${cls === activeClassName ? 'is-active-chip' : ''}" data-class="${escapeHtml(cls)}">
         ${escapeHtml(cls)}
       </button>
     `).join('');
 
-    chipsHtml += `
-      <button type="button" class="c-class-chip c-class-chip--unassigned j-class-chip ${activeClassName === 'Unassigned' ? 'is-active-chip' : ''}" data-class="Unassigned" style="margin-left: 0.5rem; border-color: rgba(127, 3, 3, 0.3); color: var(--maroon, #7F0303);">
-        Unassigned <span class="c-badge-pill j-unassigned-badge" style="margin-left: 0.25rem; background: var(--maroon, #7F0303); color: #fff; padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: 700;">${unassignedCount}</span>
-      </button>
-    `;
+    if (unassignedCount > 0) {
+      chipsHtml += `
+        <button type="button" class="c-class-chip c-class-chip--unassigned j-class-chip ${activeClassName === 'Unassigned' ? 'is-active-chip' : ''}" data-class="Unassigned" style="margin-left: 0.5rem; border-color: rgba(127, 3, 3, 0.3); color: var(--maroon, #7F0303);">
+          Unassigned <span class="c-badge-pill j-unassigned-badge" style="margin-left: 0.25rem; background: var(--maroon, #7F0303); color: #fff; padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: 700;">${unassignedCount}</span>
+        </button>
+      `;
+    }
 
     classChipsWrapEl.innerHTML = chipsHtml;
     updateContextCard(activeClassName);
@@ -1783,6 +2417,13 @@
       }).length;
       if (contextEnrollmentEl) contextEnrollmentEl.textContent = `${unassignedCount} unassigned`;
       if (contextTeacherEl) contextTeacherEl.textContent = 'Awaiting class placement';
+      return;
+    }
+
+    if (className === 'all') {
+      if (contextTitleEl) contextTitleEl.textContent = activeGradeId === 'all' ? 'All Grades' : 'All Classes';
+      if (contextEnrollmentEl) contextEnrollmentEl.textContent = 'All enrolled';
+      if (contextTeacherEl) contextTeacherEl.textContent = 'Multiple homeroom teachers';
       return;
     }
 
@@ -1843,10 +2484,10 @@
             isVisible = false;
           }
         } else {
-          if (activeGradeId && rowGrade !== activeGradeId) {
+          if (activeGradeId && activeGradeId !== 'all' && rowGrade !== activeGradeId) {
             isVisible = false;
           }
-          if (isVisible && activeClassName && rowClass !== activeClassName) {
+          if (isVisible && activeClassName && activeClassName !== 'all' && rowClass !== activeClassName) {
             isVisible = false;
           }
         }
@@ -1872,6 +2513,16 @@
         const rowId = (row.getAttribute('data-id') || '').toLowerCase();
         if (!rowText.includes(searchQuery) && !rowId.includes(searchQuery)) {
           isVisible = false;
+        }
+      }
+
+      // 3. Status filter
+      if (isVisible && selectedStatus !== 'all') {
+        const rowStatus = (row.getAttribute('data-status') || '').toLowerCase();
+        if (selectedStatus === 'active') {
+          if (rowStatus !== 'active') isVisible = false;
+        } else if (selectedStatus === 'deactivated') {
+          if (rowStatus !== 'deactivated' && rowStatus !== 'inactive') isVisible = false;
         }
       }
 

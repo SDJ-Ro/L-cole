@@ -161,10 +161,39 @@ $parentRelationOptions = [
       <!-- Role-Themed Header matching 1:1 original -->
       <header class="c-form-header c-header-<?= htmlspecialchars($cfg['headerTheme']) ?>">
         <div class="c-form-header-row">
-          <h1 class="c-form-header-title c-font-display"><?= htmlspecialchars($cfg['title']) ?></h1>
-          <?php if (!empty($cfg['draftText'])): ?>
-            <span id="j-enrollment-draft-pill" class="c-draft-pill"><?= htmlspecialchars($cfg['draftText']) ?></span>
-          <?php endif; ?>
+          <div class="c-form-header-title-wrap" style="display: flex; align-items: center; gap: 0.75rem;">
+            <h1 class="c-form-header-title c-font-display"><?= htmlspecialchars($cfg['title']) ?></h1>
+            <?php if (!empty($cfg['draftText'])): ?>
+              <span id="j-enrollment-draft-pill" class="c-draft-pill"><?= htmlspecialchars($cfg['draftText']) ?></span>
+            <?php endif; ?>
+          </div>
+
+          <!-- Top-Right: Saved Drafts Dropdown Button -->
+          <div class="c-saved-drafts-wrap j-saved-drafts-wrap" data-role="<?= htmlspecialchars($role) ?>">
+            <button type="button" class="c-saved-drafts-btn j-saved-drafts-toggle" data-role="<?= htmlspecialchars($role) ?>" aria-expanded="false" title="View presaved drafts">
+              <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-fileText"/></svg>
+              <span>Saved Drafts</span>
+              <span class="c-drafts-badge j-drafts-count">0</span>
+              <svg class="c-icon c-drafts-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronDown"/></svg>
+            </button>
+
+            <!-- Small Fixed-Size Dropdown with Scrollbar -->
+            <div class="c-saved-drafts-dropdown j-saved-drafts-dropdown" style="display: none;">
+              <div class="c-saved-drafts-dropdown__head">
+                <span class="c-saved-drafts-dropdown__title">Presaved Drafts</span>
+                <span class="c-saved-drafts-dropdown__sub j-drafts-count-label">0 drafts</span>
+              </div>
+              <div class="c-saved-drafts-dropdown__list j-saved-drafts-list" tabindex="0">
+                <!-- Injected dynamically by people-directory.js -->
+              </div>
+              <div class="c-saved-drafts-dropdown__foot">
+                <button type="button" class="c-btn-save-draft-inline j-btn-save-draft" data-role="<?= htmlspecialchars($role) ?>">
+                  <svg class="c-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-plus"/></svg>
+                  <span>Save current form as draft</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -572,8 +601,12 @@ $parentRelationOptions = [
             <span class="c-status-note-pill">Pending save</span>
           </div>
 
-          <!-- Submit Button Row -->
-          <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--color-border, #EFE8DF); padding-top: 1rem;">
+          <!-- Submit Button Row with Save Draft -->
+          <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; border-top: 1px solid var(--color-border, #EFE8DF); padding-top: 1rem;">
+            <button id="j-teacher-save-draft" class="c-btn-outline-sunshine j-btn-save-draft" data-role="teacher" type="button">
+              <svg class="c-icon" width="16" height="16"><use href="#icon-save"/></svg>
+              <span>Save draft</span>
+            </button>
             <button class="c-btn-solid-tone c-tone-sunshine j-btn-submit-person" type="submit" id="j-teacher-submit">
               <svg class="c-icon" width="16" height="16"><use href="#icon-save"/></svg>
               <span>Save Account</span>
@@ -688,8 +721,12 @@ $parentRelationOptions = [
           <!-- Warning Notice Box -->
           <p class="c-form-warning-box">A temporary password would be sent to the personal email after verification.</p>
 
-          <!-- Submit Button Row -->
-          <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--color-border, #EFE8DF); padding-top: 1rem;">
+          <!-- Submit Button Row with Save Draft -->
+          <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; border-top: 1px solid var(--color-border, #EFE8DF); padding-top: 1rem;">
+            <button id="j-mgmt-save-draft" class="c-btn-outline-maroon j-btn-save-draft" data-role="management" type="button">
+              <svg class="c-icon" width="16" height="16"><use href="#icon-save"/></svg>
+              <span>Save draft</span>
+            </button>
             <button class="c-btn-solid-tone c-tone-maroon j-btn-submit-person" type="submit" id="j-mgmt-submit">
               <svg class="c-icon" width="16" height="16"><use href="#icon-save"/></svg>
               <span>Save Account</span>
