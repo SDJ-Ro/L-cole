@@ -26,6 +26,7 @@ require_once __DIR__ . '/core/Model.php';
 require_once __DIR__ . '/core/MailService.php';
 require_once __DIR__ . '/app/Models/AuditModel.php';
 require_once __DIR__ . '/app/Models/UserModel.php';
+require_once __DIR__ . '/app/Models/UserActions.php';
 
 // ANSI color helpers
 function color(string $text, string $code): string {
@@ -54,8 +55,7 @@ switch ($command) {
             error("Missing identifier. Usage: php console.php unlock <email-or-index-number>");
             exit(1);
         }
-        $userModel = new UserModel();
-        $res = $userModel->unlockAccount($identifier);
+        $res = UserActions::unlockAccount($identifier);
         if ($res['success']) {
             success($res['message']);
             info("Account ID: " . $res['account']['id'] . " | Identifier: " . $res['account']['identifier'] . " | Role: " . $res['account']['role']);
@@ -67,8 +67,7 @@ switch ($command) {
 
     case 'list-locked':
     case 'locked':
-        $userModel = new UserModel();
-        $lockedList = $userModel->listLockedAccounts();
+        $lockedList = UserModel::listLockedAccounts();
         if (empty($lockedList)) {
             success("Great news! There are currently no locked or suspended accounts in the system.");
         } else {
@@ -90,8 +89,7 @@ switch ($command) {
             error("Missing parameters. Usage: php console.php reset-password <identifier> <new-password>");
             exit(1);
         }
-        $userModel = new UserModel();
-        $res = $userModel->resetPasswordDirect($identifier, $newPass);
+        $res = UserActions::resetPasswordDirect($identifier, $newPass);
         if ($res['success']) {
             success($res['message']);
         } else {
@@ -147,9 +145,8 @@ switch ($command) {
             error("Missing identifier. Usage: php console.php invite <identifier-or-index>");
             exit(1);
         }
-        $userModel = new UserModel();
         info("Dispatching private email activation invite for '{$identifier}'...");
-        $res = $userModel->sendActivationInviteForAccount($identifier);
+        $res = UserActions::sendActivationInviteForAccount($identifier);
         if ($res['success']) {
             success($res['message']);
             info("Recipient: " . $res['recipient'] . " (Delivered to: " . $res['routed_to'] . ")");

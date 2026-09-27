@@ -135,6 +135,28 @@ class MailService {
     }
 
     /**
+     * Dispatch 6-digit Activation OTP code during account signup / password setup.
+     */
+    public static function sendActivationOtp(string $recipientEmail, string $otp, string $role = '', string $name = ''): array {
+        $subject = "Your L'École Portal Activation Code: {$otp}";
+        $roleTitle = ucfirst($role ?: 'Portal');
+        $body = '
+          <h2 style="margin-top:0;color:#0f414a;font-size:20px;">Activate Your L\'École ' . htmlspecialchars($roleTitle) . ' Account</h2>
+          <p>Hello ' . htmlspecialchars($name ?: 'there') . ',</p>
+          <p>Thank you for setting up your permanent password. To verify your identity and finalize your account activation, please enter the 6-digit verification code below on the signup page:</p>
+          <div class="code-box">
+            <span class="code-label">Account Verification Code</span>
+            <span class="code-value">' . htmlspecialchars($otp) . '</span>
+          </div>
+          <p style="font-size:13px;color:rgba(15,65,74,0.7);">
+            This verification code is valid for <strong>15 minutes</strong>. Once verified, your account will be activated and you will be able to access your dashboard.
+          </p>
+        ';
+
+        return self::send($recipientEmail, $subject, $body, ['role' => $role, 'name' => $name, 'otp' => $otp]);
+    }
+
+    /**
      * Security Lockout Alert dispatched when an account hits 5 failed attempts.
      * Contains single-use 6-digit bypass OTP and [ Unlock & Reset Password Now ] button.
      */
@@ -236,6 +258,120 @@ class MailService {
         return self::send($toPrivateEmail, $subject, $body, [
             'role' => $role,
             'name' => $name
+        ]);
+    }
+
+    /**
+     * Case 1: Consolidated Admission Email (New Student + New Guardian)
+     * Dispatches one email to the guardian containing instructions and credentials for both parties:
+     * - Parent: Username = Email, instructions to activate and set password.
+     * - Student: Username = Student Registration / Index Number, grade/class placement, and portal sign-in guide.
+     */
+    public static function sendNewAdmissionWithGuardian(
+        string $parentEmail,
+        string $parentName,
+        array $studentData
+    ): array {
+        $subject = "Welcome to L'École — Parent & Student Portal Credentials (" . $studentData['index'] . ")";
+        $parentSignupUrl = 'http://localhost:8040/auth/parentSignup?identifier=' . urlencode($parentEmail) . '&name=' . urlencode($parentName);
+        $studentSignupUrl = 'http://localhost:8040/auth/studentSignup?identifier=' . urlencode($studentData['index']) . '&name=' . urlencode($studentData['name']);
+
+        $body = '
+          <h2 style="margin-top:0;color:#0f414a;font-size:20px;">Welcome to L\'École International School</h2>
+          <p>Dear ' . htmlspecialchars($parentName) . ',</p>
+          <p>Congratulations! Your child <strong>' . htmlspecialchars($studentData['name']) . '</strong> has been formally admitted to L\'École. Below are the official portal credentials and onboarding instructions for both your parent workspace and your child\'s student workspace.</p>
+          
+          <!-- Parent Credentials Section -->
+          <div style="background:#f4ece1;padding:18px 20px;border-radius:12px;margin:20px 0;border-left:4px solid #af5031;">
+            <h3 style="margin:0 0 10px 0;color:#af5031;font-size:14px;text-transform:uppercase;letter-spacing:0.05em;">Parent / Guardian Portal Account</h3>
+            <table class="meta-table" style="margin:0;">
+              <tr><td class="label" style="width:140px;">Parent Username:</td><td><strong>' . htmlspecialchars($parentEmail) . '</strong> <span style="font-size:11px;color:#7a6b5e;">(Your personal email)</span></td></tr>
+              <tr><td class="label">Portal Access:</td><td><a href="http://localhost:8040/auth/parent" style="color:#0f414a;font-weight:600;">http://localhost:8040/auth/parent</a></td></tr>
+              <tr><td class="label">Initial Setup:</td><td>Please activate your parent account and set your secure password.</td></tr>
+            </table>
+            <div style="margin-top:14px;">
+              <a href="' . htmlspecialchars($parentSignupUrl) . '" class="btn-primary" style="background:#af5031;color:#ffffff;display:inline-block;padding:10px 20px;border-radius:6px;font-size:13px;font-weight:700;text-decoration:none;">
+                Set Parent Password & Activate &rarr;
+              </a>
+            </div>
+          </div>
+
+          <!-- Student Credentials Section -->
+          <div style="background:#e8f4f5;padding:18px 20px;border-radius:12px;margin:20px 0;border-left:4px solid #207c82;">
+            <h3 style="margin:0 0 10px 0;color:#0f414a;font-size:14px;text-transform:uppercase;letter-spacing:0.05em;">Enrolled Student Account</h3>
+            <table class="meta-table" style="margin:0;">
+              <tr><td class="label" style="width:140px;">Student Name:</td><td><strong>' . htmlspecialchars($studentData['name']) . '</strong></td></tr>
+              <tr><td class="label">Student Username:</td><td><strong style="font-size:15px;color:#0f414a;letter-spacing:0.04em;">' . htmlspecialchars($studentData['index']) . '</strong> <span style="font-size:11px;color:#207c82;">(Registration / Index No.)</span></td></tr>
+              <tr><td class="label">Cohort Placement:</td><td>' . htmlspecialchars($studentData['grade']) . ' &bull; Class ' . htmlspecialchars($studentData['classSection']) . '</td></tr>
+              <tr><td class="label">Student Portal:</td><td><a href="http://localhost:8040/auth/student" style="color:#0f414a;font-weight:600;">http://localhost:8040/auth/student</a></td></tr>
+            </table>
+            <p style="font-size:12.5px;color:#0f414a;margin:12px 0 0 0;">
+              Your child signs into the Student Workspace using their <strong>Registration Number (' . htmlspecialchars($studentData['index']) . ')</strong>. For first-time login and password configuration, visit <a href="' . htmlspecialchars($studentSignupUrl) . '" style="color:#207c82;font-weight:600;">Student Portal Activation</a>.
+            </p>
+          </div>
+
+          <p style="font-size:13px;color:rgba(15,65,74,0.75);margin-top:20px;">
+            If you need any assistance, our School Administration and Admissions Office is available at <a href="mailto:admissions@lecole.edu" style="color:#0f414a;font-weight:600;">admissions@lecole.edu</a>.
+          </p>
+        ';
+
+        return self::send($parentEmail, $subject, $body, [
+            'role'       => 'parent',
+            'name'       => $parentName,
+            'student_id' => $studentData['index']
+        ]);
+    }
+
+    /**
+     * Case 2: Sibling Enrolment Email (Existing Guardian)
+     * Dispatched to the existing guardian informing them of the newly enrolled child.
+     * Reassures the parent that their username (email) and password remain identical,
+     * and provides the student's registration credentials.
+     */
+    public static function sendSiblingAdmissionToExistingGuardian(
+        string $parentEmail,
+        string $parentName,
+        array $studentData
+    ): array {
+        $subject = "L'École — New Sibling Enrolment: " . $studentData['name'] . " (" . $studentData['index'] . ")";
+        $studentSignupUrl = 'http://localhost:8040/auth/studentSignup?identifier=' . urlencode($studentData['index']) . '&name=' . urlencode($studentData['name']);
+
+        $body = '
+          <h2 style="margin-top:0;color:#0f414a;font-size:20px;">New Student Enrolled — Sibling Linkage Confirmed</h2>
+          <p>Dear ' . htmlspecialchars($parentName) . ',</p>
+          <p>We are delighted to confirm that <strong>' . htmlspecialchars($studentData['name']) . '</strong> has been admitted to L\'École and successfully linked to your existing parent profile.</p>
+
+          <!-- New Sibling Details Card -->
+          <div style="background:#e8f4f5;padding:18px 20px;border-radius:12px;margin:20px 0;border-left:4px solid #207c82;">
+            <h3 style="margin:0 0 10px 0;color:#0f414a;font-size:14px;text-transform:uppercase;letter-spacing:0.05em;">New Student Information</h3>
+            <table class="meta-table" style="margin:0;">
+              <tr><td class="label" style="width:150px;">Student Name:</td><td><strong>' . htmlspecialchars($studentData['name']) . '</strong></td></tr>
+              <tr><td class="label">Student Username:</td><td><strong style="font-size:15px;color:#0f414a;letter-spacing:0.04em;">' . htmlspecialchars($studentData['index']) . '</strong> <span style="font-size:11px;color:#207c82;">(Registration / Index No.)</span></td></tr>
+              <tr><td class="label">Class Section:</td><td>' . htmlspecialchars($studentData['grade']) . ' &bull; Class ' . htmlspecialchars($studentData['classSection']) . '</td></tr>
+              <tr><td class="label">Student Portal:</td><td><a href="http://localhost:8040/auth/student" style="color:#0f414a;font-weight:600;">http://localhost:8040/auth/student</a></td></tr>
+            </table>
+            <p style="font-size:12.5px;color:#0f414a;margin:12px 0 0 0;">
+              Your child will log in using their Registration Number <strong>' . htmlspecialchars($studentData['index']) . '</strong>. Initial password setup can be completed at <a href="' . htmlspecialchars($studentSignupUrl) . '" style="color:#207c82;font-weight:600;">Student Portal Activation</a>.
+            </p>
+          </div>
+
+          <!-- Existing Parent Account Note -->
+          <div style="background:#fdfaf6;padding:16px 20px;border-radius:12px;margin:20px 0;border:1px solid rgba(15,65,74,0.12);">
+            <h4 style="margin:0 0 8px 0;color:#0f414a;font-size:14px;">Your Existing Parent Portal Account</h4>
+            <p style="margin:0;font-size:13.5px;color:#233438;line-height:1.5;">
+              Your parent username remains <strong>' . htmlspecialchars($parentEmail) . '</strong> and your existing password is unchanged. When you log into your <a href="http://localhost:8040/auth/parent" style="color:#af5031;font-weight:600;">Parent Portal</a>, your new child will automatically be visible alongside their siblings in your family dashboard!
+            </p>
+          </div>
+
+          <p style="font-size:13px;color:rgba(15,65,74,0.75);">
+            If you did not authorize this enrollment or have questions, please contact the School Office at <a href="mailto:office@lecole.edu" style="color:#0f414a;font-weight:600;">office@lecole.edu</a>.
+          </p>
+        ';
+
+        return self::send($parentEmail, $subject, $body, [
+            'role'       => 'parent',
+            'name'       => $parentName,
+            'student_id' => $studentData['index']
         ]);
     }
 
