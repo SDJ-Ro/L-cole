@@ -82,8 +82,22 @@ CREATE TABLE IF NOT EXISTS class_subject_teachers (
 -- 7. Ensure students table columns grade and class_section allow NULL and link to classes(id)
 ALTER TABLE students MODIFY COLUMN grade VARCHAR(20) NULL;
 ALTER TABLE students MODIFY COLUMN class_section VARCHAR(20) NULL;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS class_id INT NULL AFTER birth_certificate_number;
-ALTER TABLE students ADD CONSTRAINT fk_students_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL;
-ALTER TABLE students ADD INDEX IF NOT EXISTS idx_students_class_id (class_id);
+
+DROP PROCEDURE IF EXISTS add_students_class_id_if_missing;
+DELIMITER $$
+CREATE PROCEDURE add_students_class_id_if_missing()
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.COLUMNS 
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME = 'class_id'
+    ) THEN
+        ALTER TABLE students ADD COLUMN class_id INT NULL AFTER birth_certificate_number;
+        ALTER TABLE students ADD CONSTRAINT fk_students_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL;
+        ALTER TABLE students ADD INDEX idx_students_class_id (class_id);
+    END IF;
+END$$
+DELIMITER ;
+CALL add_students_class_id_if_missing();
+DROP PROCEDURE IF EXISTS add_students_class_id_if_missing;
 
 SET FOREIGN_KEY_CHECKS = 1;

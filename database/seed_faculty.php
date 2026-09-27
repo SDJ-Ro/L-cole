@@ -81,7 +81,7 @@ $faculty = [
     ]
 ];
 
-$stmtUser = $db->prepare("INSERT IGNORE INTO user_accounts (identifier, role, password_hash, activation_status, activated_at) VALUES (?, 'teacher', '$2y$10$XPpdU8haziMIscD0MJsWjuShRbVgZ/XvYqhKIUVvbATLD6dDT4uDm', 'ACTIVE', NOW())");
+$stmtUser = $db->prepare("INSERT IGNORE INTO user_accounts (identifier, role, password_hash, activation_status, activated_at) VALUES (?, 'teacher', '\$2y\$10\$XPpdU8haziMIscD0MJsWjuShRbVgZ/XvYqhKIUVvbATLD6dDT4uDm', 'ACTIVE', NOW())");
 $stmtTeacher = $db->prepare("INSERT INTO teachers (account_id, staff_id, full_name, first_name, last_name, nic, date_of_birth, phone, personal_email, institutional_email, subjects, experience_years, join_date, emergency_name, emergency_phone)
 VALUES (?, ?, ?, ?, ?, '198512345678V', '1985-05-15', ?, ?, ?, ?, 5, '2022-01-10', 'Family Contact', '+94 70 000 0000')
 ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), subjects = VALUES(subjects)");
