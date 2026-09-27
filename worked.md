@@ -354,7 +354,8 @@ All events are recorded in `activity_logs` via `AuditModel::record(...)`.
 | **Batch 11** | `ba09838` | `docs: update documentation and committed file register in worked.md` | • `README.md`<br>• `worked.md`<br>• `CROSS_MODULE_SPECS_AND_ROADMAP.md` |
 | **Batch 12** | `f4c95bb` | `fix(db): close extracurricular_activities table definition in schema.sql` | • `database/schema.sql`<br>• `worked.md` |
 | **Batch 13** | `aae1b46` | `fix(db): make academic_schema MySQL 8.0 compliant and add Windows PowerShell guide` | • `database/academic_schema.sql`<br>• `database/seed_faculty.php`<br>• `database/README.md`<br>• `worked.md` |
-| **Batch 14** | `6c555e1` | `feat(calendar,parent): implement scrollable time picker and fix parent extracurricular noticeboard` | • `app/Views/components/_calendar.php`<br>• `public/assets/css/components/calendar.css`<br>• `public/assets/js/components/calendar.js`<br>• `app/Views/parent/child-profile.php`<br>• `app/Views/components/_extracurricular_noticeboard.php`<br>• `public/assets/js/components/parent-child-profile.js`<br>• `worked.md` |
+| **Batch 14** | `e4f296f` | `feat(calendar,parent): implement scrollable time picker and fix parent extracurricular noticeboard` | • `app/Views/components/_calendar.php`<br>• `public/assets/css/components/calendar.css`<br>• `public/assets/js/components/calendar.js`<br>• `app/Views/parent/child-profile.php`<br>• `app/Views/components/_extracurricular_noticeboard.php`<br>• `public/assets/js/components/parent-child-profile.js`<br>• `worked.md` |
+| **Batch 15** | `19eac86` | `feat(calendar): implement in-place expanding cyclic drum tumbler with fixed center lens` | • `app/Views/components/_calendar.php`<br>• `public/assets/css/components/calendar.css`<br>• `public/assets/js/components/calendar.js`<br>• `worked.md` |
 
 
 
