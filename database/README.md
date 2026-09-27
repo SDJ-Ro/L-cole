@@ -81,6 +81,20 @@ docker exec -i mvc-php-1 php /var/www/html/database/seed_faculty.php && \
 docker exec -i mvc-php-1 php /var/www/html/database/seed_academic.php
 ```
 
+### Windows PowerShell Docker Commands:
+
+On Windows PowerShell, piping via `Get-Content` is used instead of `<`:
+
+```powershell
+docker exec -i mvc-db-1 mysql -u root -proot -e "CREATE DATABASE IF NOT EXISTS l_ecole CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+Get-Content database\schema.sql | docker exec -i mvc-db-1 mysql -u root -proot l_ecole
+Get-Content database\academic_schema.sql | docker exec -i mvc-db-1 mysql -u root -proot l_ecole
+Get-Content database\calendar_schema.sql | docker exec -i mvc-db-1 mysql -u root -proot l_ecole
+Get-Content database\seeds.sql | docker exec -i mvc-db-1 mysql -u root -proot l_ecole
+docker exec -i mvc-php-1 php /var/www/html/database/seed_faculty.php
+docker exec -i mvc-php-1 php /var/www/html/database/seed_academic.php
+```
+
 ---
 
 ## Option B: Setup on Local Host (Native MySQL + PHP)
