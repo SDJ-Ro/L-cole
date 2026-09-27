@@ -195,11 +195,11 @@ class UserActions extends Model {
         $identifier = trim($identifier);
         $role       = strtolower(trim($role));
 
-        // Leadership security guard: Admin & Management can never be self-created online
-        if (in_array($role, ['admin', 'management'], true)) {
+        // System admin security guard: Admin accounts cannot be activated via public web signup
+        if ($role === 'admin') {
             return [
                 'success' => false,
-                'error'   => 'Management and Administrator accounts cannot be self-created online. Leadership workspaces are provisioned by the Board of Directors.'
+                'error'   => 'Administrator accounts cannot be self-created online. Leadership workspaces are provisioned by the Board of Directors.'
             ];
         }
 

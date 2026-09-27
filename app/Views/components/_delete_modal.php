@@ -8,6 +8,7 @@
  * =========================================================================
  */
 ?>
+<link rel="stylesheet" href="/assets/css/components/delete-modal.css?v=<?= time() ?>" />
 <div class="c-modal-layer" id="j-universal-delete-modal" role="presentation">
   <button type="button" class="c-modal-backdrop j-modal-backdrop" aria-label="Close dialog"></button>
   <section class="c-modal c-modal--confirm c-modal--confirm-wide" role="dialog" aria-modal="true" aria-labelledby="j-universal-delete-title">
@@ -58,6 +59,12 @@
         customSlotRenderer(slotEl, btnEl);
       } else {
         slotEl.style.display = 'none';
+        slotEl.innerHTML = `
+          <p class="c-del-structure__label">Grade option</p>
+          <div class="c-del-structure__pills" id="j-del-grade-pill-wrap"></div>
+          <p class="c-del-structure__label" style="margin-top: 1rem;">Class options</p>
+          <div class="c-del-structure__pills" id="j-del-class-pill-wrap"></div>
+        `;
       }
     }
 
@@ -70,15 +77,16 @@
       }
     };
 
+    // Ensure close buttons inside modal always trigger close
+    modal.querySelectorAll('.j-modal-close, .j-modal-backdrop').forEach(b => {
+      b.onclick = (e) => { e.preventDefault(); close(); };
+    });
+
     if (typeof window.openModal === 'function') {
       window.openModal(modal);
     } else {
       document.body.style.overflow = 'hidden';
       modal.classList.add('c-is-open');
-
-      modal.querySelectorAll('.j-modal-close, .j-modal-backdrop').forEach(b => {
-        b.onclick = (e) => { e.preventDefault(); close(); };
-      });
 
       const onEsc = (e) => {
         if (e.key === 'Escape' && modal.classList.contains('c-is-open')) {
@@ -91,6 +99,7 @@
 
     btnEl.onclick = (e) => {
       e.preventDefault();
+      if (btnEl.disabled) return;
       if (typeof onConfirm === 'function') onConfirm();
       close();
     };

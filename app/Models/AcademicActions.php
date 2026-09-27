@@ -37,10 +37,13 @@ class AcademicActions extends Model {
      */
     public static function addGrade(string $name, ?int $actorId = null, ?string $actorIdentifier = null): array {
         $name = trim($name);
+        if (preg_match('/^\d+$/', $name)) {
+            $name = 'Grade ' . $name;
+        }
 
         // 1. Validation
         if (!preg_match('/^Grade\s+(\d+)$/i', $name, $matches)) {
-            return ['success' => false, 'error' => 'Grade name must follow the format "Grade N" (e.g. "Grade 12").'];
+            return ['success' => false, 'error' => 'Grade name must follow the format "Grade N" or a number (e.g. "Grade 12" or "12").'];
         }
 
         $gradeNum      = (int)$matches[1];
@@ -61,7 +64,7 @@ class AcademicActions extends Model {
         if (!$curriculumGroupId) {
             return [
                 'success' => false,
-                'error'   => "No curriculum stage covers Grade {$gradeNum}. Please create a curriculum stage covering this year before adding the grade."
+                'error'   => "No curriculum stage covers Grade {$gradeNum}. In L'École, every grade must belong to a curriculum. Please add or expand a curriculum stage (e.g. Years 12–13) under Curriculum Stages below first."
             ];
         }
 
@@ -685,12 +688,26 @@ class AcademicActions extends Model {
             return ['success' => false, 'error' => 'Curriculum stage range is required (e.g. "Years 12–13").'];
         }
 
+        if (empty($subjects)) {
+            return ['success' => false, 'error' => 'A curriculum stage must have at least one subject. Please add at least one subject before saving.'];
+        }
+
         $db = Database::getConnection();
 
         $stmtCheck = $db->prepare("SELECT id FROM curriculum_groups WHERE range_label = ?");
         $stmtCheck->execute([$rangeLabel]);
         if ($stmtCheck->fetchColumn()) {
-            return ['success' => false, 'error' => "Curriculum stage '{$rangeLabel}' already exists."];
+            $suffixIndex = 2;
+            $candidate = "{$rangeLabel} #{$suffixIndex}";
+            while (true) {
+                $stmtCheck->execute([$candidate]);
+                if (!$stmtCheck->fetchColumn()) {
+                    $rangeLabel = $candidate;
+                    break;
+                }
+                $suffixIndex++;
+                $candidate = "{$rangeLabel} #{$suffixIndex}";
+            }
         }
 
         $db->beginTransaction();
@@ -755,6 +772,10 @@ class AcademicActions extends Model {
         $newRangeLabel = !empty($newRangeLabel) ? trim($newRangeLabel) : $rangeLabel;
         $description   = trim((string)$description);
         $subjects      = array_values(array_filter(array_map('trim', $subjects)));
+
+        if (empty($subjects)) {
+            return ['success' => false, 'error' => 'A curriculum stage must have at least one subject. Please add at least one subject before saving.'];
+        }
 
         $db = Database::getConnection();
 
@@ -916,27 +937,55 @@ class AcademicActions extends Model {
             return ['success' => false, 'error' => "Curriculum stage '{$rangeLabel}' not found."];
         }
 
-        // Guard: Hard block if grades depend on it
-        $stmtGrades = $db->prepare("SELECT name FROM grades WHERE group_id = ?");
-        $stmtGrades->execute([$groupId]);
-        $dependentGrades = $stmtGrades->fetchAll(PDO::FETCH_COLUMN);
-
-        if (!empty($dependentGrades)) {
-            $names = implode(', ', $dependentGrades);
-            AuditModel::record(
-                $actorId,
-                $actorIdentifier,
-                'SECURITY_CURRICULUM_DELETE_BLOCKED',
-                "Attempted deletion of curriculum stage '{$rangeLabel}' blocked: required by active grades: {$names}."
-            );
-            return [
-                'success' => false,
-                'error'   => "Cannot delete curriculum stage '{$rangeLabel}'. It is currently required by: {$names}. Remove or reassign those grades first."
-            ];
-        }
-
         $db->beginTransaction();
         try {
+            // Find all linked grades and check whether they can be covered by another existing curriculum stage
+            $stmtGrades = $db->prepare("SELECT id, name, sort_order FROM grades WHERE group_id = ?");
+            $stmtGrades->execute([$groupId]);
+            $linkedGrades = $stmtGrades->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($linkedGrades)) {
+                $stmtOtherGroups = $db->prepare("SELECT id, range_label FROM curriculum_groups WHERE id != ?");
+                $stmtOtherGroups->execute([$groupId]);
+                $otherGroups = $stmtOtherGroups->fetchAll(PDO::FETCH_ASSOC);
+
+                $orphanGrades = [];
+                $reassignments = []; // [grade_id => newGroupId]
+
+                foreach ($linkedGrades as $lg) {
+                    $order = (int)$lg['sort_order'];
+                    $newGroupId = null;
+                    foreach ($otherGroups as $og) {
+                        $bounds = self::parseRangeBounds($og['range_label']);
+                        if ($bounds && $order >= $bounds['min'] && $order <= $bounds['max']) {
+                            $newGroupId = (int)$og['id'];
+                            break;
+                        }
+                    }
+                    if ($newGroupId !== null) {
+                        $reassignments[$lg['id']] = $newGroupId;
+                    } else {
+                        $orphanGrades[] = $lg['name'];
+                    }
+                }
+
+                // If any grade would be left without a curriculum stage, block deletion strictly!
+                if (!empty($orphanGrades)) {
+                    $db->rollBack();
+                    $names = implode(', ', $orphanGrades);
+                    return [
+                        'success' => false,
+                        'error'   => "Cannot delete curriculum stage '{$rangeLabel}'. Active grades ({$names}) depend solely on it. Every grade must belong to a curriculum. To delete this stage, remove those grades first or cover them with another curriculum stage."
+                    ];
+                }
+
+                // All grades are safely covered by other curriculums; reassign them now
+                $stmtUpdateGrade = $db->prepare("UPDATE grades SET group_id = ? WHERE id = ?");
+                foreach ($reassignments as $gId => $nGroupId) {
+                    $stmtUpdateGrade->execute([$nGroupId, $gId]);
+                }
+            }
+
             $stmtDelete = $db->prepare("DELETE FROM curriculum_groups WHERE id = ?");
             $stmtDelete->execute([$groupId]);
 

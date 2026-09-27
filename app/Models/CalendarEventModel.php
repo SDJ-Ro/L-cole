@@ -202,9 +202,17 @@ class CalendarEventModel extends Model {
         return self::castIds($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
-    /** Teacher: schoolwide + owned class + subject classes (read-only) + owned clubs/sports. */
+    /** Teacher: schoolwide + owned class + subject classes (read-only) + owned clubs/sports + authored events. */
     public static function getEventsForTeacher(int $accountIdOrTeacherId): array {
         $teacherId = self::getTeacherId($accountIdOrTeacherId) ?: $accountIdOrTeacherId;
+        $accountId = $accountIdOrTeacherId;
+        if ($teacherId === $accountIdOrTeacherId) {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT account_id FROM teachers WHERE id = ?");
+            $stmt->execute([$teacherId]);
+            $acc = $stmt->fetchColumn();
+            if ($acc) $accountId = (int)$acc;
+        }
 
         $classIds = array_unique(array_filter([
             self::getClassIdForTeacher($teacherId),
@@ -213,7 +221,7 @@ class CalendarEventModel extends Model {
         $clubIds = self::getClubIdsForTeacher($teacherId);
         $sportIds = self::getSportIdsForTeacher($teacherId);
 
-        return self::queryByScopes([], $classIds, $clubIds, $sportIds, 'teacher');
+        return self::queryByScopes([], $classIds, $clubIds, $sportIds, 'teacher', (int)$accountId);
     }
 
     /** Student: schoolwide + enrolled grade + enrolled class + active club/sport memberships. */
@@ -314,7 +322,7 @@ class CalendarEventModel extends Model {
 
     // ---- internals --------------------------------------------------------
 
-    private static function queryByScopes(array $gradeIds, array $classIds, array $clubIds, array $sportIds = [], string $role = 'admin'): array {
+    private static function queryByScopes(array $gradeIds, array $classIds, array $clubIds, array $sportIds = [], string $role = 'admin', int $creatorAccountId = 0): array {
         $db = Database::getConnection();
         $conditions = [
             "(scope_type = 'schoolwide' OR EXISTS (SELECT 1 FROM calendar_event_scopes ces_sw WHERE ces_sw.event_id = calendar_events.id AND ces_sw.scope_type = 'schoolwide'))"
@@ -349,10 +357,15 @@ class CalendarEventModel extends Model {
         $audSql = self::getAudienceSql($role);
         $scopeSql = "(" . implode(' OR ', $conditions) . ")";
 
+        $creatorSql = "";
+        if ($creatorAccountId > 0) {
+            $creatorSql = "created_by_account_id = ? OR ";
+            $params = array_merge([$creatorAccountId], $params);
+        }
+
         $stmt = $db->prepare("SELECT DISTINCT " . self::SELECT_COLS . " FROM calendar_events
                                WHERE deleted_at IS NULL 
-                                 AND {$audSql}
-                                 AND {$scopeSql}
+                                 AND ({$creatorSql}({$audSql} AND {$scopeSql}))
                                ORDER BY event_date ASC, start_time ASC");
         $stmt->execute($params);
         return self::castIds($stmt->fetchAll(PDO::FETCH_ASSOC));
@@ -422,8 +435,8 @@ class CalendarEventModel extends Model {
                 ];
             }
 
-            // Classes
-            $classes = $db->query("SELECT id, section_name FROM classes ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+            // Classes (natural grade & section ordering)
+            $classes = $db->query("SELECT c.id, c.section_name FROM classes c JOIN grades g ON g.id = c.grade_id ORDER BY g.sort_order ASC, LENGTH(c.section_name) ASC, c.section_name ASC")->fetchAll(PDO::FETCH_ASSOC);
             foreach ($classes as $c) {
                 $options[] = [
                     'type'  => 'class',
@@ -523,7 +536,7 @@ class CalendarEventModel extends Model {
 
         if (in_array($role, ['admin', 'management'], true)) {
             $grades = $db->query("SELECT id, name FROM grades ORDER BY sort_order ASC, id ASC")->fetchAll(PDO::FETCH_ASSOC);
-            $classes = $db->query("SELECT id, grade_id, section_name as name FROM classes ORDER BY grade_id ASC, section_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+            $classes = $db->query("SELECT c.id, c.grade_id, c.section_name as name FROM classes c JOIN grades g ON g.id = c.grade_id ORDER BY g.sort_order ASC, LENGTH(c.section_name) ASC, c.section_name ASC")->fetchAll(PDO::FETCH_ASSOC);
             $clubs = $db->query("SELECT id, name FROM clubs ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
             $sports = $db->query("SELECT id, name FROM sports ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -544,17 +557,40 @@ class CalendarEventModel extends Model {
                 return ['role' => 'teacher', 'grades' => [], 'classes' => [], 'clubs' => [], 'sports' => [], 'can_schoolwide' => false, 'can_grade' => false];
             }
 
-            // Homeroom class
-            $classId = self::getClassIdForTeacher($teacherId);
+            // Homeroom class + subject classes taught by this teacher
+            $classIds = [];
+            $homeroomClassId = self::getClassIdForTeacher($teacherId);
+            if ($homeroomClassId) {
+                $classIds[] = $homeroomClassId;
+            }
+            $subjectClassIds = self::getSubjectClassIdsForTeacher($teacherId);
+            foreach ($subjectClassIds as $scId) {
+                if (!in_array($scId, $classIds, true)) {
+                    $classIds[] = $scId;
+                }
+            }
+
             $classes = [];
             $grades = [];
-            if ($classId) {
-                $stmt = $db->prepare("SELECT c.id, c.grade_id, c.section_name as name, g.name as grade_name FROM classes c JOIN grades g ON g.id = c.grade_id WHERE c.id = ?");
-                $stmt->execute([$classId]);
-                $cRow = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($cRow) {
+            if (!empty($classIds)) {
+                $placeholders = implode(',', array_fill(0, count($classIds), '?'));
+                $stmt = $db->prepare("
+                    SELECT c.id, c.grade_id, c.section_name as name, g.name as grade_name 
+                    FROM classes c 
+                    JOIN grades g ON g.id = c.grade_id 
+                    WHERE c.id IN ($placeholders)
+                    ORDER BY g.sort_order ASC, LENGTH(c.section_name) ASC, c.section_name ASC
+                ");
+                $stmt->execute($classIds);
+                while ($cRow = $stmt->fetch(PDO::FETCH_ASSOC)) {
                     $classes[] = ['id' => (int)$cRow['id'], 'grade_id' => $cRow['grade_id'], 'name' => $cRow['name']];
-                    $grades[]  = ['id' => $cRow['grade_id'], 'name' => $cRow['grade_name']];
+                    $found = false;
+                    foreach ($grades as $gr) {
+                        if ($gr['id'] === $cRow['grade_id']) { $found = true; break; }
+                    }
+                    if (!$found) {
+                        $grades[] = ['id' => $cRow['grade_id'], 'name' => $cRow['grade_name']];
+                    }
                 }
             }
 

@@ -63,8 +63,8 @@ if (!function_exists('renderProfileDatepicker')) {
         <p class="c-info-card-value" id="j-card-student-index">STU-2026-0142</p>
       </div>
       <div class="c-info-card">
-        <p class="c-info-card-label"><svg class="c-icon" width="14" height="14" viewBox="0 0 24 24"><use href="#icon-mail"/></svg> Student Email</p>
-        <p class="c-info-card-value j-view-only" id="j-card-student-email">student@lecole.edu</p>
+        <p class="c-info-card-label"><svg class="c-icon" width="14" height="14" viewBox="0 0 24 24"><use href="#icon-mail"/></svg> Parent Email</p>
+        <p class="c-info-card-value j-view-only" id="j-card-student-email">parent@lecole.edu</p>
         <input type="email" class="c-info-card-input j-edit-only" id="j-input-student-email" style="display: none;" />
       </div>
     </div>

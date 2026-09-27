@@ -21,9 +21,9 @@
 
     const currentRole = (noticeGrid.getAttribute('data-current-role') || 'management').toLowerCase();
 
-    // Default to active tab in DOM (or 'my-notices')
+    // Default to active tab in DOM (or 'all' for admin, 'my-notices' for others)
     const activeTabBtn = document.querySelector('.j-notice-scope-tab.is-active-tab');
-    let selectedTabMode = activeTabBtn ? (activeTabBtn.getAttribute('data-filter') || 'my-notices') : 'my-notices';
+    let selectedTabMode = activeTabBtn ? (activeTabBtn.getAttribute('data-filter') || 'my-notices') : (currentRole === 'admin' ? 'all' : 'my-notices');
     let selectedAudience = 'all';
     let selectedCategory = 'all';
     let searchQuery = '';
@@ -31,6 +31,10 @@
     // Synchronize audience dropdown visibility based on active tab
     function syncAudienceVisibility() {
       if (!audienceWrapper) return;
+      if (currentRole === 'admin') {
+        audienceWrapper.style.display = '';
+        return;
+      }
       if (selectedTabMode === 'my-notices') {
         audienceWrapper.style.display = 'none';
         selectedAudience = 'all';

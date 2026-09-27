@@ -37,6 +37,8 @@
         <?php
         $showBackLink = false;
         $canEdit      = true;
+        $userRole     = 'teacher';
+        $currentRole  = 'teacher';
         require __DIR__ . '/../components/_extracurricular_card_header.php';
         ?>
 

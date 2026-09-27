@@ -27,7 +27,7 @@ ob_start();
       $dropdownId    = 'j-cc-type';
       $dropdownLabel = 'Type';
       $placeholder   = 'Select type';
-      $options       = ['Sports', 'Society', 'Club', 'Arts'];
+      $options       = ['Clubs & Societies', 'Sports'];
       $name          = 'type';
       require __DIR__ . '/_dropdown.php';
       ?>
@@ -67,22 +67,6 @@ ob_start();
     <label class="c-field-label" for="j-cc-description">Description</label>
     <textarea class="c-field-input c-field-input--textarea" id="j-cc-description" placeholder="Describe the extracurricular activities, goals, and membership expectations..."></textarea>
   </div>
-
-  <section class="c-form-section" style="margin-top: 1.25rem;">
-    <div class="c-form-section__head">
-      <div>
-        <h3 class="c-form-section__title">Leadership Positions Needed</h3>
-        <p class="c-form-section__hint">Define optional roles such as Captain or Secretary.</p>
-      </div>
-      <button type="button" class="c-form-section__add-btn" id="j-cc-add-position">
-        <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <use href="#icon-plus"/>
-        </svg>
-        Add Position
-      </button>
-    </div>
-    <div id="j-cc-positions" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
-  </section>
 <?php
 $formBodySlot = ob_get_clean();
 
@@ -108,7 +92,7 @@ $headerTheme     = 'sand';
 $headerIcon      = 'icon-usersRound';
 $headerEyebrow   = 'New programme';
 $formTitle       = 'New Extracurricular';
-$formSubtitle    = 'Set up a programme and define its leadership structure.';
+$formSubtitle    = 'Set up a club, society, or sports programme.';
 $isModal         = true;
 $cardClass       = 'c-form-card--modal';
 ?>
