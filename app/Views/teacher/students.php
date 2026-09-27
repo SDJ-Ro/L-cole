@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/assets/css/components/dropdown.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/people-directory.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/profile-modal.css?v=<?= time() ?>" />
+  <link rel="stylesheet" href="/assets/css/components/student-academic.css?v=<?= time() ?>" />
 </head>
 <body>
 
@@ -81,6 +82,7 @@ require __DIR__ . '/../components/_person_profile_modal.php';
 <script src="/assets/js/components/sidebar.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/dropdown.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/profile-modal.js?v=<?= time() ?>"></script>
+<script src="/assets/js/components/student-academic.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/teacher-students.js?v=<?= time() ?>"></script>
 </body>
 </html>
