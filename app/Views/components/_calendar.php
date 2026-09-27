@@ -248,10 +248,99 @@ $scopeStructure = $calendarConfig['scopeStructure'] ?? ($canAddEvent ? CalendarE
         </div>
 
         <div class="c-form-row">
-          <div>
-            <label class="c-field-label" for="j-field-time">Time</label>
-            <input class="c-field-input" id="j-field-time" placeholder="e.g. 09:00 AM or 08:30–10:30" type="text" />
-            <p class="c-field-error" id="j-field-time-error">Enter the event time.</p>
+          <div class="c-time-picker-field">
+            <label class="c-field-label" for="j-field-time">Event Time</label>
+            <div class="c-time-picker-wrapper" id="j-time-picker-wrapper">
+              <div class="c-time-trigger" id="j-time-trigger" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false">
+                <svg class="c-icon c-time-clock-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <use href="#icon-clock"/>
+                </svg>
+                <input class="c-field-input c-time-input" id="j-field-time" placeholder="Select time (e.g. 09:00 AM)" type="text" readonly autocomplete="off" />
+                <button type="button" class="c-time-dropdown-btn" id="j-time-dropdown-btn" tabindex="-1" aria-label="Toggle time picker">
+                  <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <use href="#icon-chevronDown"/>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Time Picker Popover Modal / Wheel Dropdown -->
+              <div class="c-time-picker-popover" id="j-time-picker-popover" style="display: none;">
+                <!-- Header with Mode Switch: Single Time or Duration Range -->
+                <div class="c-tp-header">
+                  <div class="c-tp-mode-tabs">
+                    <button type="button" class="c-tp-mode-btn is-active" id="j-tp-mode-single" data-mode="single">Single Time</button>
+                    <button type="button" class="c-tp-mode-btn" id="j-tp-mode-range" data-mode="range">Time Range</button>
+                  </div>
+                  <div class="c-tp-range-tabs" id="j-tp-range-tabs" style="display: none;">
+                    <button type="button" class="c-tp-subtab-btn is-active" id="j-tp-tab-start" data-target="start">Start Time</button>
+                    <span class="c-tp-subtab-sep">&rarr;</span>
+                    <button type="button" class="c-tp-subtab-btn" id="j-tp-tab-end" data-target="end">End Time</button>
+                  </div>
+                </div>
+
+                <!-- Wheel Columns Container -->
+                <div class="c-tp-body">
+                  <!-- Hours Column -->
+                  <div class="c-tp-col-wrap">
+                    <span class="c-tp-col-label">Hour</span>
+                    <button type="button" class="c-tp-arrow-btn j-tp-arrow-up" data-col="hour" aria-label="Previous hour">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronUp"/></svg>
+                    </button>
+                    <div class="c-tp-wheel j-tp-wheel-hour" data-col="hour">
+                      <?php for ($h = 1; $h <= 12; $h++): $hStr = str_pad((string)$h, 2, '0', STR_PAD_LEFT); ?>
+                        <div class="c-tp-item <?= $h === 9 ? 'is-selected' : '' ?>" data-val="<?= $hStr ?>"><?= $hStr ?></div>
+                      <?php endfor; ?>
+                    </div>
+                    <button type="button" class="c-tp-arrow-btn j-tp-arrow-down" data-col="hour" aria-label="Next hour">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronDown"/></svg>
+                    </button>
+                  </div>
+
+                  <div class="c-tp-sep">:</div>
+
+                  <!-- Minutes Column -->
+                  <div class="c-tp-col-wrap">
+                    <span class="c-tp-col-label">Min</span>
+                    <button type="button" class="c-tp-arrow-btn j-tp-arrow-up" data-col="minute" aria-label="Previous minute">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronUp"/></svg>
+                    </button>
+                    <div class="c-tp-wheel j-tp-wheel-minute" data-col="minute">
+                      <?php for ($m = 0; $m < 60; $m += 5): $mStr = str_pad((string)$m, 2, '0', STR_PAD_LEFT); ?>
+                        <div class="c-tp-item <?= $m === 0 ? 'is-selected' : '' ?>" data-val="<?= $mStr ?>"><?= $mStr ?></div>
+                      <?php endfor; ?>
+                    </div>
+                    <button type="button" class="c-tp-arrow-btn j-tp-arrow-down" data-col="minute" aria-label="Next minute">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronDown"/></svg>
+                    </button>
+                  </div>
+
+                  <!-- AM / PM Column -->
+                  <div class="c-tp-col-wrap c-tp-col-wrap--ampm">
+                    <span class="c-tp-col-label">Period</span>
+                    <button type="button" class="c-tp-arrow-btn j-tp-arrow-up" data-col="ampm" aria-label="Toggle AM/PM">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronUp"/></svg>
+                    </button>
+                    <div class="c-tp-wheel j-tp-wheel-ampm" data-col="ampm">
+                      <div class="c-tp-item is-selected" data-val="AM">AM</div>
+                      <div class="c-tp-item" data-val="PM">PM</div>
+                    </div>
+                    <button type="button" class="c-tp-arrow-btn j-tp-arrow-down" data-col="ampm" aria-label="Toggle AM/PM">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronDown"/></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Footer with Live Preview & Done Button -->
+                <div class="c-tp-footer">
+                  <div class="c-tp-preview" id="j-tp-preview">09:00 AM</div>
+                  <div class="c-tp-actions">
+                    <button type="button" class="c-btn c-btn--ghost c-btn--sm" id="j-tp-btn-clear">Clear</button>
+                    <button type="button" class="c-btn c-btn--solid c-btn--sm" id="j-tp-btn-apply">Done</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="c-field-error" id="j-field-time-error">Please select the event time.</p>
           </div>
         </div>
 
