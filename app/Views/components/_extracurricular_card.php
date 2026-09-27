@@ -28,9 +28,13 @@ $isRequested  = !empty($club['requested']);
 $image        = $club['image'] ?? null;
 $tic          = $club['tic'] ?? [];
 $coach        = $club['coach'] ?? [];
-$canModerate  = $canModerate ?? true;
-$currentRole  = $currentRole ?? 'admin';
+$currentRole  = $currentRole ?? ($_SESSION['user_role'] ?? 'admin');
 $isStudent    = ($currentRole === 'student');
+$isManagement = ($currentRole === 'management');
+$canModerate  = !empty($canModerate) && !$isStudent && !$isManagement;
+if ($isStudent || $isManagement) {
+    $canModerate = false;
+}
 
 // Pill configuration
 if ($isPending) {
@@ -143,7 +147,7 @@ $contactPhone = !empty($coach['phone']) ? $coach['phone'] : (!empty($tic['phone'
 
     <!-- Action Slot -->
     <div class="c-club-card__actions j-card-actions">
-      <?php if ($isPending): ?>
+      <?php if ($isPending && $canModerate): ?>
         <button type="button" class="c-btn c-btn--maroon c-btn--card-action j-reject-club" data-club-id="<?= $clubId ?>" data-club-name="<?= htmlspecialchars($clubName) ?>">
           <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24"><use href="#icon-x"/></svg>
           Reject
@@ -151,6 +155,11 @@ $contactPhone = !empty($coach['phone']) ? $coach['phone'] : (!empty($tic['phone'
         <button type="button" class="c-btn c-btn--moss c-btn--card-action j-approve-club" data-club-id="<?= $clubId ?>" data-club-name="<?= htmlspecialchars($clubName) ?>">
           <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24"><use href="#icon-check"/></svg>
           Accept
+        </button>
+      <?php elseif ($isPending): ?>
+        <button type="button" class="c-club-card__btn c-club-card__btn--requested" disabled style="opacity: 0.75; cursor: default;">
+          <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24"><use href="#icon-clock"/></svg>
+          Pending Approval
         </button>
       <?php elseif ($isStudent): ?>
         <?php if ($isEnrolled): ?>

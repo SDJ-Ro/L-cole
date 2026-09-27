@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="/assets/css/components/sidebar.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/page-header.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/extracurricular-card.css?v=<?= time() ?>" />
-  <link rel="stylesheet" href="/assets/css/components/reject-modal.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/calendar.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/extracurricular-detail.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/feedback-banner.css?v=<?= time() ?>" />
@@ -58,7 +57,7 @@
             <?php foreach ($clubs as $club): ?>
               <?php 
                 $currentRole = 'student';
-                $canModerate = true;
+                $canModerate = false;
                 require __DIR__ . '/../components/_extracurricular_card.php'; 
               ?>
             <?php endforeach; ?>
@@ -130,9 +129,6 @@
 
       <!-- View 4: Achievement Detail Page Component -->
       <?php require __DIR__ . '/../components/_extracurricular_card_achievement_page.php'; ?>
-
-      <!-- Rejection Feedback Modal Component -->
-      <?php require __DIR__ . '/../components/_reject_modal.php'; ?>
 
     </div>
   </main>

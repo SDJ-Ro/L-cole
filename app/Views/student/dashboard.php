@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/assets/css/components/metric-card.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/bar-chart.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/calendar.css?v=<?= time() ?>" />
+  <link rel="stylesheet" href="/assets/css/components/delete-modal.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/upcoming-events.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/unread-notices.css?v=<?= time() ?>" />
 </head>

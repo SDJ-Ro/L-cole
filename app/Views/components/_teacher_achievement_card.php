@@ -58,6 +58,7 @@ $classTxt  = $s['class'] ?? 'Class 6-A';
          data-student-tone="<?= htmlspecialchars($toneClass) ?>"
          data-student-marks='<?= htmlspecialchars($marksJson, ENT_QUOTES, 'UTF-8') ?>'
          data-student-feedback="<?= htmlspecialchars($feedback) ?>"
+         data-has-issue="<?= $showRedRing ? '1' : '0' ?>"
          data-item-type="<?= htmlspecialchars($itemType) ?>">
 
   <!-- Popped-out Avatar -->

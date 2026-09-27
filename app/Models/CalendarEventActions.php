@@ -49,7 +49,12 @@ class CalendarEventActions extends Model {
     /** Teacher scope ownership check — re-derived from DB. */
     public static function teacherOwnsScope(int $teacherId, string $scopeType, $scopeId): bool {
         if ($scopeType === 'class') {
-            return CalendarEventModel::getClassIdForTeacher($teacherId) === (int)$scopeId;
+            $classId = (int)$scopeId;
+            if (CalendarEventModel::getClassIdForTeacher($teacherId) === $classId) {
+                return true;
+            }
+            $subjectClassIds = CalendarEventModel::getSubjectClassIdsForTeacher($teacherId);
+            return in_array($classId, $subjectClassIds, true);
         }
         if ($scopeType === 'club') {
             return in_array((int)$scopeId, CalendarEventModel::getClubIdsForTeacher($teacherId), true);

@@ -20,8 +20,8 @@ class AuthController extends Controller {
             'image'            => '/assets/images/students.jpg',
             'imageAlt'         => 'Student boy and girl in school uniform',
             'badgeIcon'        => 'icon-graduationCap',
-            'inputLabel'       => 'Student email or index number',
-            'inputPlaceholder' => 'name@lecole.edu',
+            'inputLabel'       => 'Student index number',
+            'inputPlaceholder' => 'e.g. STU-2026-0001',
             'signupUrl'        => '/auth/studentSignup',
             'signupLabel'      => 'Need access? Sign up',
             'alternateText'    => "New to L'École?",
@@ -118,8 +118,8 @@ class AuthController extends Controller {
             'image'            => '/assets/images/students.jpg',
             'imageAlt'         => 'Student boy and girl in school uniform',
             'badgeIcon'        => 'icon-graduationCap',
-            'inputLabel'       => 'Student email or index number',
-            'inputPlaceholder' => 'name@lecole.edu',
+            'inputLabel'       => 'Student index number',
+            'inputPlaceholder' => 'e.g. STU-2026-0001',
             'signinUrl'        => '/auth/student'
         ]);
     }
@@ -153,6 +153,22 @@ class AuthController extends Controller {
             'inputLabel'       => 'Email address',
             'inputPlaceholder' => 'parent@email.com',
             'signinUrl'        => '/auth/parent'
+        ]);
+    }
+
+    public function managementSignup() {
+        $this->view('sign-in-up_page/sign-up-template', [
+            'role'             => 'management',
+            'title'            => "Set up management access — L'École",
+            'eyebrow'          => 'Leadership workspace',
+            'desc'             => 'Activate your management access to school operations, staffing, and student records.',
+            'headline'         => 'Lead school administration, academic programs, and staff oversight with full clarity.',
+            'image'            => '/assets/images/management.jpg',
+            'imageAlt'         => 'School leadership team talking in a bright campus corridor',
+            'badgeIcon'        => 'icon-building2',
+            'inputLabel'       => 'Institutional email or Staff ID',
+            'inputPlaceholder' => 'name@staff.lecole.edu or MGT-0001',
+            'signinUrl'        => '/auth/management'
         ]);
     }
 

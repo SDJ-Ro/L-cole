@@ -18,6 +18,8 @@
 $clubData       = $club ?? [];
 $isEditable     = $canEdit ?? true;
 $showStaffCards = $showStaff ?? true;
+$currentUserRole = strtolower($userRole ?? ($currentRole ?? ($_SESSION['user']['role'] ?? 'teacher')));
+$canEditStaff   = $isEditable && ($currentUserRole !== 'teacher');
 
 $tic = $clubData['tic'] ?? [];
 $ticName = $tic['name'] ?? 'Mr. Weerasinghe';
@@ -45,7 +47,7 @@ $createdAt = $clubData['createdAt'] ?? '15 Jan 2024';
     <article class="j-ex-37">
       <div class="j-ex-38">
         <h3 class="c-staff-card__role j-ex-39">Teacher in Charge</h3>
-        <?php if ($isEditable): ?>
+        <?php if ($canEditStaff): ?>
           <button type="button" class="c-btn c-btn--ghost c-btn--sm j-ex-40" id="j-edit-tic-btn" title="Edit Teacher in Charge">
             <svg class="c-icon" width="12" height="12" viewBox="0 0 24 24"><use href="#icon-edit"/></svg>
             <span>Edit</span>
@@ -77,7 +79,7 @@ $createdAt = $clubData['createdAt'] ?? '15 Jan 2024';
     <article class="j-ex-37">
       <div class="j-ex-38">
         <h3 class="c-staff-card__role j-ex-39">Coach / Instructor</h3>
-        <?php if ($isEditable): ?>
+        <?php if ($canEditStaff): ?>
           <button type="button" class="c-btn c-btn--ghost c-btn--sm j-ex-40" id="j-edit-coach-btn" title="Edit coach details">
             <svg class="c-icon" width="12" height="12" viewBox="0 0 24 24"><use href="#icon-edit"/></svg>
             <span>Edit</span>

@@ -248,3 +248,23 @@
   color: #ffffff;
   background: var(--maroon, #7F0303);
 }
+
+/* Compact variant for inline editors e.g. Curriculum Card Year Select */
+.c-dropdown--compact > .c-dropdown__trigger {
+  height: 2.125rem;
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid #D8BA98;
+  background: #ffffff;
+}
+
+.c-dropdown--compact .c-dropdown__menu {
+  border-radius: var(--radius-lg, 0.5rem);
+  max-height: 180px;
+}
+
+.c-dropdown--compact .c-dropdown__option {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+}

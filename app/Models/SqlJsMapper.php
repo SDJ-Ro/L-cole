@@ -21,9 +21,8 @@ class SqlJsMapper {
     public static function studentToJs(array $row): array {
         $statusRaw = strtoupper($row['account_status'] ?? $row['activation_status'] ?? 'ACTIVE');
         $statusLabel = match ($statusRaw) {
-            'ACTIVE'   => 'Active',
             'INACTIVE' => 'Deactivated',
-            default    => 'Pending'
+            default    => 'Active'
         };
 
         $fullName = trim($row['full_name'] ?? '');
@@ -98,7 +97,11 @@ class SqlJsMapper {
             'activationStatus'        => $statusRaw,
             'avatar'                  => 'bg-sand text-midnight',
             'role'                    => 'student',
-            // Guardian linkage
+            // Contact & Guardian linkage (Students do not have their own email)
+            'email'                   => $parentEmail ?: 'Not recorded',
+            'parentEmail'             => $parentEmail ?: 'Not recorded',
+            'phone'                   => $parentPhone ?: 'Not recorded',
+            'parentPhone'             => $parentPhone ?: 'Not recorded',
             'parentName'              => $parentName,
             'parentId'                => (string)$parentId,
             'guardian'                => $guardianObj
