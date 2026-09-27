@@ -884,6 +884,9 @@
         if (submitLabel) submitLabel.textContent = 'Save changes';
         if (titleInput) titleInput.value = eventToEdit.title || '';
         if (timeInput) timeInput.value = eventToEdit.time || '';
+        if (typeof window.syncDrumTimeFromValue === 'function') {
+          window.syncDrumTimeFromValue(eventToEdit.time || '09:00 AM');
+        }
         if (detailsInput) detailsInput.value = eventToEdit.details || '';
 
         const editCat = eventToEdit.category || 'General';
@@ -930,6 +933,9 @@
         if (submitLabel) submitLabel.textContent = 'Save event';
         if (titleInput) titleInput.value = '';
         if (timeInput) timeInput.value = '09:00 AM';
+        if (typeof window.syncDrumTimeFromValue === 'function') {
+          window.syncDrumTimeFromValue('09:00 AM');
+        }
         if (detailsInput) detailsInput.value = '';
 
         const defaultCat = fixedScope ? (fixedScope.type === 'club' || fixedScope.type === 'sport' ? 'Extracurricular' : 'Academic') : 'General';
@@ -1077,214 +1083,297 @@
     }
 
     // -------------------------------------------------------------------------
-    // SCROLLABLE WHEEL TIME PICKER COMPONENT CONTROLLER
+    // EXPANDING CYCLIC DRUM WHEEL TIME PICKER CONTROLLER
     // -------------------------------------------------------------------------
-    function initTimePickerComponent() {
-      const trigger = document.getElementById('j-time-trigger');
-      const timeInput = document.getElementById('j-field-time');
-      const popover = document.getElementById('j-time-picker-popover');
-      const modeSingle = document.getElementById('j-tp-mode-single');
-      const modeRange = document.getElementById('j-tp-mode-range');
-      const rangeTabs = document.getElementById('j-tp-range-tabs');
-      const tabStart = document.getElementById('j-tp-tab-start');
-      const tabEnd = document.getElementById('j-tp-tab-end');
-      const preview = document.getElementById('j-tp-preview');
-      const btnApply = document.getElementById('j-tp-btn-apply');
-      const btnClear = document.getElementById('j-tp-btn-clear');
+    function initCyclicDrumTimePicker() {
+      const trigger = document.getElementById('j-time-drum-trigger');
+      const drawer = document.getElementById('j-drum-drawer');
+      const displayVal = document.getElementById('j-drum-display-value');
+      const hiddenTimeInput = document.getElementById('j-field-time');
+      const toggleHint = document.getElementById('j-drum-toggle-hint');
+      const modeSingle = document.getElementById('j-drum-mode-single');
+      const modeRange = document.getElementById('j-drum-mode-range');
+      const rangeTabs = document.getElementById('j-drum-range-tabs');
+      const subtabStart = document.getElementById('j-drum-subtab-start');
+      const subtabEnd = document.getElementById('j-drum-subtab-end');
+      const btnDone = document.getElementById('j-drum-btn-done');
 
-      if (!trigger || !timeInput || !popover) return;
+      const hourSlotsEl = drawer?.querySelector('.j-drum-slots-hour');
+      const minuteSlotsEl = drawer?.querySelector('.j-drum-slots-minute');
+      const ampmSlotsEl = drawer?.querySelector('.j-drum-slots-ampm');
+
+      if (!trigger || !drawer || !hiddenTimeInput) return;
 
       let isRange = false;
-      let activeSubtab = 'start'; // 'start' | 'end'
-      let startTime = { hour: '09', minute: '00', ampm: 'AM' };
-      let endTime = { hour: '10', minute: '30', ampm: 'AM' };
+      let activeTarget = 'start'; // 'start' | 'end'
+      let startTime = { hour: 9, minute: 0, ampm: 'AM' };
+      let endTime = { hour: 10, minute: 30, ampm: 'AM' };
 
-      function togglePopover(show) {
-        const isShown = (typeof show === 'boolean') ? show : (popover.style.display !== 'none');
-        if (isShown) {
-          popover.style.display = 'none';
-          trigger.setAttribute('aria-expanded', 'false');
-        } else {
-          popover.style.display = 'block';
-          trigger.setAttribute('aria-expanded', 'true');
-          syncFromInput();
-          updateSelectionUI();
-        }
+      function pad2(n) {
+        return String(n).padStart(2, '0');
       }
 
-      function parseTimeString(str) {
-        if (!str) return null;
-        const match = str.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-        if (!match) return null;
-        return {
-          hour: String(match[1]).padStart(2, '0'),
-          minute: String(match[2]).padStart(2, '0'),
-          ampm: match[3].toUpperCase()
-        };
+      function wrapHour(h) {
+        return ((h - 1) % 12 + 12) % 12 + 1;
       }
 
-      function syncFromInput() {
-        const val = timeInput.value.trim();
-        if (val.includes('–') || val.includes('-')) {
-          const parts = val.split(/[-–]/);
-          const p1 = parseTimeString(parts[0]);
-          const p2 = parseTimeString(parts[1]);
-          if (p1) startTime = p1;
-          if (p2) endTime = p2;
-          setMode(true);
-        } else if (val) {
-          const p1 = parseTimeString(val);
-          if (p1) startTime = p1;
-          setMode(false);
-        }
+      function wrapMinute(m) {
+        return (m % 60 + 60) % 60;
       }
 
-      function formatTime(t) {
-        return `${t.hour}:${t.minute} ${t.ampm}`;
-      }
-
-      function updatePreview() {
-        if (!preview) return;
-        if (isRange) {
-          preview.textContent = `${formatTime(startTime)} – ${formatTime(endTime)}`;
-        } else {
-          preview.textContent = formatTime(startTime);
-        }
+      function otherAmPm(val) {
+        return val === 'AM' ? 'PM' : 'AM';
       }
 
       function getCurrentTarget() {
-        return (!isRange || activeSubtab === 'start') ? startTime : endTime;
+        return (!isRange || activeTarget === 'start') ? startTime : endTime;
       }
 
-      function updateSelectionUI() {
-        const cur = getCurrentTarget();
-        ['hour', 'minute', 'ampm'].forEach(col => {
-          const wheel = popover.querySelector(`.j-tp-wheel-${col}`);
-          if (!wheel) return;
-          const targetVal = (col === 'hour') ? cur.hour : ((col === 'minute') ? cur.minute : cur.ampm);
-          wheel.querySelectorAll('.c-tp-item').forEach(item => {
-            const isMatch = (item.dataset.val === targetVal);
-            item.classList.toggle('is-selected', isMatch);
-            if (isMatch) {
-              item.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
-            }
-          });
-        });
-        updatePreview();
+      function formatTimeString(t) {
+        return `${pad2(t.hour)}:${pad2(t.minute)} ${t.ampm}`;
       }
 
-      function setMode(range) {
-        isRange = range;
+      function updateDisplayAndInput() {
+        let fullStr = '';
         if (isRange) {
+          fullStr = `${formatTimeString(startTime)} – ${formatTimeString(endTime)}`;
+          if (subtabStart) subtabStart.textContent = `Start: ${formatTimeString(startTime)}`;
+          if (subtabEnd) subtabEnd.textContent = `End: ${formatTimeString(endTime)}`;
+        } else {
+          fullStr = formatTimeString(startTime);
+        }
+
+        if (displayVal) displayVal.textContent = fullStr;
+        hiddenTimeInput.value = fullStr;
+        document.getElementById('j-field-time-error')?.classList.remove('c-is-visible');
+
+        // Fire live validation & clash check listeners
+        hiddenTimeInput.dispatchEvent(new Event('input', { bubbles: true }));
+        hiddenTimeInput.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      function renderDrumSlots() {
+        const cur = getCurrentTarget();
+
+        // 1. Hour Column (5 cyclic slots centered on cur.hour)
+        if (hourSlotsEl) {
+          const offsets = [-2, -1, 0, 1, 2];
+          hourSlotsEl.innerHTML = offsets.map(offset => {
+            const h = wrapHour(cur.hour + offset);
+            let cls = 'c-drum-slot';
+            if (offset === 0) cls += ' c-drum-slot--selected';
+            else if (Math.abs(offset) === 1) cls += ' c-drum-slot--near';
+            else cls += ' c-drum-slot--far';
+            return `<div class="${cls}" data-offset="${offset}">${pad2(h)}</div>`;
+          }).join('');
+        }
+
+        // 2. Minute Column (5 cyclic slots centered on cur.minute)
+        if (minuteSlotsEl) {
+          const offsets = [-2, -1, 0, 1, 2];
+          minuteSlotsEl.innerHTML = offsets.map(offset => {
+            const m = wrapMinute(cur.minute + offset);
+            let cls = 'c-drum-slot';
+            if (offset === 0) cls += ' c-drum-slot--selected';
+            else if (Math.abs(offset) === 1) cls += ' c-drum-slot--near';
+            else cls += ' c-drum-slot--far';
+            return `<div class="${cls}" data-offset="${offset}">${pad2(m)}</div>`;
+          }).join('');
+        }
+
+        // 3. AM/PM Column (3 cyclic slots centered on cur.ampm)
+        if (ampmSlotsEl) {
+          const other = otherAmPm(cur.ampm);
+          ampmSlotsEl.innerHTML = `
+            <div class="c-drum-slot c-drum-slot--near" data-offset="-1">${other}</div>
+            <div class="c-drum-slot c-drum-slot--selected" data-offset="0">${cur.ampm}</div>
+            <div class="c-drum-slot c-drum-slot--near" data-offset="1">${other}</div>
+          `;
+        }
+
+        updateDisplayAndInput();
+      }
+
+      function stepDrum(col, delta) {
+        const cur = getCurrentTarget();
+        if (col === 'hour') {
+          cur.hour = wrapHour(cur.hour + delta);
+        } else if (col === 'minute') {
+          cur.minute = wrapMinute(cur.minute + delta);
+        } else if (col === 'ampm') {
+          cur.ampm = otherAmPm(cur.ampm);
+        }
+        renderDrumSlots();
+      }
+
+      // Slot Click delegation
+      drawer.querySelectorAll('.j-drum-col').forEach(colEl => {
+        const col = colEl.dataset.col;
+
+        colEl.addEventListener('click', (e) => {
+          const slot = e.target.closest('.c-drum-slot');
+          if (slot) {
+            e.stopPropagation();
+            const offset = parseInt(slot.dataset.offset || '0', 10);
+            if (offset !== 0) {
+              stepDrum(col, offset);
+            }
+          }
+        });
+
+        // Mouse Wheel on column (continuous cyclic roll)
+        colEl.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const dir = e.deltaY > 0 ? 1 : -1;
+          stepDrum(col, dir);
+        }, { passive: false });
+
+        // Keyboard arrow navigation
+        colEl.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            stepDrum(col, -1);
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            stepDrum(col, 1);
+          }
+        });
+
+        // Touch swipe drag support
+        let startY = 0;
+        colEl.addEventListener('touchstart', (e) => {
+          startY = e.touches[0].clientY;
+        }, { passive: true });
+
+        colEl.addEventListener('touchmove', (e) => {
+          const currentY = e.touches[0].clientY;
+          const diff = startY - currentY;
+          if (Math.abs(diff) >= 24) {
+            stepDrum(col, diff > 0 ? 1 : -1);
+            startY = currentY;
+          }
+        }, { passive: true });
+      });
+
+      // Arrow Up/Down buttons
+      drawer.querySelectorAll('.j-drum-prev').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          stepDrum(btn.dataset.col, -1);
+        });
+      });
+
+      drawer.querySelectorAll('.j-drum-next').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          stepDrum(btn.dataset.col, 1);
+        });
+      });
+
+      // Expand / Collapse Drawer
+      function toggleDrawer(open) {
+        const isOpen = (typeof open === 'boolean') ? open : (drawer.style.display === 'none');
+        if (isOpen) {
+          drawer.style.display = 'block';
+          trigger.classList.add('is-expanded');
+          trigger.setAttribute('aria-expanded', 'true');
+          if (toggleHint) toggleHint.textContent = 'Close';
+          renderDrumSlots();
+        } else {
+          drawer.style.display = 'none';
+          trigger.classList.remove('is-expanded');
+          trigger.setAttribute('aria-expanded', 'false');
+          if (toggleHint) toggleHint.textContent = 'Tap to adjust';
+        }
+      }
+
+      trigger.addEventListener('click', () => {
+        toggleDrawer();
+      });
+
+      btnDone?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleDrawer(false);
+      });
+
+      // Mode Switch: Single Time vs Time Range
+      modeSingle?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isRange = false;
+        modeSingle.classList.add('is-active');
+        modeRange?.classList.remove('is-active');
+        if (rangeTabs) rangeTabs.style.display = 'none';
+        renderDrumSlots();
+      });
+
+      modeRange?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isRange = true;
+        modeRange.classList.add('is-active');
+        modeSingle?.classList.remove('is-active');
+        if (rangeTabs) rangeTabs.style.display = 'flex';
+        renderDrumSlots();
+      });
+
+      subtabStart?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        activeTarget = 'start';
+        subtabStart.classList.add('is-active');
+        subtabEnd?.classList.remove('is-active');
+        renderDrumSlots();
+      });
+
+      subtabEnd?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        activeTarget = 'end';
+        subtabEnd.classList.add('is-active');
+        subtabStart?.classList.remove('is-active');
+        renderDrumSlots();
+      });
+
+      // Global helper to synchronize drum from existing string (e.g. on event edit)
+      window.syncDrumTimeFromValue = function(rawStr) {
+        if (!rawStr) return;
+        const clean = String(rawStr).trim();
+        if (clean.includes('–') || clean.includes('-')) {
+          const parts = clean.split(/[-–]/);
+          const p1 = parseTime(parts[0]);
+          const p2 = parseTime(parts[1]);
+          if (p1) startTime = p1;
+          if (p2) endTime = p2;
+          isRange = true;
           modeRange?.classList.add('is-active');
           modeSingle?.classList.remove('is-active');
           if (rangeTabs) rangeTabs.style.display = 'flex';
         } else {
+          const p = parseTime(clean);
+          if (p) startTime = p;
+          isRange = false;
           modeSingle?.classList.add('is-active');
           modeRange?.classList.remove('is-active');
           if (rangeTabs) rangeTabs.style.display = 'none';
         }
-        updateSelectionUI();
+        renderDrumSlots();
+      };
+
+      function parseTime(str) {
+        if (!str) return null;
+        const match = str.trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i);
+        if (!match) return null;
+        let h = parseInt(match[1], 10);
+        let m = parseInt(match[2], 10);
+        let ampm = match[3] ? match[3].toUpperCase() : (h >= 12 ? 'PM' : 'AM');
+        if (h > 12) h -= 12;
+        if (h === 0) h = 12;
+        return { hour: h, minute: m, ampm: ampm };
       }
 
-      modeSingle?.addEventListener('click', (e) => { e.stopPropagation(); setMode(false); });
-      modeRange?.addEventListener('click', (e) => { e.stopPropagation(); setMode(true); });
-
-      tabStart?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        activeSubtab = 'start';
-        tabStart.classList.add('is-active');
-        tabEnd?.classList.remove('is-active');
-        updateSelectionUI();
-      });
-
-      tabEnd?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        activeSubtab = 'end';
-        tabEnd.classList.add('is-active');
-        tabStart?.classList.remove('is-active');
-        updateSelectionUI();
-      });
-
-      popover.querySelectorAll('.c-tp-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const col = item.closest('.c-tp-wheel')?.dataset.col;
-          const val = item.dataset.val;
-          const cur = getCurrentTarget();
-          if (col === 'hour') cur.hour = val;
-          if (col === 'minute') cur.minute = val;
-          if (col === 'ampm') cur.ampm = val;
-          updateSelectionUI();
-        });
-      });
-
-      function stepColumn(col, dir) {
-        const wheel = popover.querySelector(`.j-tp-wheel-${col}`);
-        if (!wheel) return;
-        const items = Array.from(wheel.querySelectorAll('.c-tp-item'));
-        const curIdx = items.findIndex(it => it.classList.contains('is-selected'));
-        if (curIdx === -1) return;
-        let nextIdx = curIdx + dir;
-        if (nextIdx < 0) nextIdx = items.length - 1;
-        if (nextIdx >= items.length) nextIdx = 0;
-        items[nextIdx].click();
-      }
-
-      popover.querySelectorAll('.j-tp-arrow-up').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          stepColumn(btn.dataset.col, -1);
-        });
-      });
-
-      popover.querySelectorAll('.j-tp-arrow-down').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          stepColumn(btn.dataset.col, 1);
-        });
-      });
-
-      popover.querySelectorAll('.c-tp-wheel').forEach(wheel => {
-        wheel.addEventListener('wheel', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const col = wheel.dataset.col;
-          stepColumn(col, e.deltaY > 0 ? 1 : -1);
-        }, { passive: false });
-      });
-
-      btnApply?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        timeInput.value = preview ? preview.textContent : formatTime(startTime);
-        document.getElementById('j-field-time-error')?.classList.remove('c-is-visible');
-        timeInput.dispatchEvent(new Event('input', { bubbles: true }));
-        timeInput.dispatchEvent(new Event('change', { bubbles: true }));
-        togglePopover(true);
-      });
-
-      btnClear?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        timeInput.value = '';
-        timeInput.dispatchEvent(new Event('input', { bubbles: true }));
-        timeInput.dispatchEvent(new Event('change', { bubbles: true }));
-        togglePopover(true);
-      });
-
-      trigger.addEventListener('click', (e) => {
-        e.stopPropagation();
-        togglePopover();
-      });
-
-      document.addEventListener('click', (e) => {
-        if (!popover.contains(e.target) && !trigger.contains(e.target)) {
-          popover.style.display = 'none';
-          trigger.setAttribute('aria-expanded', 'false');
-        }
-      });
+      // Initial render on load
+      renderDrumSlots();
     }
 
-    initTimePickerComponent();
+    initCyclicDrumTimePicker();
 
     // Attach live clash check listeners to time input
     const timeInputEl = document.getElementById('j-field-time');
