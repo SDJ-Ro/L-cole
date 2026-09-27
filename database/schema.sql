@@ -284,6 +284,7 @@ CREATE TABLE extracurricular_activities (
     CONSTRAINT fk_extracurricular_teacher FOREIGN KEY (teacher_id)
         REFERENCES teachers(id) ON DELETE SET NULL,
     INDEX idx_extracurricular_category (category)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 -- -------------------------------------------------------------------------
 -- 12. NOTICES & ANNOUNCEMENTS
 -- -------------------------------------------------------------------------
