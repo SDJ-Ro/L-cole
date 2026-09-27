@@ -249,98 +249,105 @@ $scopeStructure = $calendarConfig['scopeStructure'] ?? ($canAddEvent ? CalendarE
 
         <div class="c-form-row">
           <div class="c-time-picker-field">
-            <label class="c-field-label" for="j-field-time">Event Time</label>
-            <div class="c-time-picker-wrapper" id="j-time-picker-wrapper">
-              <div class="c-time-trigger" id="j-time-trigger" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false">
-                <svg class="c-icon c-time-clock-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <use href="#icon-clock"/>
-                </svg>
-                <input class="c-field-input c-time-input" id="j-field-time" placeholder="Select time (e.g. 09:00 AM)" type="text" readonly autocomplete="off" />
-                <button type="button" class="c-time-dropdown-btn" id="j-time-dropdown-btn" tabindex="-1" aria-label="Toggle time picker">
-                  <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <use href="#icon-chevronDown"/>
+            <label class="c-field-label" for="j-drum-display-value">Event Time</label>
+
+            <!-- 1. The Interactive Time Display Bar (No text box, click to expand) -->
+            <div class="c-drum-trigger" id="j-time-drum-trigger" role="button" tabindex="0" aria-expanded="false" aria-controls="j-drum-drawer">
+              <div class="c-drum-trigger__left">
+                <span class="c-drum-trigger__icon-wrap">
+                  <svg class="c-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <use href="#icon-clock"/>
                   </svg>
-                </button>
+                </span>
+                <div class="c-drum-trigger__meta">
+                  <span class="c-drum-trigger__label">Scheduled Slot</span>
+                  <span class="c-drum-trigger__value" id="j-drum-display-value">09:00 AM</span>
+                </div>
               </div>
-
-              <!-- Time Picker Popover Modal / Wheel Dropdown -->
-              <div class="c-time-picker-popover" id="j-time-picker-popover" style="display: none;">
-                <!-- Header with Mode Switch: Single Time or Duration Range -->
-                <div class="c-tp-header">
-                  <div class="c-tp-mode-tabs">
-                    <button type="button" class="c-tp-mode-btn is-active" id="j-tp-mode-single" data-mode="single">Single Time</button>
-                    <button type="button" class="c-tp-mode-btn" id="j-tp-mode-range" data-mode="range">Time Range</button>
-                  </div>
-                  <div class="c-tp-range-tabs" id="j-tp-range-tabs" style="display: none;">
-                    <button type="button" class="c-tp-subtab-btn is-active" id="j-tp-tab-start" data-target="start">Start Time</button>
-                    <span class="c-tp-subtab-sep">&rarr;</span>
-                    <button type="button" class="c-tp-subtab-btn" id="j-tp-tab-end" data-target="end">End Time</button>
-                  </div>
-                </div>
-
-                <!-- Wheel Columns Container -->
-                <div class="c-tp-body">
-                  <!-- Hours Column -->
-                  <div class="c-tp-col-wrap">
-                    <span class="c-tp-col-label">Hour</span>
-                    <button type="button" class="c-tp-arrow-btn j-tp-arrow-up" data-col="hour" aria-label="Previous hour">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronUp"/></svg>
-                    </button>
-                    <div class="c-tp-wheel j-tp-wheel-hour" data-col="hour">
-                      <?php for ($h = 1; $h <= 12; $h++): $hStr = str_pad((string)$h, 2, '0', STR_PAD_LEFT); ?>
-                        <div class="c-tp-item <?= $h === 9 ? 'is-selected' : '' ?>" data-val="<?= $hStr ?>"><?= $hStr ?></div>
-                      <?php endfor; ?>
-                    </div>
-                    <button type="button" class="c-tp-arrow-btn j-tp-arrow-down" data-col="hour" aria-label="Next hour">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronDown"/></svg>
-                    </button>
-                  </div>
-
-                  <div class="c-tp-sep">:</div>
-
-                  <!-- Minutes Column -->
-                  <div class="c-tp-col-wrap">
-                    <span class="c-tp-col-label">Min</span>
-                    <button type="button" class="c-tp-arrow-btn j-tp-arrow-up" data-col="minute" aria-label="Previous minute">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronUp"/></svg>
-                    </button>
-                    <div class="c-tp-wheel j-tp-wheel-minute" data-col="minute">
-                      <?php for ($m = 0; $m < 60; $m += 5): $mStr = str_pad((string)$m, 2, '0', STR_PAD_LEFT); ?>
-                        <div class="c-tp-item <?= $m === 0 ? 'is-selected' : '' ?>" data-val="<?= $mStr ?>"><?= $mStr ?></div>
-                      <?php endfor; ?>
-                    </div>
-                    <button type="button" class="c-tp-arrow-btn j-tp-arrow-down" data-col="minute" aria-label="Next minute">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronDown"/></svg>
-                    </button>
-                  </div>
-
-                  <!-- AM / PM Column -->
-                  <div class="c-tp-col-wrap c-tp-col-wrap--ampm">
-                    <span class="c-tp-col-label">Period</span>
-                    <button type="button" class="c-tp-arrow-btn j-tp-arrow-up" data-col="ampm" aria-label="Toggle AM/PM">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronUp"/></svg>
-                    </button>
-                    <div class="c-tp-wheel j-tp-wheel-ampm" data-col="ampm">
-                      <div class="c-tp-item is-selected" data-val="AM">AM</div>
-                      <div class="c-tp-item" data-val="PM">PM</div>
-                    </div>
-                    <button type="button" class="c-tp-arrow-btn j-tp-arrow-down" data-col="ampm" aria-label="Toggle AM/PM">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronDown"/></svg>
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Footer with Live Preview & Done Button -->
-                <div class="c-tp-footer">
-                  <div class="c-tp-preview" id="j-tp-preview">09:00 AM</div>
-                  <div class="c-tp-actions">
-                    <button type="button" class="c-btn c-btn--ghost c-btn--sm" id="j-tp-btn-clear">Clear</button>
-                    <button type="button" class="c-btn c-btn--solid c-btn--sm" id="j-tp-btn-apply">Done</button>
-                  </div>
-                </div>
+              <div class="c-drum-trigger__right">
+                <span class="c-drum-trigger__hint" id="j-drum-toggle-hint">Tap to adjust</span>
+                <svg class="c-icon c-drum-trigger__chevron" id="j-drum-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <use href="#icon-chevronDown"/>
+                </svg>
               </div>
             </div>
+
+            <!-- Hidden Input for Form Submission, Live Conflict Checks & Backend Compatibility -->
+            <input type="hidden" id="j-field-time" name="time" value="09:00 AM" />
             <p class="c-field-error" id="j-field-time-error">Please select the event time.</p>
+
+            <!-- 2. The In-Place Expanding Drum Tumbler Drawer -->
+            <div class="c-drum-drawer" id="j-drum-drawer" style="display: none;">
+              <!-- Mode Tabs: Single Time vs Time Range -->
+              <div class="c-drum-mode-row">
+                <div class="c-drum-mode-tabs">
+                  <button type="button" class="c-drum-mode-btn is-active" id="j-drum-mode-single" data-mode="single">Single Time</button>
+                  <button type="button" class="c-drum-mode-btn" id="j-drum-mode-range" data-mode="range">Time Range</button>
+                </div>
+                <div class="c-drum-range-tabs" id="j-drum-range-tabs" style="display: none;">
+                  <button type="button" class="c-drum-subtab is-active" id="j-drum-subtab-start">Start Time</button>
+                  <span class="c-drum-subtab-arrow">&rarr;</span>
+                  <button type="button" class="c-drum-subtab" id="j-drum-subtab-end">End Time</button>
+                </div>
+              </div>
+
+              <!-- Drum Cylinder Stage with Fixed Selection Lens -->
+              <div class="c-drum-stage">
+                <!-- Center Fixed Selection Lens Band -->
+                <div class="c-drum-lens"></div>
+
+                <!-- Top & Bottom Soft Fading Masks -->
+                <div class="c-drum-fade c-drum-fade--top"></div>
+                <div class="c-drum-fade c-drum-fade--bottom"></div>
+
+                <!-- Three Cyclic Columns: Hours, Minutes, AM/PM -->
+                <div class="c-drum-wheels">
+                  <!-- Hours Cylinder (Cyclic 1-12) -->
+                  <div class="c-drum-column j-drum-col" data-col="hour" tabindex="0" aria-label="Hour selection">
+                    <span class="c-drum-col-header">Hour</span>
+                    <button type="button" class="c-drum-arrow j-drum-prev" data-col="hour" aria-label="Previous hour">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronUp"/></svg>
+                    </button>
+                    <div class="c-drum-slots j-drum-slots-hour"></div>
+                    <button type="button" class="c-drum-arrow j-drum-next" data-col="hour" aria-label="Next hour">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronDown"/></svg>
+                    </button>
+                  </div>
+
+                  <div class="c-drum-divider">:</div>
+
+                  <!-- Minutes Cylinder (Cyclic 00-59) -->
+                  <div class="c-drum-column j-drum-col" data-col="minute" tabindex="0" aria-label="Minute selection">
+                    <span class="c-drum-col-header">Min</span>
+                    <button type="button" class="c-drum-arrow j-drum-prev" data-col="minute" aria-label="Previous minute">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronUp"/></svg>
+                    </button>
+                    <div class="c-drum-slots j-drum-slots-minute"></div>
+                    <button type="button" class="c-drum-arrow j-drum-next" data-col="minute" aria-label="Next minute">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronDown"/></svg>
+                    </button>
+                  </div>
+
+                  <!-- Period Cylinder (Cyclic AM/PM) -->
+                  <div class="c-drum-column c-drum-column--ampm j-drum-col" data-col="ampm" tabindex="0" aria-label="AM or PM selection">
+                    <span class="c-drum-col-header">Period</span>
+                    <button type="button" class="c-drum-arrow j-drum-prev" data-col="ampm" aria-label="Toggle AM/PM">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronUp"/></svg>
+                    </button>
+                    <div class="c-drum-slots j-drum-slots-ampm"></div>
+                    <button type="button" class="c-drum-arrow j-drum-next" data-col="ampm" aria-label="Toggle AM/PM">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-chevronDown"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Drawer Footer -->
+              <div class="c-drum-footer">
+                <span class="c-drum-footer-hint">Scroll mouse wheel or tap arrows to cycle</span>
+                <button type="button" class="c-btn c-btn--solid c-btn--sm" id="j-drum-btn-done">Done</button>
+              </div>
+            </div>
           </div>
         </div>
 
