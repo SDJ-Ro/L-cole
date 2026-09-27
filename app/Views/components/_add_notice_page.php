@@ -28,6 +28,7 @@ $action     = $formAction ?? '';
   </button>
 
   <form class="c-notice-form" id="j-post-notice-form" action="<?= htmlspecialchars($action) ?>" method="POST" enctype="multipart/form-data" novalidate>
+    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($_SESSION['_csrf_token'] ?? '') ?>" />
     
     <!-- Form Header (Signature Sky Blue #7FC7CC across all roles, matching original prototype) -->
     <header class="c-notice-form__header" style="background: #7FC7CC; padding: 1.5rem 1.75rem; color: #0F414A; border-top-left-radius: var(--radius-xl, 0.875rem); border-top-right-radius: var(--radius-xl, 0.875rem);">
@@ -78,6 +79,74 @@ $action     = $formAction ?? '';
           $name          = 'audience[]';
           $isMultiSelect = true;
           require __DIR__ . '/_dropdown.php';
+          ?>
+        </div>
+
+        <!-- Dynamic Target Scope: Extracurricular Club selector -->
+        <div class="c-form-field j-scope-field j-scope-extracurricular" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 0.375rem;">
+          <span class="c-form-field__label" style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(15, 65, 74, 0.75);">Target Club / Sport Program</span>
+          <?php
+          $clubOptions = [['value' => 'All', 'label' => 'All Extracurriculars (School-Wide)']];
+          foreach (($availableClubs ?? []) as $clb) {
+              $clubOptions[] = [
+                  'value' => $clb['activity_id'],
+                  'label' => $clb['activity_name']
+              ];
+          }
+          $dropdownId    = 'j-select-post-club';
+          $dropdownLabel = 'Target Club';
+          $placeholder   = 'All Extracurriculars (School-Wide)';
+          $options       = $clubOptions;
+          $selectedValue = 'All';
+          $name          = 'target_club_id';
+          require __DIR__ . '/_dropdown.php';
+          ?>
+        </div>
+
+        <!-- Dynamic Target Scope: Academic Grade / Class selector -->
+        <div class="c-form-field j-scope-field j-scope-academic" style="grid-column: 1 / -1; display: none; flex-direction: column; gap: 0.375rem;">
+          <span class="c-form-field__label" style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(15, 65, 74, 0.75);">Target Grade / Class Section</span>
+          <?php
+          $classOptions = [['value' => 'All', 'label' => 'All Grades (School-Wide)']];
+          foreach (($availableClasses['grades'] ?? []) as $grd) {
+              $classOptions[] = ['value' => $grd, 'label' => $grd . ' (All Sections)'];
+          }
+          foreach (($availableClasses['sections'] ?? []) as $sec) {
+              $classOptions[] = ['value' => $sec, 'label' => 'Class ' . $sec];
+          }
+          $dropdownId    = 'j-select-post-class';
+          $dropdownLabel = 'Target Class';
+          $placeholder   = 'All Grades (School-Wide)';
+          $options       = $classOptions;
+          $selectedValue = 'All';
+          $name          = 'target_class_section';
+          require __DIR__ . '/_dropdown.php';
+          ?>
+        </div>
+
+        <!-- Time Slot: Publish Date (Reusing L'École _datepicker.php atom) -->
+        <div class="c-form-field" style="display: flex; flex-direction: column; gap: 0.375rem;">
+          <span class="c-form-field__label" style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(15, 65, 74, 0.75);">Publish Date (Optional)</span>
+          <?php
+          $datepickerId  = 'j-post-publish-datepicker';
+          $inputName     = 'publish_at';
+          $selectedValue = '';
+          $placeholder   = 'Publish immediately (or select date)';
+          $tone          = 'sky';
+          require __DIR__ . '/_datepicker.php';
+          ?>
+        </div>
+
+        <!-- Time Slot: Expiration Date (Reusing L'École _datepicker.php atom) -->
+        <div class="c-form-field" style="display: flex; flex-direction: column; gap: 0.375rem;">
+          <span class="c-form-field__label" style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(15, 65, 74, 0.75);">Expiration Date (Optional)</span>
+          <?php
+          $datepickerId  = 'j-post-expires-datepicker';
+          $inputName     = 'expires_at';
+          $selectedValue = '';
+          $placeholder   = 'Never expires (or select date)';
+          $tone          = 'sky';
+          require __DIR__ . '/_datepicker.php';
           ?>
         </div>
 

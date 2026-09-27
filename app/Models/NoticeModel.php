@@ -1,80 +1,120 @@
 <?php
 /**
  * =========================================================================
- * L'ÉCOLE — NOTICE MODEL
+ * L'ÉCOLE — NOTICE READ MODEL
  * =========================================================================
- * Central backend provider for notice announcements across all 5 roles.
- * Replace with PDO/database queries when live SQL is connected.
+ * Pure read engine querying the MySQL `notices` table for active announcements.
+ * Handles role-based audience filtering, date formatting, and search filters.
+ * Zero state mutations or writes.
  * =========================================================================
  */
 
+require_once __DIR__ . '/../../core/Database.php';
+
 class NoticeModel {
 
-    protected static $notices = [
-        [
-            'id'       => 1,
-            'title'    => 'Term 2 Examination Schedule — June 2026',
-            'category' => 'Academic',
-            'audience' => ['All'],
-            'body'     => 'Term 2 examinations run from 17–26 June 2026. Students should follow their grade and class section timetable for subject sessions, rooms, and reporting times. The make-up examination session is scheduled for 26 June for approved absences.',
-            'author'   => 'Academic Office',
-            'date'     => '10 JUN 2026',
-            'pinned'   => true,
-        ],
-        [
-            'id'       => 2,
-            'title'    => 'Sports Day Rehearsal Schedule',
-            'category' => 'Extracurricular',
-            'audience' => ['Students', 'Teachers'],
-            'body'     => 'Final rehearsal for the annual sports meet will take place on the main grounds this Friday at 14:00. Attendance is mandatory for all participating athletes and event coordinators.',
-            'author'   => 'Student Life Office',
-            'date'     => '14 JUN 2026',
-            'pinned'   => false,
-        ],
-        [
-            'id'       => 3,
-            'title'    => 'Library Renovation Notice',
-            'category' => 'General',
-            'audience' => ['All'],
-            'body'     => 'The main library will be closed for digital catalog upgrades starting next Monday. A temporary reading room and borrowing desk has been set up in Hall B for student and faculty use.',
-            'author'   => 'Admin Office',
-            'date'     => '20 MAY 2026',
-            'pinned'   => false,
-        ],
-        [
-            'id'       => 4,
-            'title'    => 'Parent-Teacher Conference: Grade 10 & 11',
-            'category' => 'Academic',
-            'audience' => ['Parents', 'Teachers'],
-            'body'     => 'The termly parent-teacher conference for Grade 10 & 11 will be held virtually this Saturday. One-on-one booking links have been dispatched to registered email addresses.',
-            'author'   => 'Mrs. Perera',
-            'date'     => '18 MAY 2026',
-            'pinned'   => false,
-        ],
-        [
-            'id'       => 5,
-            'title'    => 'Annual Staff Leadership & Curriculum Review',
-            'category' => 'Administrative',
-            'audience' => ['Teachers', 'Management'],
-            'body'     => 'Departmental curriculum reviews and teaching strategy workshops will convene in the Executive Boardroom on Friday at 16:00. All faculty heads are expected to attend with term assessments.',
-            'author'   => 'Dr. Vance',
-            'date'     => '12 MAY 2026',
-            'pinned'   => false,
-        ],
-    ];
-
-    public static function getAll(): array {
-        $list = self::$notices;
-        usort($list, fn($a, $b) => ($b['pinned'] ? 1 : 0) <=> ($a['pinned'] ? 1 : 0));
-        return $list;
+    /**
+     * Predefined category list.
+     */
+    public static function getCategories(): array {
+        return ['Academic', 'Extracurricular', 'General', 'Administrative'];
     }
 
-    public static function getForRole(string $role): array {
-        $role = strtolower($role);
+    /**
+     * Predefined audience list.
+     */
+    public static function getAudiences(): array {
+        return ['All', 'Students', 'Parents', 'Teachers', 'Management'];
+    }
 
-        // Admin and Management see all announcements
+    /**
+     * Count currently pinned notices.
+     */
+    public static function countPinned(): int {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->query(
+                "SELECT COUNT(*) FROM notices 
+                 WHERE pinned = 1 
+                   AND deleted_at IS NULL 
+                   AND (publish_at IS NULL OR publish_at <= NOW()) 
+                   AND (expires_at IS NULL OR expires_at > NOW())"
+            );
+            return (int)$stmt->fetchColumn();
+        } catch (\Throwable $e) {
+            error_log("[NoticeModel Error] Failed counting pinned notices: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Lookup a single notice by ID.
+     */
+    public static function findById(int $id): ?array {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT * FROM notices WHERE id = ? AND deleted_at IS NULL");
+            $stmt->execute([$id]);
+            $row = $stmt->fetch();
+            return $row ? self::formatRow($row) : null;
+        } catch (\Throwable $e) {
+            error_log("[NoticeModel Error] Failed finding notice #{$id}: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Retrieve all active notices (Admin & Management overview).
+     */
+    public static function getAll(?string $category = null, ?string $audience = null, ?string $search = null): array {
+        try {
+            $db = Database::getConnection();
+            $sql = "SELECT * FROM notices 
+                    WHERE deleted_at IS NULL 
+                      AND (publish_at IS NULL OR publish_at <= NOW()) 
+                      AND (expires_at IS NULL OR expires_at > NOW())";
+            $params = [];
+
+            if ($category && $category !== 'All') {
+                $sql .= " AND category = ?";
+                $params[] = $category;
+            }
+
+            if ($audience && $audience !== 'All') {
+                $sql .= " AND (JSON_CONTAINS(audience, '\"All\"') OR JSON_CONTAINS(audience, ?))";
+                $params[] = json_encode($audience);
+            }
+
+            if ($search && trim($search) !== '') {
+                $sql .= " AND (title LIKE ? OR body LIKE ? OR author_name LIKE ?)";
+                $q = '%' . trim($search) . '%';
+                $params[] = $q;
+                $params[] = $q;
+                $params[] = $q;
+            }
+
+            $sql .= " ORDER BY pinned DESC, created_at DESC, id DESC";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll();
+
+            return array_map([self::class, 'formatRow'], $rows);
+        } catch (\Throwable $e) {
+            error_log("[NoticeModel Error] Failed reading notices: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Retrieve notices visible to a specific authenticated role.
+     */
+    public static function getForRole(string $role, ?string $category = null, ?string $search = null): array {
+        $role = strtolower(trim($role));
+
+        // Admin and Management see all active announcements
         if ($role === 'admin' || $role === 'management') {
-            return self::getAll();
+            return self::getAll($category, null, $search);
         }
 
         $targetAudience = match($role) {
@@ -84,20 +124,108 @@ class NoticeModel {
             default   => 'All'
         };
 
-        $filtered = array_filter(self::$notices, function ($n) use ($targetAudience) {
-            $aud = $n['audience'] ?? [];
-            return in_array('All', $aud, true) || in_array($targetAudience, $aud, true);
-        });
-
-        usort($filtered, fn($a, $b) => ($b['pinned'] ? 1 : 0) <=> ($a['pinned'] ? 1 : 0));
-        return array_values($filtered);
+        return self::getAll($category, $targetAudience, $search);
     }
 
-    public static function getCategories(): array {
-        return ['Academic', 'Extracurricular', 'General', 'Administrative'];
+    /**
+     * Format raw MySQL notice row for frontend templates.
+     */
+    public static function formatRow(array $r): array {
+        $rawAudience = json_decode($r['audience'] ?? '[]', true);
+        $audienceList = is_array($rawAudience) ? $rawAudience : ['All'];
+
+        // Human-friendly date formatting
+        $createdTime = !empty($r['created_at']) ? strtotime($r['created_at']) : time();
+        $todayStart = strtotime('today midnight');
+        $yesterdayStart = strtotime('yesterday midnight');
+
+        if ($createdTime >= $todayStart) {
+            $formattedDate = 'TODAY';
+        } elseif ($createdTime >= $yesterdayStart) {
+            $formattedDate = 'YESTERDAY';
+        } else {
+            $formattedDate = strtoupper(date('d M Y', $createdTime));
+        }
+
+        return [
+            'id'                => (int)$r['id'],
+            'title'             => htmlspecialchars($r['title'] ?? ''),
+            'category'          => htmlspecialchars($r['category'] ?? 'General'),
+            'audience'          => $audienceList,
+            'body'              => htmlspecialchars($r['body'] ?? ''),
+            'author'            => htmlspecialchars($r['author_name'] ?? 'Admin Office'),
+            'author_name'       => htmlspecialchars($r['author_name'] ?? 'Admin Office'),
+            'author_role'       => strtolower($r['author_role'] ?? 'admin'),
+            'author_account_id' => !empty($r['author_account_id']) ? (int)$r['author_account_id'] : null,
+            'attachment_name'   => !empty($r['attachment_name']) ? htmlspecialchars($r['attachment_name']) : null,
+            'attachment_path'   => !empty($r['attachment_path']) ? htmlspecialchars($r['attachment_path']) : null,
+            'target_class'      => $r['target_class_section'] ?? null,
+            'target_club'       => $r['target_club_id'] ?? null,
+            'publish_at'        => $r['publish_at'] ?? null,
+            'expires_at'        => $r['expires_at'] ?? null,
+            'pinned'            => (bool)$r['pinned'],
+            'created_at'        => $r['created_at'],
+            'date'              => $formattedDate,
+        ];
     }
 
-    public static function getAudiences(): array {
-        return ['All', 'Students', 'Parents', 'Teachers', 'Management'];
+    /**
+     * Retrieve all active extracurricular activities for dropdown selection.
+     */
+    public static function getExtracurricularActivities(): array {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->query("SELECT activity_id, activity_name, category FROM extracurricular_activities ORDER BY activity_name ASC");
+            return $stmt->fetchAll() ?: [];
+        } catch (\Throwable $e) {
+            error_log("[NoticeModel Error] Failed fetching activities: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Retrieve all classes and grades for academic targeting.
+     */
+    public static function getAcademicClasses(): array {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->query("SELECT section_name FROM classes ORDER BY section_name ASC");
+            $rows = $stmt->fetchAll();
+            $sections = array_column($rows, 'section_name');
+
+            $stmtGrades = $db->query("SELECT name FROM grades ORDER BY sort_order ASC");
+            $grades = array_column($stmtGrades->fetchAll(), 'name');
+
+            return [
+                'grades'   => $grades,
+                'sections' => $sections
+            ];
+        } catch (\Throwable $e) {
+            error_log("[NoticeModel Error] Failed fetching classes: " . $e->getMessage());
+            return ['grades' => [], 'sections' => []];
+        }
+    }
+
+    /**
+     * Retrieve notices specifically linked to an extracurricular club.
+     */
+    public static function getClubNotices(string $clubId): array {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare(
+                "SELECT * FROM notices 
+                 WHERE (target_club_id = ? OR target_club_id = ?) 
+                   AND deleted_at IS NULL 
+                   AND (publish_at IS NULL OR publish_at <= NOW()) 
+                   AND (expires_at IS NULL OR expires_at > NOW())
+                 ORDER BY pinned DESC, created_at DESC"
+            );
+            $stmt->execute([$clubId, strtolower($clubId)]);
+            $rows = $stmt->fetchAll();
+            return array_map([self::class, 'formatRow'], $rows);
+        } catch (\Throwable $e) {
+            error_log("[NoticeModel Error] Failed fetching club notices: " . $e->getMessage());
+            return [];
+        }
     }
 }
