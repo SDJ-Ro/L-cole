@@ -52,11 +52,18 @@
     let activeType = 'all';
     let searchQuery = '';
 
+    function normalizeType(t) {
+      t = (t || '').toLowerCase();
+      if (t.includes('sport')) return 'sports';
+      if (t.includes('club') || t.includes('societ')) return 'clubs';
+      return 'all';
+    }
+
     function filterClubs() {
       let visibleCount = 0;
       clubCards.forEach(function (card) {
         const name = (card.getAttribute('data-club-name') || '').toLowerCase();
-        const type = (card.getAttribute('data-club-type') || '').toLowerCase();
+        const type = normalizeType(card.getAttribute('data-club-type') || '');
 
         const matchesSearch = !searchQuery || name.includes(searchQuery);
         const matchesType = (activeType === 'all') || (type === activeType);
@@ -87,7 +94,7 @@
         tab.classList.add('active');
 
         const filterVal = tab.getAttribute('data-type');
-        activeType = (filterVal === 'sport') ? 'sports' : ((filterVal === 'club') ? 'club' : 'all');
+        activeType = (filterVal === 'sport') ? 'sports' : ((filterVal === 'club') ? 'clubs' : 'all');
         filterClubs();
       });
     });

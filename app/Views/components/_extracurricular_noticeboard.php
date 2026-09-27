@@ -40,9 +40,33 @@ if (!empty($clubId)) {
 
 $clubNotices = !empty($liveNotices) ? $liveNotices : ($n_club['notices'] ?? []);
 
-// Fallback demo notices if none present
+// Fallback to active extracurricular notices or demo cards if none present
 if (empty($clubNotices)) {
-    $clubNotices = [];
+    $clubNotices = NoticeModel::getForRole('parent', 'Extracurricular');
+}
+if (empty($clubNotices)) {
+    $clubNotices = [
+        [
+            'id'       => 101,
+            'title'    => 'Inter-School Athletics & Sports Meet',
+            'category' => 'Extracurricular',
+            'audience' => ['Parents', 'Students'],
+            'author'   => 'Sports Department',
+            'date'     => '15 OCT 2026',
+            'body'     => 'Track and field heats begin next Tuesday at 8:00 AM on the main school grounds. Parents and guardians are warmly invited.',
+            'pinned'   => true
+        ],
+        [
+            'id'       => 102,
+            'title'    => 'Extracurricular Practice & Equipment Notice',
+            'category' => 'Extracurricular',
+            'audience' => ['Parents', 'Students'],
+            'author'   => 'Activities Coordinator',
+            'date'     => '10 OCT 2026',
+            'body'     => 'All students attending afternoon clubs and team training must report in official school kits. Water stations are positioned across all pitches.',
+            'pinned'   => false
+        ]
+    ];
 }
 
 // Sort pinned notices to the top

@@ -979,3 +979,276 @@ select.c-field-input {
   resize: vertical !important;
 }
 
+/* =========================================================================
+   L'ÉCOLE — SCROLLABLE WHEEL TIME PICKER COMPONENT
+   ========================================================================= */
+.c-time-picker-field {
+  position: relative;
+  width: 100%;
+}
+
+.c-time-picker-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.c-time-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  width: 100%;
+}
+
+.c-time-clock-icon {
+  position: absolute;
+  left: 0.875rem;
+  color: var(--midnight, #0F414A);
+  opacity: 0.65;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.c-time-dropdown-btn {
+  position: absolute;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--midnight, #0F414A);
+  opacity: 0.65;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  z-index: 2;
+  transition: transform 150ms ease, opacity 150ms ease;
+}
+
+.c-time-dropdown-btn:hover {
+  opacity: 1;
+}
+
+.c-time-input {
+  padding-left: 2.5rem !important;
+  padding-right: 2.5rem !important;
+  cursor: pointer !important;
+  background: #ffffff !important;
+  font-weight: 600 !important;
+  color: var(--midnight, #0F414A) !important;
+  user-select: none;
+}
+
+.c-time-picker-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  max-width: 320px;
+  background: #ffffff;
+  border: 1px solid #D8BA98;
+  border-radius: var(--radius-xl, 0.875rem);
+  box-shadow: 0 12px 28px -4px rgba(15, 65, 74, 0.16), 0 4px 10px -2px rgba(15, 65, 74, 0.08);
+  padding: 1rem;
+  z-index: 100;
+  animation: c-tp-scale-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes c-tp-scale-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.c-tp-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.875rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(15, 65, 74, 0.08);
+}
+
+.c-tp-mode-tabs {
+  display: flex;
+  background: var(--cream, #F7F3EC);
+  border-radius: var(--radius-md, 0.5rem);
+  padding: 2px;
+  gap: 2px;
+}
+
+.c-tp-mode-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(15, 65, 74, 0.65);
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm, 0.375rem);
+  cursor: pointer;
+  transition: all 140ms ease;
+  text-align: center;
+}
+
+.c-tp-mode-btn.is-active {
+  background: #ffffff;
+  color: var(--midnight, #0F414A);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(15, 65, 74, 0.08);
+}
+
+.c-tp-range-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.c-tp-subtab-btn {
+  border: 1px solid #EFE8DF;
+  background: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(15, 65, 74, 0.7);
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+.c-tp-subtab-btn.is-active {
+  background: var(--midnight, #0F414A);
+  color: #ffffff;
+  border-color: var(--midnight, #0F414A);
+}
+
+.c-tp-subtab-sep {
+  color: rgba(15, 65, 74, 0.4);
+  font-size: 0.75rem;
+}
+
+.c-tp-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0;
+  background: #FAF7F2;
+  border-radius: var(--radius-lg, 0.625rem);
+  border: 1px solid rgba(15, 65, 74, 0.06);
+}
+
+.c-tp-col-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 58px;
+}
+
+.c-tp-col-wrap--ampm {
+  width: 52px;
+}
+
+.c-tp-col-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(15, 65, 74, 0.45);
+  margin-bottom: 2px;
+}
+
+.c-tp-arrow-btn {
+  background: transparent;
+  border: none;
+  color: rgba(15, 65, 74, 0.5);
+  cursor: pointer;
+  padding: 2px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 140ms ease, transform 140ms ease;
+}
+
+.c-tp-arrow-btn:hover {
+  color: var(--midnight, #0F414A);
+  transform: scale(1.15);
+}
+
+.c-tp-wheel {
+  height: 120px;
+  width: 100%;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 44px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.c-tp-wheel::-webkit-scrollbar {
+  display: none;
+}
+
+.c-tp-item {
+  height: 32px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: rgba(15, 65, 74, 0.5);
+  cursor: pointer;
+  scroll-snap-align: center;
+  border-radius: var(--radius-md, 0.5rem);
+  transition: all 120ms ease;
+  user-select: none;
+}
+
+.c-tp-item:hover {
+  background: rgba(127, 199, 204, 0.2);
+  color: var(--midnight, #0F414A);
+}
+
+.c-tp-item.is-selected {
+  background: var(--midnight, #0F414A);
+  color: #ffffff !important;
+  font-weight: 700;
+  transform: scale(1.04);
+  box-shadow: 0 2px 4px rgba(15, 65, 74, 0.15);
+}
+
+.c-tp-sep {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--midnight, #0F414A);
+  margin-top: 18px;
+}
+
+.c-tp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.875rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(15, 65, 74, 0.08);
+}
+
+.c-tp-preview {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+  letter-spacing: 0.02em;
+}
+
+.c-tp-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
