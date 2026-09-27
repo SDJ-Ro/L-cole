@@ -12,9 +12,7 @@ if (!isset($roleConfig)) {
   <div class="c-sidebar__brand">
     <a href="<?= htmlspecialchars($roleConfig['homeHref'] ?? '/') ?>" id="j-brand-home-link" class="c-sidebar__brand-link">
       <div class="c-sidebar__brand-mark" aria-hidden="true">
-        <svg class="c-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <use href="#<?= htmlspecialchars($roleConfig['badgeIcon'] ?? 'icon-graduationCap') ?>"/>
-        </svg>
+        <img src="/assets/images/logo.png?v=<?= time() ?>" alt="L'École Crest" class="c-sidebar__brand-logo" />
       </div>
       <div class="c-sidebar__brand-text j-collapsible-text">
         <h1 class="c-sidebar__brand-title"><?= htmlspecialchars($roleConfig['title'] ?? "L'École") ?></h1>

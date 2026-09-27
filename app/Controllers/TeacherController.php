@@ -5,8 +5,11 @@ require_once __DIR__ . '/../Models/ExtracurricularModel.php';
 require_once __DIR__ . '/../Models/PeopleModel.php';
 require_once __DIR__ . '/../Models/AchievementModel.php';
 require_once __DIR__ . '/../Models/AcademicModel.php';
+require_once __DIR__ . '/CalendarEventCrudTrait.php';
+require_once __DIR__ . '/../Models/CalendarEventModel.php';
 
 class TeacherController extends Controller {
+    use CalendarEventCrudTrait;
 
     public function __construct() {
         parent::__construct();
@@ -272,10 +275,28 @@ class TeacherController extends Controller {
     }
 
     public function extracurricular() {
-        // Assigned club managed by this faculty member (e.g. Cricket Club, ID: 3)
-        $club  = ExtracurricularModel::getById(3) ?? (ExtracurricularModel::getAll()[0] ?? []);
-        $clubs = [$club];
+        $actor = $this->getUser();
+        $teacherId = CalendarEventModel::getTeacherId((int)($actor['id'] ?? 0));
+        $ownedClubIds = $teacherId ? CalendarEventModel::getClubIdsForTeacher($teacherId) : [];
+        $ownedSportIds = $teacherId ? CalendarEventModel::getSportIdsForTeacher($teacherId) : [];
 
+        $scopeType = ($_GET['type'] ?? '') === 'sport' ? 'sport' : 'club';
+        $itemId = isset($_GET['id']) ? (int)$_GET['id'] : null;
+
+        if (!$itemId) {
+            // No selection yet — default to whichever the teacher owns first, club before sport.
+            if ($ownedClubIds) { $scopeType = 'club'; $itemId = $ownedClubIds[0]; }
+            elseif ($ownedSportIds) { $scopeType = 'sport'; $itemId = $ownedSportIds[0]; }
+            else { $scopeType = 'club'; $itemId = ExtracurricularModel::getAll()[0]['id'] ?? null; }
+        }
+
+        $club = $itemId ? (ExtracurricularModel::getById($itemId) ?? []) : [];
+        $isTicOfThis = $itemId && (
+            ($scopeType === 'club' && in_array($itemId, $ownedClubIds, true)) ||
+            ($scopeType === 'sport' && in_array($itemId, $ownedSportIds, true))
+        );
+
+        $clubs = !empty($club) ? [$club] : ExtracurricularModel::getAll();
         $joinRequests = $club['joinRequests'] ?? [];
         $pendingCount = count($joinRequests);
         $totalMembers = $club['stats']['members'] ?? 45;
@@ -307,6 +328,16 @@ class TeacherController extends Controller {
             ],
         ];
 
+        $calendarConfig = [
+            'canAddEvent' => $isTicOfThis,
+            'initialDate' => date('Y-m-d'),
+            'viewDate'    => date('Y-m-01'),
+            'events'      => $scopeType === 'sport'
+                ? CalendarEventModel::getEventsForSport($itemId ?? 0)
+                : CalendarEventModel::getEventsForClub($itemId ?? 0),
+            'fixedScope'  => ['type' => $scopeType, 'id' => $itemId],
+        ];
+
         $this->view('teacher/extracurricular', [
             'currentRole'       => 'teacher',
             'currentRoute'      => '/teacher/extracurricular',
@@ -316,8 +347,10 @@ class TeacherController extends Controller {
             'enrollmentMetrics' => $enrollmentMetrics,
             'staffAssignments'  => AcademicModel::getStaffAssignments(),
             'canModerate'       => false,
-            'canCreate'         => true,
-            'canEdit'           => true,
+            'canCreate'         => $isTicOfThis,
+            'canEdit'           => $isTicOfThis,
+            'scopeType'         => $scopeType,
+            'calendarConfig'    => $calendarConfig,
         ]);
     }
 
@@ -430,21 +463,20 @@ class TeacherController extends Controller {
                 </div>',
         ];
 
-        // Calendar Configuration (Teacher: Can add and manage events)
+        // Calendar Configuration (Teacher: Can add and manage events for assigned class/club/sport)
+        $actor = $this->getUser();
+        $teacherId = CalendarEventModel::getTeacherId((int)($actor['id'] ?? 0));
+        $ownedClassId = $teacherId ? CalendarEventModel::getClassIdForTeacher($teacherId) : null;
+        $ownedClubIds = $teacherId ? CalendarEventModel::getClubIdsForTeacher($teacherId) : [];
+        $ownedSportIds = $teacherId ? CalendarEventModel::getSportIdsForTeacher($teacherId) : [];
+        $scopeOptions = $teacherId ? CalendarEventModel::getScopeOptionsForTeacher($teacherId) : [];
+
         $calendarConfig = [
-            'canAddEvent' => true,
-            'initialDate' => '2026-06-17',
-            'viewDate'    => '2026-06-01',
-            'events'      => [
-                ['id' => 'exam-17', 'date' => '2026-06-17', 'time' => '08:30–10:30', 'title' => 'Mathematics examination', 'details' => 'Grades 6–8 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-18', 'date' => '2026-06-18', 'time' => '08:30–10:30', 'title' => 'English examination', 'details' => 'Grades 6–8 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-19', 'date' => '2026-06-19', 'time' => '08:30–10:30', 'title' => 'Science examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-20', 'date' => '2026-06-20', 'time' => '08:30–10:00', 'title' => 'History examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-23', 'date' => '2026-06-23', 'time' => '08:30–10:30', 'title' => 'Sinhala / Tamil examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-24', 'date' => '2026-06-24', 'time' => '08:30–11:00', 'title' => 'ICT practical assessment', 'details' => 'Grades 9–13 · Computer laboratories', 'category' => 'Academic'],
-                ['id' => 'exam-25', 'date' => '2026-06-25', 'time' => '08:30–11:30', 'title' => 'Senior stream papers', 'details' => 'Grades 12–13 · Senior examination hall', 'category' => 'Academic'],
-                ['id' => 'exam-26', 'date' => '2026-06-26', 'time' => '08:30–10:30', 'title' => 'Make-up examination session', 'details' => 'Grades 6–13 · Library seminar room', 'category' => 'Academic'],
-            ],
+            'canAddEvent'   => (bool)$ownedClassId || !empty($ownedClubIds) || !empty($ownedSportIds),
+            'scopeOptions'  => $scopeOptions,
+            'initialDate'   => date('Y-m-d'),
+            'viewDate'      => date('Y-m-01'),
+            'events'        => CalendarEventModel::getEventsForTeacher((int)($actor['id'] ?? 0)),
         ];
 
         // Donut / Pie Charts Data (Teacher Dashboard)
@@ -530,9 +562,9 @@ class TeacherController extends Controller {
 
         // Upcoming Events Data (Teacher)
         $upcomingEvents = [
-            ['day' => '17', 'month' => 'JUN', 'name' => 'Mathematics Examination', 'tag' => 'ACADEMIC', 'tagColor' => 'sand'],
-            ['day' => '20', 'month' => 'JUN', 'name' => 'Term 1 Exams Begin', 'tag' => 'ACADEMIC', 'tagColor' => 'sky'],
-            ['day' => '28', 'month' => 'JUN', 'name' => 'Science Lab Practical', 'tag' => 'ACADEMIC', 'tagColor' => 'terracotta'],
+            ['day' => '27', 'month' => 'SEP', 'name' => 'Term Assessment Review & Practical Exams', 'tag' => 'ACADEMIC', 'tagColor' => 'sand'],
+            ['day' => '28', 'month' => 'SEP', 'name' => 'All-Island School Athletics Meet', 'tag' => 'SPORTS', 'tagColor' => 'sky'],
+            ['day' => '29', 'month' => 'SEP', 'name' => 'Science Society Annual Exhibition', 'tag' => 'ACADEMIC', 'tagColor' => 'terracotta'],
         ];
 
         $this->view('teacher/dashboard', [
@@ -566,6 +598,14 @@ class TeacherController extends Controller {
         $this->notice();
     }
 
+    public function notices() {
+        $this->notice();
+    }
+
+    public function academic() {
+        $this->students();
+    }
+
     public function feedback() {
         require_once __DIR__ . '/../Models/FeedbackModel.php';
         $feedbacks = \App\Models\FeedbackModel::getForTeacher(1);
@@ -580,74 +620,8 @@ class TeacherController extends Controller {
     }
 
     public function profile() {
-        $profileData = [
-            'role'        => 'teacher',
-            'name'        => 'Havindu Rajapaksha',
-            'id'          => 'TCH-047',
-            'status'      => 'Active',
-            'avatar'      => '/assets/images/teacher.jpg',
-            'eyebrow'     => 'Senior Teacher',
-            'sub'         => "Teacher Portal · L'École School Management",
-            'editable'    => true,
-            'showPassword'=> true,
-            'contact' => [
-                ['label' => 'Institutional Email', 'icon' => 'icon-mail',  'type' => 'email', 'value' => 'h.rajapaksha@lecole.edu'],
-                ['label' => 'Personal Email',      'icon' => 'icon-mail',  'type' => 'email', 'value' => 'h.rajapaksha.personal@gmail.com'],
-                ['label' => 'Mobile Number',       'icon' => 'icon-phone', 'value' => '+94 71 345 6789'],
-            ],
-            'personal' => [
-                ['label' => 'Full Name',            'icon' => 'icon-user',        'value' => 'Havindu Rajapaksha',                        'readonly' => false],
-                ['label' => 'NIC Number',           'icon' => 'icon-lockKeyhole', 'value' => '199083245621',                              'readonly' => true],
-                ['label' => 'Date of Birth',        'icon' => 'icon-calendar',    'value' => 'Mar 22, 1990',                              'readonly' => true],
-                ['label' => 'Nationality',          'icon' => 'icon-mapPin',      'value' => 'Sri Lankan',                                'readonly' => true],
-                ['label' => 'Experience (Years)',   'icon' => 'icon-award',       'value' => '8 Years',                                   'readonly' => true],
-                ['label' => 'Joined Date',          'icon' => 'icon-calendar',    'value' => 'Feb 14, 2018',                              'readonly' => true],
-                ['label' => 'Qualifications',       'icon' => 'icon-award',       'value' => 'B.Ed (Mathematics), Dip. in Ed. Leadership','readonly' => true],
-                ['label' => 'Office Address',       'icon' => 'icon-building2',   'value' => 'Main Building · Staff Room 204',            'readonly' => true],
-            ],
-            'roleSection' => [
-                'title'     => 'Teaching Assignments & Responsibilities',
-                'tintClass' => 'c-profile-tinted--sunshine',
-                'items' => [
-                    ['label' => 'Primary Subject',     'icon' => 'icon-bookOpen',      'value' => 'Mathematics'],
-                    ['label' => 'Secondary Subject',   'icon' => 'icon-bookOpen',      'value' => 'ICT'],
-                    ['label' => 'Class Teacher Role',  'icon' => 'icon-usersRound',    'value' => 'Class Teacher — In charge of Grade 9-A'],
-                    ['label' => 'Teaches Grades',      'icon' => 'icon-graduationCap', 'value' => 'Grades 7 – 11'],
-                    ['label' => 'Weekly Workload',     'icon' => 'icon-calendar',      'value' => '24 instructional periods'],
-                    ['label' => 'TIC Responsibility',  'icon' => 'icon-extracurricular','value' => 'Senior Debating Society TIC'],
-                ],
-            ],
-            'extraSections' => [
-                [
-                    'title' => 'Residential & Emergency Contact Details',
-                    'icon'  => 'icon-mapPin',
-                    'cols'  => 'c-cols-3',
-                    'items' => [
-                        ['label' => 'Residential Address',      'icon' => 'icon-mapPin',          'value' => '12 Lake Drive, Colombo 05', 'readonly' => false, 'fullWidth' => true],
-                        ['label' => 'Emergency Contact Name',   'icon' => 'icon-user',            'value' => 'Nimal Rajapaksha',          'readonly' => false],
-                        ['label' => 'Emergency Contact Number', 'icon' => 'icon-phone',           'value' => '+94 77 456 7890',          'readonly' => false],
-                        ['label' => 'Emergency Relationship',   'icon' => 'icon-heartHandshake',  'value' => 'Spouse',                    'readonly' => false],
-                    ],
-                ],
-                [
-                    'title' => 'Academic Background & Professional Certifications',
-                    'icon'  => 'icon-award',
-                    'cols'  => 'c-cols-3',
-                    'items' => [
-                        ['label' => 'Degree / Title',        'icon' => 'icon-award',     'value' => 'B.Sc in Mathematics & Statistics',         'readonly' => true],
-                        ['label' => 'Awarding Institution',  'icon' => 'icon-building2', 'value' => 'University of Colombo',                   'readonly' => true],
-                        ['label' => 'Graduation Year',       'icon' => 'icon-calendar',  'value' => '2015 · First Class Honours',              'readonly' => true],
-                        ['label' => 'Professional Training', 'icon' => 'icon-award',     'value' => 'National Diploma in Teaching · NIE Maharagama (2017)', 'readonly' => true, 'fullWidth' => true],
-                    ],
-                ],
-            ],
-            'account' => [
-                ['label' => 'Staff ID',        'icon' => 'icon-lockKeyhole',   'value' => 'TCH-047',        'readonly' => true],
-                ['label' => 'Portal Role',     'icon' => 'icon-graduationCap', 'value' => 'Teacher',        'readonly' => true],
-                ['label' => 'Account Created', 'icon' => 'icon-calendar',      'value' => 'Feb 14, 2018',   'readonly' => true],
-                ['label' => 'Last Login',      'icon' => 'icon-clock',         'value' => 'Today, 22:10',   'readonly' => true],
-            ],
-        ];
+        require_once __DIR__ . '/../Models/ProfileModel.php';
+        $profileData = ProfileModel::getProfileData('teacher', $this->getUser(), $this->getProfile());
 
         $this->view('teacher/profile', [
             'currentRole'  => 'teacher',

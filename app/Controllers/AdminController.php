@@ -7,9 +7,13 @@ require_once __DIR__ . '/../Models/AcademicModel.php';
 require_once __DIR__ . '/../Models/ExtracurricularModel.php';
 require_once __DIR__ . '/../Models/PeopleModel.php';
 require_once __DIR__ . '/AcademicCrudTrait.php';
+require_once __DIR__ . '/PeopleCrudTrait.php';
+require_once __DIR__ . '/NoticeCrudTrait.php';
+require_once __DIR__ . '/CalendarEventCrudTrait.php';
+require_once __DIR__ . '/../Models/CalendarEventModel.php';
 
 class AdminController extends Controller {
-    use AcademicCrudTrait;
+    use AcademicCrudTrait, PeopleCrudTrait, NoticeCrudTrait, CalendarEventCrudTrait;
 
     public function __construct() {
         parent::__construct();
@@ -84,116 +88,20 @@ class AdminController extends Controller {
             'headerExtra' => '',
         ];
 
-        // Calendar Configuration (Admin: Can add and manage events)
-        $calendarConfig = [
-            'canAddEvent' => true,
-            'initialDate' => '2026-06-17',
-            'viewDate'    => '2026-06-01',
-            'events'      => [
-                ['id' => 'exam-17', 'date' => '2026-06-17', 'time' => '08:30–10:30', 'title' => 'Mathematics examination', 'details' => 'Grades 6–8 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-18', 'date' => '2026-06-18', 'time' => '08:30–10:30', 'title' => 'English examination', 'details' => 'Grades 6–8 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-19', 'date' => '2026-06-19', 'time' => '08:30–10:30', 'title' => 'Science examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-20', 'date' => '2026-06-20', 'time' => '08:30–10:00', 'title' => 'History examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-23', 'date' => '2026-06-23', 'time' => '08:30–10:30', 'title' => 'Sinhala / Tamil examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-24', 'date' => '2026-06-24', 'time' => '08:30–11:00', 'title' => 'ICT practical assessment', 'details' => 'Grades 9–13 · Computer laboratories', 'category' => 'Academic'],
-                ['id' => 'exam-25', 'date' => '2026-06-25', 'time' => '08:30–11:30', 'title' => 'Senior stream papers', 'details' => 'Grades 12–13 · Senior examination hall', 'category' => 'Academic'],
-                ['id' => 'exam-26', 'date' => '2026-06-26', 'time' => '08:30–10:30', 'title' => 'Make-up examination session', 'details' => 'Grades 6–13 · Library seminar room', 'category' => 'Academic'],
-            ],
-        ];
-
-        // Donut / Pie Charts Data
-        $donutSports = [
-            'id'          => 'j-donut-sports',
-            'title'       => 'Sports Participation',
-            'totalLabel'  => 'Students in all sports',
-            'centerLabel' => 'Total',
-            'total'       => 438,
-            'slices'      => [
-                [
-                    'name'  => 'Football',
-                    'value' => 150,
-                    'color' => BRAND_SKYBLUE,
-                    'd'     => 'M 162.68 131.17 A 70 70 0 0 0 100.00 30.00 L 100.00 50.00 A 50 50 0 0 1 144.77 122.26 Z',
-                ],
-                [
-                    'name'  => 'Cricket',
-                    'value' => 122,
-                    'color' => BRAND_MIDNIGHT,
-                    'd'     => 'M 58.72 156.53 A 70 70 0 0 0 159.72 136.51 L 142.66 126.08 A 50 50 0 0 1 70.51 140.38 Z',
-                ],
-                [
-                    'name'  => 'Swimming',
-                    'value' => 90,
-                    'color' => BRAND_SUNSHINE,
-                    'd'     => 'M 34.65 74.91 A 70 70 0 0 0 53.95 152.72 L 67.10 137.65 A 50 50 0 0 1 53.32 82.08 Z',
-                ],
-                [
-                    'name'  => 'Athletics',
-                    'value' => 76,
-                    'color' => BRAND_TERRACOTTA,
-                    'd'     => 'M 93.90 30.27 A 70 70 0 0 0 37.09 69.31 L 55.06 78.08 A 50 50 0 0 1 95.64 50.19 Z',
-                ],
-            ],
-        ];
-
-        $donutClubs = [
-            'id'          => 'j-donut-clubs',
-            'title'       => 'Clubs & Societies',
-            'totalLabel'  => 'Club and society members',
-            'centerLabel' => 'Total',
-            'total'       => 314,
-            'slices'      => [
-                [
-                    'name'  => 'Science Society',
-                    'value' => 120,
-                    'color' => BRAND_LIGHTBLUE,
-                    'd'     => 'M 153.67 144.94 A 70 70 0 0 0 100.00 30.00 L 100.00 50.00 A 50 50 0 0 1 138.34 132.10 Z',
-                ],
-                [
-                    'name'  => 'Debate',
-                    'value' => 80,
-                    'color' => BRAND_TERRACOTTA,
-                    'd'     => 'M 53.56 152.38 A 70 70 0 0 0 149.55 149.44 L 135.39 135.32 A 50 50 0 0 1 66.83 137.41 Z',
-                ],
-                [
-                    'name'  => 'Music',
-                    'value' => 60,
-                    'color' => BRAND_MAROON,
-                    'd'     => 'M 34.88 74.31 A 70 70 0 0 0 49.17 148.13 L 63.69 134.38 A 50 50 0 0 1 53.49 81.65 Z',
-                ],
-                [
-                    'name'  => 'Robotics',
-                    'value' => 54,
-                    'color' => BRAND_MOSS,
-                    'd'     => 'M 93.90 30.27 A 70 70 0 0 0 37.37 68.73 L 55.26 77.67 A 50 50 0 0 1 95.64 50.19 Z',
-                ],
-            ],
-        ];
-
-        // Upcoming Events Data
-        $upcomingEvents = [
-            ['day' => '17', 'month' => 'JUN', 'name' => 'Term 2 examinations begin', 'tag' => 'Academic', 'tagColor' => 'sand'],
-            ['day' => '20', 'month' => 'JUN', 'name' => 'History examination', 'tag' => 'Academic', 'tagColor' => 'sky'],
-            ['day' => '26', 'month' => 'JUN', 'name' => 'Make-up examination session', 'tag' => 'Academic', 'tagColor' => 'terracotta'],
-        ];
-
-        $this->view('admin/dashboard', [
+        $this->view('admin/dashboard', array_merge([
             'currentRole'    => 'admin',
             'currentRoute'   => '/admin/dashboard',
             'metrics'        => $metrics,
             'chartConfig'    => $chartConfig,
-            'calendarConfig' => $calendarConfig,
-            'donutSports'    => $donutSports,
-            'donutClubs'     => $donutClubs,
-            'upcomingEvents' => $upcomingEvents,
-        ]);
+        ], $this->getSharedDashboardData()));
     }
 
     public function notice() {
-
         $notices    = NoticeModel::getForRole('admin');
         $categories = NoticeModel::getCategories();
         $audiences  = NoticeModel::getAudiences();
+        $clubs      = NoticeModel::getExtracurricularActivities();
+        $classes    = NoticeModel::getAcademicClasses();
 
         $this->view('admin/notice', [
             'currentRole'  => 'admin',
@@ -201,10 +109,16 @@ class AdminController extends Controller {
             'notices'      => $notices,
             'categories'   => $categories,
             'audiences'    => $audiences,
+            'clubs'        => $clubs,
+            'classes'      => $classes,
         ]);
     }
 
     public function noticeBoard() {
+        $this->notice();
+    }
+
+    public function notices() {
         $this->notice();
     }
 
@@ -263,10 +177,11 @@ class AdminController extends Controller {
 
         // 2. Calendar Config
         $calendarConfig = [
-            'canAddEvent' => true,
-            'initialDate' => '2026-06-17',
-            'viewDate'    => '2026-06-01',
-            'events'      => $events,
+            'canAddEvent'  => true,
+            'scopeOptions' => CalendarEventModel::getScopeOptionsForStaff(),
+            'initialDate'  => date('Y-m-d'),
+            'viewDate'     => date('Y-m-01'),
+            'events'       => CalendarEventModel::getAllEvents(),
         ];
 
         $curriculumGroups = AcademicModel::getCurriculumGroups();
@@ -298,15 +213,31 @@ class AdminController extends Controller {
         $clubs = ExtracurricularModel::getAll($type, $search);
         $staffAssignments = AcademicModel::getStaffAssignments();
 
+        $scopeType = ($_GET['type'] ?? '') === 'sport' ? 'sport' : 'club';
+        $itemId = isset($_GET['id']) ? (int)$_GET['id'] : null;
+        $selectedClub = $itemId ? (ExtracurricularModel::getById($itemId) ?? ($clubs[0] ?? [])) : ($clubs[0] ?? []);
+
+        $calendarConfig = [
+            'canAddEvent'  => true,
+            'scopeOptions' => CalendarEventModel::getScopeOptionsForStaff(),
+            'initialDate'  => date('Y-m-d'),
+            'viewDate'     => date('Y-m-01'),
+            'events'       => $itemId ? ($scopeType === 'sport' ? CalendarEventModel::getEventsForSport($itemId) : CalendarEventModel::getEventsForClub($itemId)) : CalendarEventModel::getAllEvents(),
+            'fixedScope'   => $itemId ? ['type' => $scopeType, 'id' => $itemId] : null,
+        ];
+
         $this->view('admin/extracurricular', [
             'currentRole'      => 'admin',
             'currentRoute'     => '/admin/extracurricular',
             'clubs'            => $clubs,
+            'club'             => $selectedClub,
             'staffAssignments' => $staffAssignments,
             'canModerate'      => true,
             'canCreate'        => true,
             'selectedType'     => $type,
             'searchQuery'      => $search,
+            'scopeType'        => $scopeType,
+            'calendarConfig'   => $calendarConfig,
         ]);
     }
 
@@ -335,74 +266,8 @@ class AdminController extends Controller {
     }
 
     public function profile() {
-        $profileData = [
-            'role'        => 'admin',
-            'name'        => 'Alex Mendis',
-            'id'          => 'ADM-001',
-            'status'      => 'Active',
-            'avatar'      => '/assets/images/admin.jpg',
-            'eyebrow'     => 'System Administrator & IT Director',
-            'sub'         => "Admin Portal · L'École School Management",
-            'editable'    => true,
-            'showPassword'=> true,
-            'contact' => [
-                ['label' => 'Administrator Email', 'icon' => 'icon-mail',  'type' => 'email', 'value' => 'alex.m@lecole.edu'],
-                ['label' => 'Primary Mobile',       'icon' => 'icon-phone', 'value' => '+94 77 123 4567'],
-                ['label' => 'Central IT Office',   'icon' => 'icon-phone', 'value' => '+94 11 234 5678'],
-                ['label' => 'Emergency NOC Line',  'icon' => 'icon-phone', 'value' => '+94 11 999 8877'],
-            ],
-            'personal' => [
-                ['label' => 'Full Name',            'icon' => 'icon-user',        'value' => 'Alexander Ravindu Mendis',                   'readonly' => false],
-                ['label' => 'NIC Number',           'icon' => 'icon-lockKeyhole', 'value' => '198516503921',                              'readonly' => true],
-                ['label' => 'Date of Birth',        'icon' => 'icon-calendar',    'value' => 'Jun 14, 1985',                              'readonly' => true],
-                ['label' => 'Nationality',          'icon' => 'icon-mapPin',      'value' => 'Sri Lankan',                                'readonly' => true],
-                ['label' => 'Joined Date',          'icon' => 'icon-calendar',    'value' => 'Jan 01, 2021',                              'readonly' => true],
-                ['label' => 'Qualifications',       'icon' => 'icon-award',       'value' => 'B.Sc in Computer Science, CISA Certified',   'readonly' => true],
-                ['label' => 'Central Station',      'icon' => 'icon-building2',   'value' => 'Central Server Facility · Server Room A',   'readonly' => true],
-            ],
-            'roleSection' => [
-                'title'     => 'Administrative Access & System Operations',
-                'tintClass' => 'c-profile-tinted--midnight',
-                'items' => [
-                    ['label' => 'Access Level',         'icon' => 'icon-shieldCheck',  'value' => 'Full Superadmin Privileges · Tier 4 Root'],
-                    ['label' => 'Department',           'icon' => 'icon-building2',    'value' => 'Central IT & Platform Operations'],
-                    ['label' => 'Infrastructure Node',  'icon' => 'icon-building2',    'value' => 'Colombo Regional Cloud Node · AWS ap-southeast-1'],
-                    ['label' => 'Security Audit Log',   'icon' => 'icon-lockKeyhole',  'value' => 'Level 4 Immutable Audit Log Active'],
-                    ['label' => 'Reports To',           'icon' => 'icon-user',         'value' => 'Principal & Board of Trustees'],
-                    ['label' => 'Session Security',     'icon' => 'icon-shieldCheck',  'value' => 'Mandatory 2FA · IP Whitelist Enforced'],
-                ],
-            ],
-            'extraSections' => [
-                [
-                    'title' => 'System Scope & Platform Governance',
-                    'icon'  => 'icon-shieldCheck',
-                    'cols'  => 'c-cols-3',
-                    'items' => [
-                        ['label' => 'Modules Managed',       'icon' => 'icon-building2',   'value' => 'User Directory, RBAC Roles, Cloud Infrastructure, Database Backups, Security Audits', 'readonly' => true, 'fullWidth' => true],
-                        ['label' => 'Compliance Standard',   'icon' => 'icon-shieldCheck', 'value' => 'FERPA & GDPR Educational Data Compliance Verified',                                    'readonly' => true],
-                        ['label' => 'Maintenance Window',   'icon' => 'icon-clock',       'value' => 'Weekly Scheduled Window: Sundays 02:00 – 04:00 UTC',                                   'readonly' => true],
-                        ['label' => 'Disaster Recovery RPO', 'icon' => 'icon-lockKeyhole', 'value' => 'RPO: 15 mins · RTO: 1 hour (Certified Q1 2026)',                                      'readonly' => true],
-                    ],
-                ],
-                [
-                    'title' => 'Residential & Emergency Support Contacts',
-                    'icon'  => 'icon-mapPin',
-                    'cols'  => 'c-cols-3',
-                    'items' => [
-                        ['label' => 'Residential Address',   'icon' => 'icon-mapPin',          'value' => '88 Havelock Road, Colombo 05',        'readonly' => false, 'fullWidth' => true],
-                        ['label' => 'Backup Lead Admin',     'icon' => 'icon-user',            'value' => 'Sarah Perera (Lead DevOps Engineer)', 'readonly' => true],
-                        ['label' => 'Backup Contact Number', 'icon' => 'icon-phone',           'value' => '+94 77 444 5566',                     'readonly' => true],
-                        ['label' => 'NOC Escalation',        'icon' => 'icon-shieldCheck',     'value' => 'Level 1 Critical Response Unit',      'readonly' => true],
-                    ],
-                ],
-            ],
-            'account' => [
-                ['label' => 'Administrator ID', 'icon' => 'icon-lockKeyhole', 'value' => 'ADM-001',              'readonly' => true],
-                ['label' => 'Portal Role',      'icon' => 'icon-shieldCheck', 'value' => 'System Administrator', 'readonly' => true],
-                ['label' => 'Account Created',  'icon' => 'icon-calendar',    'value' => 'Jan 01, 2021',         'readonly' => true],
-                ['label' => 'Last Login',       'icon' => 'icon-clock',       'value' => 'Today, 23:45',         'readonly' => true],
-            ],
-        ];
+        require_once __DIR__ . '/../Models/ProfileModel.php';
+        $profileData = ProfileModel::getProfileData('admin', $this->getUser(), $this->getProfile());
 
         $this->view('admin/profile', [
             'currentRole'  => 'admin',

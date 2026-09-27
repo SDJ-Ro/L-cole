@@ -166,7 +166,11 @@
   background: #ffffff;
 }
 
-.c-form-section-head {}
+.c-form-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
 .c-form-section-title {
   font-size: 0.75rem;
@@ -232,6 +236,8 @@
 }
 
 .c-form-input,
+.c-field-input,
+.c-text-input,
 .c-form-textarea {
   width: 100%;
   border-radius: var(--radius-lg, 0.5rem);
@@ -247,11 +253,15 @@
 }
 
 .c-form-input::placeholder,
+.c-field-input::placeholder,
+.c-text-input::placeholder,
 .c-form-textarea::placeholder {
   color: rgba(15, 65, 74, 0.3);
 }
 
 .c-form-input:focus,
+.c-field-input:focus,
+.c-text-input:focus,
 .c-form-textarea:focus {
   border-color: var(--skyblue, #7FC7CC);
   box-shadow: 0 0 0 2px rgba(127, 199, 204, 0.4);

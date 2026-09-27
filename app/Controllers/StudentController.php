@@ -4,8 +4,11 @@ require_once __DIR__ . '/../Models/NoticeModel.php';
 require_once __DIR__ . '/../Models/ExtracurricularModel.php';
 require_once __DIR__ . '/../Models/AchievementModel.php';
 require_once __DIR__ . '/../Models/CertificateModel.php';
+require_once __DIR__ . '/CalendarEventCrudTrait.php';
+require_once __DIR__ . '/../Models/CalendarEventModel.php';
 
 class StudentController extends Controller {
+    use CalendarEventCrudTrait;
 
     public function __construct() {
         parent::__construct();
@@ -18,13 +21,29 @@ class StudentController extends Controller {
 
     public function extracurricular() {
         $clubs = ExtracurricularModel::getForStudent();
+        $user = $this->getUser();
+        $studentId = CalendarEventModel::getStudentId((int)($user['id'] ?? 0));
+
+        $scopeType = ($_GET['type'] ?? '') === 'sport' ? 'sport' : 'club';
+        $itemId = isset($_GET['id']) ? (int)$_GET['id'] : null;
+        $selectedClub = $itemId ? (ExtracurricularModel::getById($itemId) ?? ($clubs[0] ?? [])) : ($clubs[0] ?? []);
+
+        $calendarConfig = [
+            'canAddEvent' => false,
+            'initialDate' => date('Y-m-d'),
+            'viewDate'    => date('Y-m-01'),
+            'events'      => $itemId ? ($scopeType === 'sport' ? CalendarEventModel::getEventsForSport($itemId) : CalendarEventModel::getEventsForClub($itemId)) : ($studentId ? CalendarEventModel::getEventsForStudent($studentId) : []),
+        ];
 
         $this->view('student/extracurricular', [
-            'currentRole'  => 'student',
-            'currentRoute' => '/student/extracurricular',
-            'clubs'        => $clubs,
-            'canModerate'  => false,
-            'canCreate'    => false,
+            'currentRole'    => 'student',
+            'currentRoute'   => '/student/extracurricular',
+            'clubs'          => $clubs,
+            'club'           => $selectedClub,
+            'canModerate'    => false,
+            'canCreate'      => false,
+            'scopeType'      => $scopeType,
+            'calendarConfig' => $calendarConfig,
         ]);
     }
 
@@ -157,76 +176,8 @@ class StudentController extends Controller {
     }
 
     public function profile() {
-        $profileData = [
-            'role'         => 'student',
-            'name'         => 'Jason Mendis',
-            'id'           => 'STU-001',
-            'status'       => 'Active',
-            'avatar'       => '/assets/images/students.jpg',
-            'eyebrow'      => 'Student · Grade 10-A',
-            'sub'          => "Student Portal · L'École School Management",
-            'editable'     => false,
-            'showPassword' => false,
-            'contact' => [
-                ['label' => 'Student Email',       'icon' => 'icon-mail',  'type' => 'email', 'value' => 'jason.mendis@student.lecole.edu'],
-                ['label' => 'Parent Contact',      'icon' => 'icon-phone', 'value' => '+94 77 234 5678 (Mother)'],
-                ['label' => 'Emergency Line',      'icon' => 'icon-phone', 'value' => '+94 11 456 7890'],
-            ],
-            'personal' => [
-                ['label' => 'Full Name',           'icon' => 'icon-user',      'value' => 'Jason Ravindu Mendis',    'readonly' => true],
-                ['label' => 'Date of Birth',       'icon' => 'icon-calendar',  'value' => 'Aug 15, 2008',             'readonly' => true],
-                ['label' => 'Gender',              'icon' => 'icon-user',      'value' => 'Male',                     'readonly' => true],
-                ['label' => 'Birth Certificate No','icon' => 'icon-award',     'value' => '2008/COL/00142',           'readonly' => true],
-                ['label' => 'Blood Group',         'icon' => 'icon-heart',     'value' => 'O+',                       'readonly' => true],
-                ['label' => 'Nationality',         'icon' => 'icon-mapPin',    'value' => 'Sri Lankan',               'readonly' => true],
-                ['label' => 'Religion',            'icon' => 'icon-shield',    'value' => 'Buddhism',                 'readonly' => true],
-                ['label' => 'Previous School',     'icon' => 'icon-bookOpen',  'value' => 'Royal College Primary',    'readonly' => true],
-            ],
-            'roleSection' => [
-                'title'     => 'Academic & Extracurricular Information',
-                'tintClass' => 'c-profile-tinted--sky',
-                'items' => [
-                    ['label' => 'Current Class',    'icon' => 'icon-graduationCap',  'value' => 'Grade 10-A'],
-                    ['label' => 'Class Teacher',    'icon' => 'icon-user',           'value' => 'Mr. H. Rajapaksha'],
-                    ['label' => 'House',            'icon' => 'icon-shield',        'value' => 'Emerald House'],
-                    ['label' => 'Primary Sport',    'icon' => 'icon-extracurricular','value' => 'Badminton (Junior Captain)'],
-                    ['label' => 'Clubs & Societies','icon' => 'icon-usersRound',    'value' => 'Debating Society, ICT Club'],
-                    ['label' => 'Prefect Role',     'icon' => 'icon-shieldCheck',    'value' => 'Junior Prefect (2025/2026)'],
-                    ['label' => 'Admission Date',   'icon' => 'icon-calendar',      'value' => 'Jan 05, 2019'],
-                    ['label' => 'Attendance Rate',  'icon' => 'icon-clock',          'value' => '96.4% this term'],
-                ],
-            ],
-            'extraSections' => [
-                [
-                    'title' => 'Residential & Regional Details',
-                    'icon'  => 'icon-mapPin',
-                    'cols'  => 'c-cols-3',
-                    'items' => [
-                        ['label' => 'Residential Address', 'icon' => 'icon-mapPin',   'value' => '45 Galle Road, Wellawatte, Colombo 06', 'readonly' => true, 'fullWidth' => true],
-                        ['label' => 'Educational Zone',    'icon' => 'icon-building2','value' => 'Colombo Zone 3',                        'readonly' => true],
-                        ['label' => 'District',            'icon' => 'icon-mapPin',   'value' => 'Colombo',                               'readonly' => true],
-                        ['label' => 'Province',            'icon' => 'icon-mapPin',   'value' => 'Western',                               'readonly' => true],
-                    ],
-                ],
-                [
-                    'title' => 'Guardian & Medical Notes',
-                    'icon'  => 'icon-heartHandshake',
-                    'cols'  => 'c-cols-3',
-                    'items' => [
-                        ['label' => 'Primary Guardian',     'icon' => 'icon-heartHandshake', 'value' => 'Samantha Perera (Mother)', 'readonly' => true],
-                        ['label' => 'Guardian Phone',       'icon' => 'icon-phone',          'value' => '+94 77 234 5678',          'readonly' => true],
-                        ['label' => 'Guardian Email',       'icon' => 'icon-mail',           'value' => 'samantha.p@email.com',     'readonly' => true],
-                        ['label' => 'Medical Notes / Health','icon' => 'icon-heart',         'value' => 'None recorded · Medically cleared for all competitive athletics and excursions.', 'readonly' => true, 'fullWidth' => true],
-                    ],
-                ],
-            ],
-            'account' => [
-                ['label' => 'Student ID',       'icon' => 'icon-lockKeyhole', 'value' => 'STU-001',        'readonly' => true],
-                ['label' => 'Portal Role',      'icon' => 'icon-graduationCap','value' => 'Student',       'readonly' => true],
-                ['label' => 'Academic Year',    'icon' => 'icon-calendar',    'value' => '2025 / 2026',    'readonly' => true],
-                ['label' => 'Last Portal Login','icon' => 'icon-clock',       'value' => 'Today, 18:20',   'readonly' => true],
-            ],
-        ];
+        require_once __DIR__ . '/../Models/ProfileModel.php';
+        $profileData = ProfileModel::getProfileData('student', $this->getUser(), $this->getProfile());
 
         $this->view('student/profile', [
             'currentRole'  => 'student',
@@ -345,37 +296,38 @@ class StudentController extends Controller {
         ];
 
         // Calendar Configuration (Student: View-only)
+        $actor = $this->getUser();
+        $studentId = CalendarEventModel::getStudentId((int)($actor['id'] ?? 0));
+
         $calendarConfig = [
             'canAddEvent' => false,
-            'initialDate' => '2026-06-17',
-            'viewDate'    => '2026-06-01',
-            'events'      => [
-                ['id' => 'exam-17', 'date' => '2026-06-17', 'time' => '08:30–10:30', 'title' => 'Mathematics examination', 'details' => 'Grades 6–8 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-18', 'date' => '2026-06-18', 'time' => '08:30–10:30', 'title' => 'English examination', 'details' => 'Grades 6–8 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-19', 'date' => '2026-06-19', 'time' => '08:30–10:30', 'title' => 'Science examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-20', 'date' => '2026-06-20', 'time' => '08:30–10:00', 'title' => 'History examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-23', 'date' => '2026-06-23', 'time' => '08:30–10:30', 'title' => 'Sinhala / Tamil examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-24', 'date' => '2026-06-24', 'time' => '08:30–11:00', 'title' => 'ICT practical assessment', 'details' => 'Grades 9–13 · Computer laboratories', 'category' => 'Academic'],
-                ['id' => 'exam-25', 'date' => '2026-06-25', 'time' => '08:30–11:30', 'title' => 'Senior stream papers', 'details' => 'Grades 12–13 · Senior examination hall', 'category' => 'Academic'],
-                ['id' => 'exam-26', 'date' => '2026-06-26', 'time' => '08:30–10:30', 'title' => 'Make-up examination session', 'details' => 'Grades 6–13 · Library seminar room', 'category' => 'Academic'],
-            ],
+            'initialDate' => date('Y-m-d'),
+            'viewDate'    => date('Y-m-01'),
+            'events'      => $studentId ? CalendarEventModel::getEventsForStudent($studentId) : [],
         ];
 
         // Upcoming Events (Student: Activities & Events)
         $upcomingEvents = [
             [
-                'day'      => '02',
-                'month'    => 'AUG',
-                'name'     => 'U17 Cricket Tournament',
+                'day'      => '27',
+                'month'    => 'SEP',
+                'name'     => 'Term Assessment Review & Practical Exams',
+                'tag'      => 'Academic',
+                'tagColor' => 'sand',
+            ],
+            [
+                'day'      => '28',
+                'month'    => 'SEP',
+                'name'     => 'All-Island School Athletics Meet',
                 'tag'      => 'Sports',
                 'tagColor' => 'sky',
             ],
             [
-                'day'      => '07',
-                'month'    => 'AUG',
-                'name'     => 'Debating Society Meet',
-                'tag'      => 'Club',
-                'tagColor' => 'sand',
+                'day'      => '30',
+                'month'    => 'SEP',
+                'name'     => 'Under-17 Cricket Practice Match',
+                'tag'      => 'Sports',
+                'tagColor' => 'terracotta',
             ],
         ];
 
@@ -420,6 +372,10 @@ class StudentController extends Controller {
     }
 
     public function noticeBoard() {
+        $this->notice();
+    }
+
+    public function notices() {
         $this->notice();
     }
 }

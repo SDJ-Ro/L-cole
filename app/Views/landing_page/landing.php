@@ -19,7 +19,7 @@
     <header class="l-hero-headerbar">
       <div class="wrap l-header">
         <a class="l-header-logo" href="/landing" aria-label="L'École home">
-          <span class="l-header-logo-badge"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-graduationCap"/></svg></span>
+          <span class="l-header-logo-badge"><img src="/assets/images/logo.png" alt="L'École Crest" style="width: 100%; height: 100%; object-fit: contain;" /></span>
           <span class="l-header-logo-name">L'École</span>
         </a>
         <nav class="l-header-nav" aria-label="Public navigation">
@@ -204,7 +204,7 @@
       <div class="wrap l-footer-grid">
         <div>
           <div class="l-footer-brand">
-            <span class="l-footer-brand-badge"><svg class="icon" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-graduationCap"/></svg></span>
+            <span class="l-footer-brand-badge" style="background: transparent !important; box-shadow: none !important;"><img src="/assets/images/logo.png" alt="L'École Crest" style="width: 100%; height: 100%; object-fit: contain;" /></span>
             <span class="l-footer-brand-name">L'École</span>
           </div>
           <p class="l-footer-tagline">A school community where academic focus meets the joy of making, performing, competing, contributing, and growing.</p>
