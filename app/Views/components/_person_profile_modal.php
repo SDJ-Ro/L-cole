@@ -29,7 +29,7 @@ $allowEdit = $allowEdit ?? true;
       <div class="c-modal-header-row">
         <div class="c-modal-identity">
           <div class="c-modal-avatar bg-sand text-midnight" id="j-modal-avatar">U</div>
-          <div style="min-width: 0;">
+          <div style="min-width: 0; flex: 1;">
             <p class="c-modal-eyebrow" id="j-modal-eyebrow">Student</p>
             <!-- View Mode Title -->
             <h2 class="c-modal-name c-font-display" id="j-modal-name-view">User Name</h2>
@@ -40,42 +40,44 @@ $allowEdit = $allowEdit ?? true;
               <p class="j-profile-name-error" style="display: none; margin: 0.25rem 0 0; font-size: 0.75rem; font-weight: 600; color: var(--maroon, #7F0303);"></p>
             </div>
             <?php endif; ?>
+
+            <!-- Description / Subtitle (e.g. Father of Dineth Jayasuriya — 6-A, Amaya Jayasuriya — 7-B) -->
             <p class="c-modal-subtitle" id="j-modal-subtitle">Details</p>
+
+            <!-- Meta Pill Row directly below Description -->
+            <div class="c-modal-meta-row" id="j-modal-meta-row">
+              <span class="c-id-pill" id="j-modal-id-pill" style="background: rgba(127, 199, 204, 0.2); color: var(--midnight, #0F414A);">ID-000</span>
+              
+              <!-- View Status Pill -->
+              <span class="c-status-pill c-status-active" id="j-modal-status-pill">Active</span>
+
+              <!-- Unknown record pill (Directory record unavailable) -->
+              <span class="c-status-pill c-status-unknown-pill" id="j-modal-unknown-pill" style="display: none;">Directory record unavailable</span>
+              
+              <?php if ($allowEdit): ?>
+              <!-- Edit Status Dropdown (Shown in edit mode) -->
+              <div id="j-modal-status-select-wrap" style="display: none; min-width: 8.5rem;">
+                <?php
+                $dropdownId    = 'j-modal-status-dropdown';
+                $options       = [
+                    ['value' => 'Active', 'label' => 'Active'],
+                    ['value' => 'Deactivated', 'label' => 'Deactivated']
+                ];
+                $selectedValue = 'Active';
+                $dropdownLabel = 'Change account status';
+                $dropdownClass = 'c-dropdown--status c-dropdown--status-active';
+                require __DIR__ . '/_dropdown.php';
+                ?>
+              </div>
+              <?php endif; ?>
+            </div>
           </div>
         </div>
 
-        <!-- Close Button -->
+        <!-- Close Button in Top-Right Corner -->
         <button type="button" class="c-modal-close j-modal-close" id="j-modal-close-btn" aria-label="Close profile">
           <svg class="c-icon" width="20" height="20" aria-hidden="true"><use href="#icon-close"/></svg>
         </button>
-      </div>
-
-      <!-- Meta Pill Row -->
-      <div class="c-modal-meta-row">
-        <span class="c-id-pill" id="j-modal-id-pill" style="background: rgba(127, 199, 204, 0.2); color: var(--midnight, #0F414A);">ID-000</span>
-        
-        <!-- View Status Pill -->
-        <span class="c-status-pill c-status-active" id="j-modal-status-pill">Active</span>
-
-        <!-- Unknown record pill (Directory record unavailable) -->
-        <span class="c-status-pill c-status-unknown-pill" id="j-modal-unknown-pill" style="display: none;">Directory record unavailable</span>
-        
-        <?php if ($allowEdit): ?>
-        <!-- Edit Status Dropdown (Shown in edit mode) -->
-        <div id="j-modal-status-select-wrap" style="display: none; min-width: 8.5rem;">
-          <?php
-          $dropdownId    = 'j-modal-status-dropdown';
-          $options       = [
-              ['value' => 'Active', 'label' => 'Active'],
-              ['value' => 'Deactivated', 'label' => 'Deactivated']
-          ];
-          $selectedValue = 'Active';
-          $dropdownLabel = 'Change account status';
-          $dropdownClass = 'c-dropdown--status c-dropdown--status-active';
-          require __DIR__ . '/_dropdown.php';
-          ?>
-        </div>
-        <?php endif; ?>
       </div>
     </header>
 
@@ -114,9 +116,9 @@ $allowEdit = $allowEdit ?? true;
         require __DIR__ . '/_profile_information_tab.php'; 
         ?>
 
-        <!-- Injected Component 2: Academics Sub-Tab Panel (Digital Record Book) -->
+        <!-- Injected Component 2: Academics Sub-Tab Panel (Shared Academic Section) -->
         <div class="c-subtab-panel j-subtab-panel" id="j-panel-academics" style="display: none;">
-          <?php require __DIR__ . '/_digital_record_book.php'; ?>
+          <?php require __DIR__ . '/_academic_section.php'; ?>
         </div>
 
         <!-- Injected Component 3: Activities & Achievements Sub-Tab Panels -->

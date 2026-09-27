@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../Models/UserModel.php';
+require_once __DIR__ . '/../Models/UserActions.php';
+
 class AuthController extends Controller {
 
     // Access selector page: http://localhost:8040/auth
@@ -190,9 +193,7 @@ class AuthController extends Controller {
             return;
         }
 
-        require_once __DIR__ . '/../Models/UserModel.php';
-        $userModel = new UserModel();
-        $result = $userModel->authenticate($identifier, $password, $role);
+        $result = UserActions::authenticate($identifier, $password, $role);
 
         if (!$result['success']) {
             // Check if account is PENDING activation
@@ -202,15 +203,20 @@ class AuthController extends Controller {
                     'success'          => false,
                     'needs_activation' => true,
                     'redirect'         => $redirectUrl,
+                    'identifier'       => $result['identifier'] ?? $identifier,
                     'error'            => $result['error']
                 ]);
                 return;
             }
 
             echo json_encode([
-                'success' => false,
-                'error'   => $result['error'],
-                'code'    => $result['code'] ?? 'AUTH_FAILED'
+                'success'     => false,
+                'error'       => $result['error'],
+                'code'        => $result['code'] ?? 'AUTH_FAILED',
+                'actual_role' => $result['actual_role'] ?? null,
+                'correct_url' => $result['correct_url'] ?? null,
+                'identifier'  => $identifier,
+                'signup_url'  => '/auth/' . $role . 'Signup?identifier=' . urlencode($identifier)
             ]);
             return;
         }
@@ -218,12 +224,31 @@ class AuthController extends Controller {
         // Authentication Success: Defend against session fixation
         session_regenerate_id(true);
 
+        // Strict Role Confinement Guard (Defense-in-depth)
+        $actualRole = strtolower($result['account']['role'] ?? $role);
+        if ($actualRole !== $role) {
+            AuditModel::record(
+                (int)$result['account']['id'],
+                $identifier,
+                'SECURITY_CROSS_ROLE_LOGIN_BLOCKED',
+                "Defense-in-depth: Blocked login of {$actualRole} account through {$role} portal."
+            );
+            $actualName = ucfirst($actualRole);
+            echo json_encode([
+                'success'     => false,
+                'error'       => "Access restricted: This account is registered as {$actualName}. Please sign in via the {$actualName} portal.",
+                'code'        => 'ROLE_MISMATCH',
+                'actual_role' => $actualRole,
+                'correct_url' => '/auth/' . $actualRole
+            ]);
+            return;
+        }
+
         $_SESSION['user']          = $result['account'];
         $_SESSION['profile']       = $result['profile'];
         $_SESSION['last_activity'] = time();
 
         // Redirect map by authenticated user's actual role
-        $actualRole = $result['account']['role'] ?? $role;
         $redirectUrl = '/' . $actualRole;
         if ($actualRole === 'management') {
             $redirectUrl = '/management';
@@ -273,12 +298,30 @@ class AuthController extends Controller {
             return;
         }
 
-        require_once __DIR__ . '/../Models/UserModel.php';
-        $userModel = new UserModel();
-        $res = $userModel->registerOrActivateAccount($fullName, $identifier, $password, $role);
+        $res = UserActions::registerOrActivateAccount($fullName, $identifier, $password, $role);
 
         if (!$res['success']) {
-            echo json_encode(['success' => false, 'error' => $res['error']]);
+            echo json_encode([
+                'success'        => false,
+                'code'           => $res['code'] ?? 'SIGNUP_FAILED',
+                'actual_role'    => $res['actual_role'] ?? null,
+                'correct_url'    => $res['correct_url'] ?? null,
+                'already_active' => !empty($res['already_active']),
+                'redirect'       => !empty($res['already_active']) ? '/auth/' . $role : null,
+                'error'          => $res['error']
+            ]);
+            return;
+        }
+
+        if (!empty($res['step']) && $res['step'] === 'verify_otp') {
+            echo json_encode([
+                'success'      => true,
+                'step'         => 'verify_otp',
+                'identifier'   => $res['identifier'],
+                'role'         => $role,
+                'masked_email' => $res['masked_email'],
+                'message'      => $res['message']
+            ]);
             return;
         }
 
@@ -287,6 +330,77 @@ class AuthController extends Controller {
             'message'  => $res['message'],
             'redirect' => '/auth/' . $role
         ]);
+    }
+
+    /**
+     * Verify Sign-Up OTP code and authenticate into dashboard
+     */
+    public function handleVerifyActivation() {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Method not allowed.']);
+            return;
+        }
+
+        $raw = file_get_contents('php://input');
+        $json = json_decode($raw, true);
+        $data = !empty($json) ? $json : $_POST;
+
+        $csrfToken = $data['_csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+        if (!$this->validateCsrf($csrfToken)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Security token invalid or expired. Please refresh.', 'code' => 'CSRF_INVALID']);
+            return;
+        }
+
+        $identifier = trim($data['identifier'] ?? '');
+        $otp        = trim($data['otp'] ?? $data['code'] ?? '');
+        $role       = strtolower(trim($data['role'] ?? ''));
+
+        if (empty($identifier) || empty($otp) || empty($role)) {
+            echo json_encode(['success' => false, 'error' => 'Please provide the 6-digit verification code.']);
+            return;
+        }
+
+        $res = UserActions::verifyActivationOtp($identifier, $otp, $role);
+
+        echo json_encode($res);
+    }
+
+    /**
+     * Resend Sign-Up OTP code
+     */
+    public function handleResendActivationOtp() {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Method not allowed.']);
+            return;
+        }
+
+        $raw = file_get_contents('php://input');
+        $json = json_decode($raw, true);
+        $data = !empty($json) ? $json : $_POST;
+
+        $csrfToken = $data['_csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+        if (!$this->validateCsrf($csrfToken)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Security token invalid or expired.', 'code' => 'CSRF_INVALID']);
+            return;
+        }
+
+        $identifier = trim($data['identifier'] ?? '');
+        $role       = strtolower(trim($data['role'] ?? ''));
+
+        if (empty($identifier) || empty($role)) {
+            echo json_encode(['success' => false, 'error' => 'Missing account identifier.']);
+            return;
+        }
+
+        $res = UserActions::resendActivationOtp($identifier, $role);
+
+        echo json_encode($res);
     }
 
     /**
@@ -317,34 +431,27 @@ class AuthController extends Controller {
         }
 
         $identifier = trim($data['email'] ?? $data['identifier'] ?? '');
+        $role       = strtolower(trim($data['role'] ?? ''));
         if (empty($identifier)) {
             echo json_encode(['success' => false, 'error' => 'Please enter your account email.']);
             return;
         }
 
-        require_once __DIR__ . '/../Models/UserModel.php';
-        $userModel = new UserModel();
-        $res = $userModel->requestPasswordReset($identifier);
+        $res = UserActions::requestPasswordReset($identifier, $role);
 
         if (!$res['success']) {
             echo json_encode([
-                'success' => false,
-                'error'   => $res['error'] ?? 'Unable to process reset request.'
+                'success'     => false,
+                'error'       => $res['error'] ?? 'Unable to process reset request.',
+                'code'        => $res['code'] ?? 'RESET_FAILED',
+                'actual_role' => $res['actual_role'] ?? null,
+                'correct_url' => $res['correct_url'] ?? null
             ]);
             return;
         }
 
         $rawEmail = $res['recipient_email'] ?? $identifier;
-        $maskedRecipient = $rawEmail;
-        if (str_contains($rawEmail, '@')) {
-            $parts = explode('@', $rawEmail, 2);
-            $userPart = $parts[0];
-            $domainPart = $parts[1];
-            $maskedUser = (strlen($userPart) <= 2) 
-                ? $userPart[0] . '*' 
-                : substr($userPart, 0, 2) . str_repeat('*', max(2, strlen($userPart) - 3)) . substr($userPart, -1);
-            $maskedRecipient = $maskedUser . '@' . $domainPart;
-        }
+        $maskedRecipient = UserModel::maskEmail($rawEmail);
 
         echo json_encode([
             'success'   => true,
@@ -383,6 +490,7 @@ class AuthController extends Controller {
         $identifier  = trim($data['email'] ?? $data['identifier'] ?? '');
         $code        = trim($data['code'] ?? '');
         $password    = trim((string)($data['password'] ?? $data['newPassword'] ?? ''));
+        $role        = strtolower(trim($data['role'] ?? ''));
         $isReset     = !empty($data['is_reset']);
 
         if (empty($identifier) || empty($code)) {
@@ -398,10 +506,7 @@ class AuthController extends Controller {
             return;
         }
 
-        require_once __DIR__ . '/../Models/UserModel.php';
-        $userModel = new UserModel();
-
-        $res = $userModel->authenticateOrResetWithOtp($identifier, $code, $password, $isReset);
+        $res = UserActions::authenticateOrResetWithOtp($identifier, $code, $password, $isReset, $role);
 
         if (!$res['success']) {
             echo json_encode($res);
@@ -461,9 +566,7 @@ class AuthController extends Controller {
 
         $newPassword = (string)($data['newPassword'] ?? '');
 
-        require_once __DIR__ . '/../Models/UserModel.php';
-        $userModel = new UserModel();
-        $res = $userModel->forcePasswordChange((int)$_SESSION['user']['id'], $newPassword);
+        $res = UserActions::forcePasswordChange((int)$_SESSION['user']['id'], $newPassword);
 
         if ($res['success']) {
             $_SESSION['user']['first_login_required'] = false;

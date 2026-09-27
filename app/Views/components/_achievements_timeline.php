@@ -5,8 +5,8 @@
 
 use App\Models\AchievementModel;
 
-if (!class_exists('App\Models\AchievementModel') && file_exists(__DIR__ . '/../Models/AchievementModel.php')) {
-    require_once __DIR__ . '/../Models/AchievementModel.php';
+if (!class_exists('App\Models\AchievementModel') && file_exists(__DIR__ . '/../../Models/AchievementModel.php')) {
+    require_once __DIR__ . '/../../Models/AchievementModel.php';
 }
 
 $achievements  = $achievements ?? AchievementModel::getAll();

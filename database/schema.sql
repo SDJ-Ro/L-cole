@@ -122,7 +122,7 @@ CREATE TABLE parents (
     full_name VARCHAR(150) NOT NULL,
     first_name VARCHAR(75) NOT NULL,
     last_name VARCHAR(75) NOT NULL,
-    nic VARCHAR(30) NOT NULL,
+    nic VARCHAR(30) NULL,                             -- Sri Lankan NIC (or NULL if foreign passport)
     date_of_birth DATE NOT NULL,
     passport VARCHAR(50) NULL,                        -- If NIC unavailable
     occupation VARCHAR(100) NOT NULL,
@@ -131,6 +131,7 @@ CREATE TABLE parents (
     home_phone VARCHAR(30) NULL,
     office_phone VARCHAR(30) NULL,
     office_address VARCHAR(255) NULL,
+    home_address TEXT NULL,
     personal_email VARCHAR(191) NOT NULL,
     emergency_name VARCHAR(150) NULL,
     emergency_contact VARCHAR(30) NULL,
@@ -204,6 +205,21 @@ CREATE TABLE student_parents (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -------------------------------------------------------------------------
+-- 7b. STUDENT ADMISSIONS TRANSACTION LOG (IDEMPOTENCY & DEDUPLICATION)
+-- -------------------------------------------------------------------------
+DROP TABLE IF EXISTS student_admissions;
+CREATE TABLE student_admissions (
+    request_key CHAR(32) PRIMARY KEY,
+    created_by INT NOT NULL,
+    student_id INT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_admission_creator FOREIGN KEY (created_by) 
+        REFERENCES user_accounts(id) ON DELETE CASCADE,
+    CONSTRAINT fk_admission_student FOREIGN KEY (student_id) 
+        REFERENCES students(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -------------------------------------------------------------------------
 -- 8. CRYPTOGRAPHIC PASSWORD RESET OTPS
 -- -------------------------------------------------------------------------
 DROP TABLE IF EXISTS password_reset_otps;
@@ -249,6 +265,68 @@ CREATE TABLE daily_stats (
     portal_logins INT UNSIGNED NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -------------------------------------------------------------------------
+-- 11. EXTRACURRICULAR ACTIVITIES
+-- -------------------------------------------------------------------------
+DROP TABLE IF EXISTS extracurricular_activities;
+CREATE TABLE extracurricular_activities (
+    activity_id VARCHAR(50) PRIMARY KEY,              -- e.g. 'CHESS', 'ROBOTICS', 'CHOIR', 'DEBATING'
+    activity_name VARCHAR(100) NOT NULL,
+    category ENUM('SPORTS', 'CLUBS', 'ACADEMIC', 'AESTHETIC', 'LEADERSHIP') NOT NULL DEFAULT 'CLUBS',
+    teacher_id INT NULL,                              -- TIC (Teacher in Charge)
+    description TEXT NULL,
+    venue VARCHAR(100) NULL,
+    meeting_schedule VARCHAR(100) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_extracurricular_teacher FOREIGN KEY (teacher_id)
+        REFERENCES teachers(id) ON DELETE SET NULL,
+    INDEX idx_extracurricular_category (category)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- -------------------------------------------------------------------------
+-- 12. NOTICES & ANNOUNCEMENTS
+-- -------------------------------------------------------------------------
+DROP TABLE IF EXISTS notices;
+CREATE TABLE notices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    category VARCHAR(50) NOT NULL DEFAULT 'General',
+    audience JSON NOT NULL,                           -- e.g. ["All"] or ["Students", "Parents"]
+    body TEXT NOT NULL,
+    author_name VARCHAR(150) NOT NULL,
+    author_role VARCHAR(50) NOT NULL,                 -- 'admin', 'management', 'teacher'
+    author_account_id INT NULL,
+    attachment_name VARCHAR(255) NULL,
+    attachment_path VARCHAR(255) NULL,
+    target_class_section VARCHAR(20) NULL,           -- e.g. '6-A' (for Homeroom notices)
+    target_club_id VARCHAR(50) NULL,                  -- e.g. 'CHESS' (for Club TIC notices)
+    publish_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP, -- Scheduled publish start time
+    expires_at DATETIME NULL DEFAULT NULL,             -- Notice expiration / unpublish time
+    pinned TINYINT(1) NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMP NULL,                        -- Soft-delete timestamp
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_category (category),
+    INDEX idx_pinned (pinned),
+    INDEX idx_deleted_at (deleted_at),
+    INDEX idx_class_section (target_class_section),
+    INDEX idx_club_id (target_club_id),
+    INDEX idx_created_at (created_at),
+    INDEX idx_notices_active_feed (deleted_at, pinned, publish_at, expires_at, created_at),
+    CONSTRAINT fk_notice_author FOREIGN KEY (author_account_id)
+        REFERENCES user_accounts(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -------------------------------------------------------------------------
+-- 11. ADMISSION IDEMPOTENCY KEYS
+-- -------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS admission_idempotency_keys (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    idempotency_key VARCHAR(191) NOT NULL UNIQUE,
+    student_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

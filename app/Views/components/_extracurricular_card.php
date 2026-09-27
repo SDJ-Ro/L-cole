@@ -33,37 +33,24 @@ $currentRole  = $currentRole ?? 'admin';
 $isStudent    = ($currentRole === 'student');
 
 // Pill configuration
-if ($isStudent) {
-    if ($isEnrolled) {
-        $pillClass = 'c-club-card__pill--enrolled';
-        $pillText  = 'ENROLLED';
-    } elseif ($clubType === 'Sports') {
-        $pillClass = 'c-club-card__pill--sport';
-        $pillText  = 'SPORT';
-    } else {
-        $pillClass = 'c-club-card__pill--club';
-        $pillText  = 'CLUB';
-    }
+if ($isPending) {
+    $pillClass = 'c-club-card__pill--pending';
+    $pillText  = 'PENDING APPROVAL';
+} elseif ($isEnrolled) {
+    $pillClass = 'c-club-card__pill--enrolled';
+    $pillText  = 'ENROLLED';
+} elseif ($clubType === 'Sports') {
+    $pillClass = 'c-club-card__pill--sport';
+    $pillText  = 'SPORT';
 } else {
-    if ($isPending) {
-        $pillClass = 'c-club-card__pill--pending';
-        $pillText  = 'PENDING APPROVAL';
-    } elseif ($isEnrolled) {
-        $pillClass = 'c-club-card__pill--enrolled';
-        $pillText  = 'ENROLLED';
-    } elseif ($clubType === 'Sports') {
-        $pillClass = 'c-club-card__pill--sport';
-        $pillText  = 'SPORT';
-    } else {
-        $pillClass = 'c-club-card__pill--club';
-        $pillText  = 'CLUB';
-    }
+    $pillClass = 'c-club-card__pill--club';
+    $pillText  = 'CLUB';
 }
 
 $contactPhone = !empty($coach['phone']) ? $coach['phone'] : (!empty($tic['phone']) ? $tic['phone'] : '+94 77 123 4567');
 ?>
 
-<article class="c-club-card <?= ($isPending && !$isStudent) ? 'c-club-card--pending' : 'c-club-card--clickable' ?> j-club-card" 
+<article class="c-club-card <?= $isPending ? 'c-club-card--pending' : 'c-club-card--clickable' ?> j-club-card" 
          id="j-club-card-<?= $clubId ?>"
          data-club-id="<?= $clubId ?>" 
          data-club-name="<?= htmlspecialchars($clubName) ?>"
@@ -113,7 +100,7 @@ $contactPhone = !empty($coach['phone']) ? $coach['phone'] : (!empty($tic['phone'
         <div class="c-club-card__tic-label">TEACHER IN CHARGE</div>
         <div class="c-club-card__tic-name j-card-tic-name"><?= htmlspecialchars($tic['name'] ?? 'Faculty Mentor') ?></div>
       </div>
-      <?php if (!empty($canModerate) || !empty($canCreate)): ?>
+      <?php if (($canModerate || !empty($canCreate)) && $currentRole !== 'student' && $currentRole !== 'parent'): ?>
         <button type="button" class="c-btn c-btn--ghost c-btn--sm j-edit-card-tic-btn" data-club-id="<?= $clubId ?>" data-club-name="<?= htmlspecialchars($clubName) ?>" data-current-tic="<?= htmlspecialchars($tic['name'] ?? '') ?>" title="Change Teacher in Charge" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; margin-left: auto; height: auto; border-radius: var(--radius-md);">
           <svg class="c-icon" width="11" height="11" viewBox="0 0 24 24"><use href="#icon-edit"/></svg>
           <span>Change</span>
@@ -122,7 +109,14 @@ $contactPhone = !empty($coach['phone']) ? $coach['phone'] : (!empty($tic['phone'
     </div>
 
     <!-- Contact Row -->
-    <?php if ($isStudent): ?>
+    <?php if ($isPending): ?>
+      <div class="c-club-card__contact c-club-card__contact--locked j-contact-locked">
+        <span class="c-club-card__contact-icon" aria-hidden="true">
+          <svg class="c-icon" width="12" height="12" viewBox="0 0 24 24"><use href="#icon-lock"/></svg>
+        </span>
+        <span class="c-club-card__contact-text">Contact hidden until program approval</span>
+      </div>
+    <?php elseif ($isStudent): ?>
       <?php if ($isEnrolled): ?>
         <div class="c-club-card__contact c-club-card__contact--unlocked">
           <span class="c-club-card__contact-icon" aria-hidden="true">
@@ -139,26 +133,26 @@ $contactPhone = !empty($coach['phone']) ? $coach['phone'] : (!empty($tic['phone'
         </div>
       <?php endif; ?>
     <?php else: ?>
-      <?php if (!$isPending): ?>
-        <div class="c-club-card__contact c-club-card__contact--unlocked">
-          <span class="c-club-card__contact-icon" aria-hidden="true">
-            <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24"><use href="#icon-phone"/></svg>
-          </span>
-          <span class="c-club-card__contact-text"><?= htmlspecialchars($contactPhone) ?></span>
-        </div>
-      <?php else: ?>
-        <div class="c-club-card__contact c-club-card__contact--locked j-contact-locked">
-          <span class="c-club-card__contact-icon" aria-hidden="true">
-            <svg class="c-icon" width="12" height="12" viewBox="0 0 24 24"><use href="#icon-lock"/></svg>
-          </span>
-          <span class="c-club-card__contact-text">Contact hidden until program approval</span>
-        </div>
-      <?php endif; ?>
+      <div class="c-club-card__contact c-club-card__contact--unlocked">
+        <span class="c-club-card__contact-icon" aria-hidden="true">
+          <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24"><use href="#icon-phone"/></svg>
+        </span>
+        <span class="c-club-card__contact-text"><?= htmlspecialchars($contactPhone) ?></span>
+      </div>
     <?php endif; ?>
 
     <!-- Action Slot -->
     <div class="c-club-card__actions j-card-actions">
-      <?php if ($isStudent): ?>
+      <?php if ($isPending): ?>
+        <button type="button" class="c-btn c-btn--maroon c-btn--card-action j-reject-club" data-club-id="<?= $clubId ?>" data-club-name="<?= htmlspecialchars($clubName) ?>">
+          <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24"><use href="#icon-x"/></svg>
+          Reject
+        </button>
+        <button type="button" class="c-btn c-btn--moss c-btn--card-action j-approve-club" data-club-id="<?= $clubId ?>" data-club-name="<?= htmlspecialchars($clubName) ?>">
+          <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24"><use href="#icon-check"/></svg>
+          Accept
+        </button>
+      <?php elseif ($isStudent): ?>
         <?php if ($isEnrolled): ?>
           <button type="button" class="c-club-card__btn <?= $clubType === 'Sports' ? 'c-club-card__btn--sport' : 'c-club-card__btn--club' ?> j-view-details" data-club-id="<?= $clubId ?>">
             View Details &rarr;
@@ -174,15 +168,6 @@ $contactPhone = !empty($coach['phone']) ? $coach['phone'] : (!empty($tic['phone'
             Interest
           </button>
         <?php endif; ?>
-      <?php elseif ($isPending && $canModerate): ?>
-        <button type="button" class="c-btn c-btn--maroon c-btn--card-action j-reject-club" data-club-id="<?= $clubId ?>" data-club-name="<?= htmlspecialchars($clubName) ?>">
-          <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24"><use href="#icon-x"/></svg>
-          Reject
-        </button>
-        <button type="button" class="c-btn c-btn--moss c-btn--card-action j-approve-club" data-club-id="<?= $clubId ?>" data-club-name="<?= htmlspecialchars($clubName) ?>">
-          <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24"><use href="#icon-check"/></svg>
-          Accept
-        </button>
       <?php else: ?>
         <button type="button" class="c-club-card__btn <?= $clubType === 'Sports' ? 'c-club-card__btn--sport' : 'c-club-card__btn--club' ?> j-view-details" data-club-id="<?= $clubId ?>">
           View Details &rarr;

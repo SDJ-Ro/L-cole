@@ -63,9 +63,10 @@ class AcademicModel extends Model {
         try {
             $db = Database::getConnection();
             $stmt = $db->query("
-                SELECT DISTINCT subject_name 
+                SELECT subject_name 
                 FROM curriculum_group_subjects 
-                ORDER BY sort_order ASC, subject_name ASC
+                GROUP BY subject_name 
+                ORDER BY MIN(sort_order) ASC, subject_name ASC
             ");
             $subjects = $stmt->fetchAll(PDO::FETCH_COLUMN);
             if (!empty($subjects)) {
@@ -181,9 +182,10 @@ class AcademicModel extends Model {
         try {
             $db = Database::getConnection();
             $stmt = $db->query("
-                SELECT c.section_name, ct.teacher_name 
+                SELECT c.section_name, t.full_name AS teacher_name 
                 FROM classes c
                 LEFT JOIN class_teachers ct ON c.id = ct.class_id
+                LEFT JOIN teachers t ON ct.teacher_id = t.id
             ");
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -225,9 +227,10 @@ class AcademicModel extends Model {
         try {
             $db = Database::getConnection();
             $stmt = $db->query("
-                SELECT c.section_name, cst.subject_name, cst.teacher_name 
+                SELECT c.section_name, cst.subject_name, t.full_name AS teacher_name 
                 FROM classes c
                 JOIN class_subject_teachers cst ON c.id = cst.class_id
+                JOIN teachers t ON cst.teacher_id = t.id
             ");
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -263,9 +266,10 @@ class AcademicModel extends Model {
 
             // Load all current class teacher assignments
             $stmtCt = $db->query("
-                SELECT ct.teacher_name, c.section_name 
+                SELECT t.full_name AS teacher_name, c.section_name 
                 FROM class_teachers ct
                 JOIN classes c ON ct.class_id = c.id
+                JOIN teachers t ON ct.teacher_id = t.id
             ");
             $ctMap = [];
             while ($row = $stmtCt->fetch(PDO::FETCH_ASSOC)) {
@@ -274,9 +278,10 @@ class AcademicModel extends Model {
 
             // Load all subject assignments
             $stmtCst = $db->query("
-                SELECT cst.teacher_name, cst.subject_name, c.section_name 
+                SELECT t.full_name AS teacher_name, cst.subject_name, c.section_name 
                 FROM class_subject_teachers cst
                 JOIN classes c ON cst.class_id = c.id
+                JOIN teachers t ON cst.teacher_id = t.id
                 ORDER BY cst.subject_name ASC, c.section_name ASC
             ");
             $cstMap = [];

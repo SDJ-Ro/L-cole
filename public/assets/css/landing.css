@@ -19,7 +19,7 @@
 /* ---------- shared public header (both landing pages use it) ---------- */
 .l-header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 0; }
 .l-header-logo { display: flex; align-items: center; gap: 0.65rem; color: #fff; }
-.l-header-logo-badge { display: flex; height: 2.5rem; width: 2.5rem; align-items: center; justify-content: center; border-radius: var(--radius-xl); background: var(--alabaster); color: var(--midnight); box-shadow: var(--shadow-lg); }
+.l-header-logo-badge { display: flex; height: 2.75rem; width: 2.75rem; align-items: center; justify-content: center; border-radius: 0; background: transparent !important; color: var(--midnight); box-shadow: none !important; }
 .l-header-logo-name { font-family: 'Poppins', sans-serif; font-size: 1.125rem; font-weight: 700; letter-spacing: 0.02em; text-shadow: 0 2px 6px rgba(9,47,51,0.5); }
 .l-header-nav { display: flex; align-items: center; gap: 0.5rem; }
 @media (min-width: 640px) { .l-header-nav { gap: 1rem; } }
@@ -84,7 +84,8 @@
 /* ---------- achievement rows (shared: home highlights + achievements.html) ---------- */
 .ach-section { border-bottom: 1px solid var(--alabaster); background: #fff; padding: 4rem 0; }
 @media (min-width: 1024px) { .ach-section { padding: 6rem 0; } }
-.ach-section--page { border-bottom: 0; background: transparent; }
+.ach-section--page { border-bottom: 0; background: transparent; padding: 1.5rem 0 3.5rem 0 !important; }
+@media (min-width: 1024px) { .ach-section--page { padding: 2rem 0 4rem 0 !important; } }
 .ach-head { display: grid; gap: 1.5rem; align-items: end; }
 @media (min-width: 768px) { .ach-head { grid-template-columns: 0.85fr 1.15fr; } }
 .ach-list { margin-top: 4rem; display: flex; flex-direction: column; gap: 5rem; }
@@ -154,17 +155,17 @@
 @media (min-width: 640px) { .l-footer-bottom-inner { flex-direction: row; align-items: center; justify-content: space-between; } }
 
 /* ---------- achievements.html page header ---------- */
-.ach-page-header { background: var(--deepsea); color: #fff; padding: 2.5rem 0; }
-@media (min-width: 1024px) { .ach-page-header { padding: 3.5rem 0; } }
+.ach-page-header { background: var(--deepsea); color: #fff; padding: 1.5rem 0 1.75rem 0; }
+@media (min-width: 1024px) { .ach-page-header { padding: 1.75rem 0 2rem 0; } }
 .ach-page-header-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
-.ach-back-link { display: inline-flex; align-items: center; gap: 0.5rem; border-radius: var(--radius-lg); background: rgba(255,255,255,0.1); padding: 0.65rem 0.9rem; font-size: 0.75rem; font-weight: 700; color: #fff; transition: background 0.15s; }
+.ach-back-link { display: inline-flex; align-items: center; gap: 0.5rem; border-radius: var(--radius-lg); background: rgba(255,255,255,0.1); padding: 0.55rem 0.85rem; font-size: 0.75rem; font-weight: 700; color: #fff; transition: background 0.15s; }
 .ach-back-link:hover { background: rgba(255,255,255,0.2); }
 .ach-page-brand { display: flex; align-items: center; gap: 0.65rem; }
-.ach-page-brand-badge { display: flex; height: 2.25rem; width: 2.25rem; align-items: center; justify-content: center; border-radius: var(--radius-lg); background: #fff; color: var(--midnight); }
+.ach-page-brand-badge { display: flex; height: 2.25rem; width: 2.25rem; align-items: center; justify-content: center; border-radius: var(--radius-lg); background: #fff; color: var(--midnight); box-shadow: none !important; }
 .ach-page-brand-name { font-family: 'Poppins', sans-serif; font-size: 1.125rem; font-weight: 700; }
-.ach-page-eyebrow { margin-top: 2.5rem; font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em; color: var(--skyblue); }
-.ach-page-title { margin-top: 0.75rem; max-width: 48rem; font-family: 'Poppins', sans-serif; font-size: 2.25rem; font-weight: 700; line-height: 1.15; letter-spacing: -0.01em; }
-@media (min-width: 640px) { .ach-page-title { font-size: 3rem; } }
+.ach-page-eyebrow { margin-top: 1.5rem; font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em; color: var(--skyblue); }
+.ach-page-title { margin-top: 1rem; max-width: 48rem; font-family: 'Poppins', sans-serif; font-size: 1.625rem; font-weight: 700; line-height: 1.25; letter-spacing: -0.01em; }
+@media (min-width: 640px) { .ach-page-title { font-size: 2rem; } }
 .ach-page-desc { margin-top: 1rem; max-width: 42rem; font-size: 0.875rem; line-height: 1.75rem; color: rgba(255,255,255,0.75); }
 .ach-page-footer { border-top: 1px solid rgba(15,65,74,0.1); background: var(--midnight); color: var(--alabaster); padding: 2rem 0; }
 .ach-page-footer-inner { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.75rem; color: rgba(239,232,223,0.6); }

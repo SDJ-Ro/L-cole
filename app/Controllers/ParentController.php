@@ -5,9 +5,11 @@ require_once __DIR__ . '/../Models/ExtracurricularModel.php';
 require_once __DIR__ . '/../Models/AchievementModel.php';
 require_once __DIR__ . '/../Models/ComplaintModel.php';
 require_once __DIR__ . '/../Models/ParentApprovalModel.php';
-
+require_once __DIR__ . '/CalendarEventCrudTrait.php';
+require_once __DIR__ . '/../Models/CalendarEventModel.php';
 
 class ParentController extends Controller {
+    use CalendarEventCrudTrait;
 
     public function __construct() {
         parent::__construct();
@@ -128,42 +130,36 @@ class ParentController extends Controller {
         ];
 
         // Calendar Configuration (Parent: View-only)
+        $actor = $this->getUser();
+        $parentId = CalendarEventModel::getParentId((int)($actor['id'] ?? 0));
+
         $calendarConfig = [
             'canAddEvent' => false,
-            'initialDate' => '2026-06-17',
-            'viewDate'    => '2026-06-01',
-            'events'      => [
-                ['id' => 'exam-17', 'date' => '2026-06-17', 'time' => '08:30–10:30', 'title' => 'Mathematics examination', 'details' => 'Grades 6–8 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-18', 'date' => '2026-06-18', 'time' => '08:30–10:30', 'title' => 'English examination', 'details' => 'Grades 6–8 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-19', 'date' => '2026-06-19', 'time' => '08:30–10:30', 'title' => 'Science examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-20', 'date' => '2026-06-20', 'time' => '08:30–10:00', 'title' => 'History examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-23', 'date' => '2026-06-23', 'time' => '08:30–10:30', 'title' => 'Sinhala / Tamil examination', 'details' => 'Grades 6–11 · Respective classrooms', 'category' => 'Academic'],
-                ['id' => 'exam-24', 'date' => '2026-06-24', 'time' => '08:30–11:00', 'title' => 'ICT practical assessment', 'details' => 'Grades 9–13 · Computer laboratories', 'category' => 'Academic'],
-                ['id' => 'exam-25', 'date' => '2026-06-25', 'time' => '08:30–11:30', 'title' => 'Senior stream papers', 'details' => 'Grades 12–13 · Senior examination hall', 'category' => 'Academic'],
-                ['id' => 'exam-26', 'date' => '2026-06-26', 'time' => '08:30–10:30', 'title' => 'Make-up examination session', 'details' => 'Grades 6–13 · Library seminar room', 'category' => 'Academic'],
-            ],
+            'initialDate' => date('Y-m-d'),
+            'viewDate'    => date('Y-m-01'),
+            'events'      => $parentId ? CalendarEventModel::getEventsForParent($parentId) : [],
         ];
 
         // Upcoming Events (Parent: Academic & Examinations)
         $upcomingEvents = [
             [
-                'day'      => '17',
-                'month'    => 'JUN',
-                'name'     => 'Term 2 examinations begin',
+                'day'      => '27',
+                'month'    => 'SEP',
+                'name'     => 'Term Assessment Review & Practical Exams',
                 'tag'      => 'Academic',
                 'tagColor' => 'sand',
             ],
             [
-                'day'      => '20',
-                'month'    => 'JUN',
-                'name'     => 'History examination',
-                'tag'      => 'Academic',
+                'day'      => '28',
+                'month'    => 'SEP',
+                'name'     => 'All-Island School Athletics Meet',
+                'tag'      => 'Sports',
                 'tagColor' => 'sky',
             ],
             [
-                'day'      => '26',
-                'month'    => 'JUN',
-                'name'     => 'Make-up examination session',
+                'day'      => '29',
+                'month'    => 'SEP',
+                'name'     => 'Science Society Annual Exhibition',
                 'tag'      => 'Academic',
                 'tagColor' => 'terracotta',
             ],
@@ -211,6 +207,14 @@ class ParentController extends Controller {
 
     public function noticeBoard() {
         $this->notice();
+    }
+
+    public function notices() {
+        $this->notice();
+    }
+
+    public function child() {
+        $this->childProfile();
     }
 
     public function childProfile() {
@@ -329,17 +333,29 @@ class ParentController extends Controller {
 
         // 3. Child's Extracurricular Activities
         $allClubs = ExtracurricularModel::getForStudent();
-        // Specifically mark activities like Debating and Swimming as Enrolled for Nethmi Perera
+        // Specifically mark activities: Football & Swimming as Enrolled, and 2 activities as Pending (Approve/Reject cards)
         $childClubs = array_map(function($c) {
-            if (in_array($c['id'], [2, 4])) { // Debating & Swimming
+            if (in_array($c['id'], [1, 4])) {
                 $c['status'] = 'Enrolled';
                 $c['enrolled'] = true;
+            } elseif (in_array($c['id'], [2, 6])) {
+                $c['status'] = 'Pending';
+                $c['enrolled'] = false;
             }
             return $c;
         }, $allClubs);
 
         $achievements = \App\Models\AchievementModel::getAll();
         $metrics = \App\Models\AchievementModel::getMetrics($achievements);
+
+        $actor = $this->getUser();
+        $parentId = CalendarEventModel::getParentId((int)($actor['id'] ?? 0));
+        $calendarConfig = [
+            'canAddEvent' => false,
+            'initialDate' => date('Y-m-d'),
+            'viewDate'    => date('Y-m-01'),
+            'events'      => $parentId ? CalendarEventModel::getEventsForParent($parentId) : [],
+        ];
 
         $this->view('parent/child-profile', [
             'currentRole'     => 'parent',
@@ -357,6 +373,7 @@ class ParentController extends Controller {
             'achievements'    => $achievements,
             'metrics'         => $metrics,
             'canModerate'     => false,
+            'calendarConfig'  => $calendarConfig,
         ]);
     }
 
@@ -402,72 +419,8 @@ class ParentController extends Controller {
     }
 
     public function profile() {
-        $profileData = [
-            'role'        => 'parent',
-            'name'        => 'Samantha Perera',
-            'id'          => 'PAR-102',
-            'status'      => 'Active',
-            'avatar'      => '/assets/images/parents.jpg',
-            'eyebrow'     => 'Guardian / Parent',
-            'sub'         => "Parent Portal · L'École School Management",
-            'editable'    => true,
-            'showPassword'=> true,
-            'contact' => [
-                ['label' => 'Email Address',      'icon' => 'icon-mail',  'type' => 'email', 'value' => 'samantha.p@email.com'],
-                ['label' => 'Mobile Phone',       'icon' => 'icon-phone', 'value' => '+94 77 234 5678'],
-                ['label' => 'Home Phone',         'icon' => 'icon-phone', 'value' => '011-2345678'],
-                ['label' => 'Office Phone',       'icon' => 'icon-phone', 'value' => '011-2334455'],
-            ],
-            'personal' => [
-                ['label' => 'Full Name',          'icon' => 'icon-user',           'value' => 'Samantha Perera',                 'readonly' => false],
-                ['label' => 'Relationship',       'icon' => 'icon-heartHandshake', 'value' => 'Mother / Primary Guardian',       'readonly' => true],
-                ['label' => 'NIC Number',         'icon' => 'icon-lockKeyhole',    'value' => '198456213904',                    'readonly' => true],
-                ['label' => 'Passport No.',       'icon' => 'icon-award',          'value' => 'N1298492',                        'readonly' => true],
-                ['label' => 'Date of Birth',      'icon' => 'icon-calendar',       'value' => 'May 19, 1984',                    'readonly' => true],
-                ['label' => 'Guardian Status',    'icon' => 'icon-shieldCheck',    'value' => 'Living · Legally Authorized',     'readonly' => true],
-            ],
-            'roleSection' => [
-                'title'     => 'Enrolled Children & Access Authorization',
-                'tintClass' => 'c-profile-tinted--terracotta',
-                'items' => [
-                    ['label' => 'Primary Child',         'icon' => 'icon-graduationCap',  'value' => 'Jason Ravindu Mendis (Grade 10-A, STU-001)'],
-                    ['label' => 'Secondary Child',       'icon' => 'icon-graduationCap',  'value' => 'Nethmi Perera (Grade 6-A, STU-042)'],
-                    ['label' => 'Pick-up Authorization', 'icon' => 'icon-shieldCheck',    'value' => 'Authorized · Level 1 Pick-up Pass Verified'],
-                    ['label' => 'Emergency Alert',       'icon' => 'icon-phone',          'value' => 'Immediate Priority SMS & Call Authorized'],
-                    ['label' => 'PTA Membership',        'icon' => 'icon-usersRound',     'value' => 'Active Member — Grade 10 Representative'],
-                    ['label' => 'Medical & Excursion',   'icon' => 'icon-heartHandshake', 'value' => 'Full Consent Granted for Field Trips & Sports'],
-                ],
-            ],
-            'extraSections' => [
-                [
-                    'title' => 'Employment & Workplace Details',
-                    'icon'  => 'icon-building2',
-                    'cols'  => 'c-cols-3',
-                    'items' => [
-                        ['label' => 'Occupation',           'icon' => 'icon-award',     'value' => 'Senior Chartered Accountant', 'readonly' => false],
-                        ['label' => 'Employer / Workplace', 'icon' => 'icon-building2', 'value' => 'Nexus Financial Consultants Ltd', 'readonly' => false],
-                        ['label' => 'Office Address',       'icon' => 'icon-mapPin',    'value' => 'Level 4, World Trade Centre, Colombo 01', 'readonly' => false, 'fullWidth' => true],
-                    ],
-                ],
-                [
-                    'title' => 'Residential Address & Emergency Contact',
-                    'icon'  => 'icon-mapPin',
-                    'cols'  => 'c-cols-3',
-                    'items' => [
-                        ['label' => 'Residential Address',      'icon' => 'icon-mapPin',          'value' => '42 Flower Road, Colombo 07', 'readonly' => false, 'fullWidth' => true],
-                        ['label' => 'Emergency Contact Name',   'icon' => 'icon-user',            'value' => 'Sunil Perera',               'readonly' => false],
-                        ['label' => 'Emergency Contact Number', 'icon' => 'icon-phone',           'value' => '+94 77 998 8776',           'readonly' => false],
-                        ['label' => 'Emergency Relationship',   'icon' => 'icon-heartHandshake',  'value' => 'Uncle / Secondary Contact',  'readonly' => false],
-                    ],
-                ],
-            ],
-            'account' => [
-                ['label' => 'Parent ID',       'icon' => 'icon-lockKeyhole',    'value' => 'PAR-102',           'readonly' => true],
-                ['label' => 'Portal Role',     'icon' => 'icon-heartHandshake', 'value' => 'Parent / Guardian', 'readonly' => true],
-                ['label' => 'Account Created', 'icon' => 'icon-calendar',       'value' => 'Jan 10, 2022',       'readonly' => true],
-                ['label' => 'Last Login',      'icon' => 'icon-clock',          'value' => 'Today, 19:40',       'readonly' => true],
-            ],
-        ];
+        require_once __DIR__ . '/../Models/ProfileModel.php';
+        $profileData = ProfileModel::getProfileData('parent', $this->getUser(), $this->getProfile());
 
         $this->view('parent/profile', [
             'currentRole'  => 'parent',

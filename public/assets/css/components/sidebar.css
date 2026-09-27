@@ -45,10 +45,20 @@
   align-items: center;
   justify-content: center;
   border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: transparent;
   width: 3.5rem;
   height: 2.5rem;
-  color: var(--sand, #E4CBA9);
+  box-shadow: none !important;
+}
+
+.c-sidebar__brand-logo {
+  width: 2.35rem;
+  height: 2.35rem;
+  object-fit: contain;
+  border-radius: 0;
+  filter: none !important;
+  box-shadow: none !important;
+  display: block;
 }
 
 .c-sidebar__brand-text {
@@ -364,7 +374,7 @@
   box-sizing: border-box;
   min-width: 0;
   max-width: calc(100vw - 16rem);
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .c-sidebar.c-is-collapsed~.c-main,

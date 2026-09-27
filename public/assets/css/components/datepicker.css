@@ -186,6 +186,15 @@
   color: rgba(15, 65, 74, 0.45);
 }
 
+.c-dp-day:disabled,
+.c-dp-day.c-dp-disabled {
+  opacity: 0.25 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  background: transparent !important;
+  color: rgba(15, 65, 74, 0.3) !important;
+}
+
 .c-dp-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);

@@ -156,6 +156,7 @@ $parentRelationOptions = [
     </button>
 
     <form class="c-form-card c-form-card--<?= htmlspecialchars($cfg['headerTheme']) ?>" id="<?= htmlspecialchars($cfg['formId']) ?>" action="<?= htmlspecialchars($formAction ?? '') ?>" method="POST" enctype="multipart/form-data" novalidate>
+      <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token ?? ($_SESSION['_csrf_token'] ?? '')) ?>" />
       
       <!-- Role-Themed Header matching 1:1 original -->
       <header class="c-form-header c-header-<?= htmlspecialchars($cfg['headerTheme']) ?>">
@@ -184,34 +185,42 @@ $parentRelationOptions = [
           <div class="c-form-grid">
             <!-- 1. Full Name -->
             <div class="c-form-field">
-              <label class="c-form-field-label">Full Name <span class="c-required-mark" style="color:var(--skyblue, #7FC7CC);">*</span></label>
-              <input type="text" class="c-form-input j-enrollment-input j-autofill-full" name="fullName" placeholder="e.g. Malsha Anjali Jayarathne" required />
+              <label class="c-form-field-label">Full Name (with initials) <span class="c-required-mark" style="color:var(--skyblue, #7FC7CC);">*</span></label>
+              <input type="text" class="c-form-input j-enrollment-input j-full-name-input" name="fullName" placeholder="e.g. M. A. Jayarathne" required />
             </div>
 
             <!-- 2. First Name -->
             <div class="c-form-field">
               <label class="c-form-field-label">First Name <span class="c-required-mark" style="color:var(--skyblue, #7FC7CC);">*</span></label>
-              <input type="text" class="c-form-input j-enrollment-input j-autofill-first" name="firstName" placeholder="e.g. Malsha" required />
+              <input type="text" class="c-form-input j-enrollment-input j-first-name-input" name="firstName" placeholder="e.g. Malsha" required />
             </div>
 
             <!-- 3. Last Name -->
             <div class="c-form-field">
               <label class="c-form-field-label">Last Name <span class="c-required-mark" style="color:var(--skyblue, #7FC7CC);">*</span></label>
-              <input type="text" class="c-form-input j-enrollment-input j-autofill-last" name="lastName" placeholder="e.g. Jayarathne" required />
+              <input type="text" class="c-form-input j-enrollment-input j-last-name-input" name="lastName" placeholder="e.g. Jayarathne" required />
             </div>
 
             <!-- 4. Date of Birth -->
             <div class="c-form-field">
-              <label class="c-form-field-label">Date of Birth <span class="c-required-mark" style="color:var(--skyblue, #7FC7CC);">*</span></label>
+              <div class="c-field-header-row" style="display:flex; justify-content:space-between; align-items:center;">
+                <label class="c-form-field-label">Date of Birth <span class="c-required-mark" style="color:var(--skyblue, #7FC7CC);">*</span></label>
+                <button type="button" id="j-unlock-student-dob" class="c-btn-text-override" title="Unlock full calendar range" style="background:none; border:none; color:var(--sky, #207C82); font-size:0.75rem; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:0.25rem;">
+                  <svg class="c-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                  <span id="j-unlock-student-dob-text">Unlock range</span>
+                </button>
+              </div>
               <?php
-              $datepickerId  = 'j-student-dob';
-              $inputName     = 'dateOfBirth';
-              $selectedValue = '';
-              $placeholder   = 'Select date of birth';
-              $tone          = 'sky';
-              $required      = true;
+              $datepickerId    = 'j-student-dob';
+              $inputName       = 'dateOfBirth';
+              $selectedValue   = '';
+              $placeholder     = 'Select date of birth';
+              $tone            = 'sky';
+              $required        = true;
+              $extraAttributes = 'data-min-age="3" data-max-age="19"';
               require __DIR__ . '/_datepicker.php';
               ?>
+              <p class="c-field-hint" id="j-student-dob-hint" style="font-size:0.75rem; color:rgba(15,65,74,0.6); margin-top:0.25rem;">Standard student age range (3–19 yrs) enforced.</p>
             </div>
 
             <!-- 5. Gender -->
@@ -254,11 +263,12 @@ $parentRelationOptions = [
               $dropdownClass = 'c-select-sky';
               require __DIR__ . '/_dropdown.php';
               ?>
+              <span id="j-student-grade-hint" class="c-field-hint" style="display:none; font-size:0.75rem; font-weight:600; color:var(--sky, #207C82); margin-top:0.25rem;"></span>
             </div>
 
             <!-- 9. Class / Section -->
             <div class="c-form-field">
-              <label class="c-form-field-label">Class / Section <span class="c-required-mark" style="color:var(--skyblue, #7FC7CC);">*</span><em class="c-field-helper">Choose a Grade 6 class</em></label>
+              <label class="c-form-field-label">Class / Section <span class="c-required-mark" style="color:var(--skyblue, #7FC7CC);">*</span><em class="c-field-helper" id="j-student-class-helper">Choose a Grade 6 class</em></label>
               <?php
               $dropdownId    = 'j-student-class';
               $name          = 'classSection';
@@ -398,8 +408,12 @@ $parentRelationOptions = [
             </div>
           </div>
 
+          <!-- 21. Guardian Information & Sibling Linkage -->
+          <?php require __DIR__ . '/_admission_guardian.php'; ?>
+
           <!-- Actions Footer (1:1 with original enrollment) -->
           <footer class="c-form-footer">
+            <div id="j-enrollment-footer-notice" class="c-form-footer-notice" style="display: none;"></div>
             <p class="c-required-note">Fields marked <span class="c-req-star" style="color:var(--skyblue, #7FC7CC);">*</span> are required to enroll a student.</p>
             <div class="c-form-footer-actions">
               <button id="j-enrollment-save-draft" class="c-btn-outline-sky j-btn-save-draft" type="button">
@@ -560,7 +574,7 @@ $parentRelationOptions = [
 
           <!-- Submit Button Row -->
           <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--color-border, #EFE8DF); padding-top: 1rem;">
-            <button class="c-btn-solid-tone c-tone-sunshine j-btn-submit-person" type="submit">
+            <button class="c-btn-solid-tone c-tone-sunshine j-btn-submit-person" type="submit" id="j-teacher-submit">
               <svg class="c-icon" width="16" height="16"><use href="#icon-save"/></svg>
               <span>Save Account</span>
             </button>
@@ -568,130 +582,24 @@ $parentRelationOptions = [
 
         <?php elseif ($role === 'parent'): ?>
           <!-- ===============================================================
-               17. ADD PARENT / GUARDIAN ACCOUNT
-               Mirrors exact fields & styling from Admin/people/app.js lines 2591-2608
+               17. PARENT ENROLLMENT POLICY CARD
+               Parents & guardians are registered alongside their child during student admission
                =============================================================== -->
-          <div class="c-form-grid">
-            <!-- Relationship to Student -->
-            <div class="c-form-field">
-              <label class="c-form-field-label">Relationship to Student <span class="c-required-mark" style="color:var(--terracotta, #AF5031);">*</span></label>
-              <?php
-              $dropdownId    = 'j-parent-relation-type';
-              $name          = 'relationship';
-              $options       = $parentRelationOptions;
-              $selectedValue = 'Father';
-              $placeholder   = 'Select relationship';
-              $dropdownLabel = 'Relationship';
-              $dropdownClass = 'c-select-terracotta';
-              require __DIR__ . '/_dropdown.php';
-              ?>
+          <div class="c-info-card c-tinted-section c-tint-terracotta" style="margin: 1.5rem 0; padding: 2rem; border-radius: var(--radius-lg, 0.75rem); background: rgba(175, 80, 49, 0.06); border: 1px solid rgba(175, 80, 49, 0.2);">
+            <div style="display: flex; align-items: flex-start; gap: 1rem;">
+              <span class="c-icon-accent" style="color: var(--terracotta, #AF5031); padding: 0.5rem; background: rgba(175, 80, 49, 0.12); border-radius: 50%;">
+                <svg class="c-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-users"/></svg>
+              </span>
+              <div style="flex: 1;">
+                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.125rem; font-weight: 700; color: var(--terracotta, #AF5031);">Parent & Guardian Registration Policy</h3>
+                <p style="margin: 0 0 1rem 0; font-size: 0.875rem; color: var(--midnight, #0F414A); line-height: 1.6;">
+                  In L'École, parents and legal guardians are enrolled alongside their child during student admission. This ensures accurate family record associations, sibling linkage, and academic record access.
+                </p>
+                <button type="button" class="c-btn-accent c-tone-sky j-open-add-student-btn" onclick="openAddPersonForm('student')">
+                  <span>Go to Student Admission Form</span>
+                </button>
+              </div>
             </div>
-
-            <!-- Full Name (span 2) -->
-            <div class="c-form-field c-span-2">
-              <label class="c-form-field-label">Full Name <span class="c-required-mark" style="color:var(--terracotta, #AF5031);">*</span></label>
-              <input type="text" class="c-form-input j-form-input j-autofill-full" name="fullName" placeholder="e.g. Suresh Perera" required />
-            </div>
-
-            <!-- First Name (span 2) -->
-            <div class="c-form-field c-span-2">
-              <label class="c-form-field-label">First Name <span class="c-required-mark" style="color:var(--terracotta, #AF5031);">*</span></label>
-              <input type="text" class="c-form-input j-form-input j-autofill-first" name="firstName" placeholder="e.g. Suresh" required />
-            </div>
-
-            <!-- Last Name (span 2) -->
-            <div class="c-form-field c-span-2">
-              <label class="c-form-field-label">Last Name <span class="c-required-mark" style="color:var(--terracotta, #AF5031);">*</span></label>
-              <input type="text" class="c-form-input j-form-input j-autofill-last" name="lastName" placeholder="e.g. Perera" required />
-            </div>
-
-            <!-- NIC -->
-            <div class="c-form-field">
-              <label class="c-form-field-label">NIC <span class="c-required-mark" style="color:var(--terracotta, #AF5031);">*</span></label>
-              <input type="text" class="c-form-input j-form-input" name="nic" placeholder="e.g. 198012345678V" required />
-            </div>
-
-            <!-- Date of Birth -->
-            <div class="c-form-field">
-              <label class="c-form-field-label">Date of Birth <span class="c-required-mark" style="color:var(--terracotta, #AF5031);">*</span></label>
-              <?php
-              $datepickerId  = 'j-parent-dob';
-              $inputName     = 'dateOfBirth';
-              $selectedValue = '';
-              $placeholder   = 'Select date of birth';
-              $tone          = 'terracotta';
-              $required      = true;
-              require __DIR__ . '/_datepicker.php';
-              ?>
-            </div>
-
-            <!-- Passport No. (if NIC unavailable) -->
-            <div class="c-form-field">
-              <label class="c-form-field-label">Passport No. (if NIC unavailable)</label>
-              <input type="text" class="c-form-input j-form-input" name="passport" placeholder="e.g. N1234567" />
-            </div>
-
-            <!-- Occupation -->
-            <div class="c-form-field">
-              <label class="c-form-field-label">Occupation <span class="c-required-mark" style="color:var(--terracotta, #AF5031);">*</span></label>
-              <input type="text" class="c-form-input j-form-input" name="occupation" placeholder="e.g. Engineer" required />
-            </div>
-
-            <!-- Employer / Place of Work -->
-            <div class="c-form-field">
-              <label class="c-form-field-label">Employer / Place of Work</label>
-              <input type="text" class="c-form-input j-form-input" name="employer" placeholder="e.g. Tech Solutions Ltd" />
-            </div>
-
-            <!-- Mobile Number -->
-            <div class="c-form-field">
-              <label class="c-form-field-label">Mobile Number <span class="c-required-mark" style="color:var(--terracotta, #AF5031);">*</span></label>
-              <input type="tel" class="c-form-input j-form-input" name="mobile" placeholder="e.g. 07X XXX XXXX" required />
-            </div>
-
-            <!-- Home number -->
-            <div class="c-form-field">
-              <label class="c-form-field-label">Home number</label>
-              <input type="tel" class="c-form-input j-form-input" name="homePhone" placeholder="e.g. 0XX XXX XXXX" />
-            </div>
-
-            <!-- Office number -->
-            <div class="c-form-field">
-              <label class="c-form-field-label">Office number</label>
-              <input type="tel" class="c-form-input j-form-input" name="officePhone" placeholder="e.g. 0XX XXX XXXX" />
-            </div>
-
-            <!-- Office address -->
-            <div class="c-form-field">
-              <label class="c-form-field-label">Office address</label>
-              <input type="text" class="c-form-input j-form-input" name="officeAddress" placeholder="e.g. 123 Office Road" />
-            </div>
-
-            <!-- Email Address -->
-            <div class="c-form-field">
-              <label class="c-form-field-label">Email Address</label>
-              <input type="email" class="c-form-input j-form-input" name="email" placeholder="e.g. parent@email.com" />
-            </div>
-
-            <!-- Emergency name -->
-            <div class="c-form-field">
-              <label class="c-form-field-label">Emergency name</label>
-              <input type="text" class="c-form-input j-form-input" name="emergencyName" placeholder="e.g. Amal Perera" />
-            </div>
-
-            <!-- Emergency contact -->
-            <div class="c-form-field">
-              <label class="c-form-field-label">Emergency contact</label>
-              <input type="tel" class="c-form-input j-form-input" name="emergencyContact" placeholder="e.g. +94 77 123 4567" />
-            </div>
-          </div>
-
-          <!-- Submit Button Row -->
-          <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--color-border, #EFE8DF); padding-top: 1rem;">
-            <button class="c-btn-solid-tone c-tone-terracotta j-btn-submit-person" type="submit">
-              <svg class="c-icon" width="16" height="16"><use href="#icon-save"/></svg>
-              <span>Save Account</span>
-            </button>
           </div>
 
         <?php elseif ($role === 'management'): ?>
@@ -782,7 +690,7 @@ $parentRelationOptions = [
 
           <!-- Submit Button Row -->
           <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--color-border, #EFE8DF); padding-top: 1rem;">
-            <button class="c-btn-solid-tone c-tone-maroon j-btn-submit-person" type="submit">
+            <button class="c-btn-solid-tone c-tone-maroon j-btn-submit-person" type="submit" id="j-mgmt-submit">
               <svg class="c-icon" width="16" height="16"><use href="#icon-save"/></svg>
               <span>Save Account</span>
             </button>
@@ -793,3 +701,6 @@ $parentRelationOptions = [
     </form>
   </div>
 </section>
+
+<!-- Parent Picker Modal for Sibling Linking -->
+<?php require_once __DIR__ . '/_parent_picker.php'; ?>
