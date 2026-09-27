@@ -1076,6 +1076,216 @@
       }
     }
 
+    // -------------------------------------------------------------------------
+    // SCROLLABLE WHEEL TIME PICKER COMPONENT CONTROLLER
+    // -------------------------------------------------------------------------
+    function initTimePickerComponent() {
+      const trigger = document.getElementById('j-time-trigger');
+      const timeInput = document.getElementById('j-field-time');
+      const popover = document.getElementById('j-time-picker-popover');
+      const modeSingle = document.getElementById('j-tp-mode-single');
+      const modeRange = document.getElementById('j-tp-mode-range');
+      const rangeTabs = document.getElementById('j-tp-range-tabs');
+      const tabStart = document.getElementById('j-tp-tab-start');
+      const tabEnd = document.getElementById('j-tp-tab-end');
+      const preview = document.getElementById('j-tp-preview');
+      const btnApply = document.getElementById('j-tp-btn-apply');
+      const btnClear = document.getElementById('j-tp-btn-clear');
+
+      if (!trigger || !timeInput || !popover) return;
+
+      let isRange = false;
+      let activeSubtab = 'start'; // 'start' | 'end'
+      let startTime = { hour: '09', minute: '00', ampm: 'AM' };
+      let endTime = { hour: '10', minute: '30', ampm: 'AM' };
+
+      function togglePopover(show) {
+        const isShown = (typeof show === 'boolean') ? show : (popover.style.display !== 'none');
+        if (isShown) {
+          popover.style.display = 'none';
+          trigger.setAttribute('aria-expanded', 'false');
+        } else {
+          popover.style.display = 'block';
+          trigger.setAttribute('aria-expanded', 'true');
+          syncFromInput();
+          updateSelectionUI();
+        }
+      }
+
+      function parseTimeString(str) {
+        if (!str) return null;
+        const match = str.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+        if (!match) return null;
+        return {
+          hour: String(match[1]).padStart(2, '0'),
+          minute: String(match[2]).padStart(2, '0'),
+          ampm: match[3].toUpperCase()
+        };
+      }
+
+      function syncFromInput() {
+        const val = timeInput.value.trim();
+        if (val.includes('–') || val.includes('-')) {
+          const parts = val.split(/[-–]/);
+          const p1 = parseTimeString(parts[0]);
+          const p2 = parseTimeString(parts[1]);
+          if (p1) startTime = p1;
+          if (p2) endTime = p2;
+          setMode(true);
+        } else if (val) {
+          const p1 = parseTimeString(val);
+          if (p1) startTime = p1;
+          setMode(false);
+        }
+      }
+
+      function formatTime(t) {
+        return `${t.hour}:${t.minute} ${t.ampm}`;
+      }
+
+      function updatePreview() {
+        if (!preview) return;
+        if (isRange) {
+          preview.textContent = `${formatTime(startTime)} – ${formatTime(endTime)}`;
+        } else {
+          preview.textContent = formatTime(startTime);
+        }
+      }
+
+      function getCurrentTarget() {
+        return (!isRange || activeSubtab === 'start') ? startTime : endTime;
+      }
+
+      function updateSelectionUI() {
+        const cur = getCurrentTarget();
+        ['hour', 'minute', 'ampm'].forEach(col => {
+          const wheel = popover.querySelector(`.j-tp-wheel-${col}`);
+          if (!wheel) return;
+          const targetVal = (col === 'hour') ? cur.hour : ((col === 'minute') ? cur.minute : cur.ampm);
+          wheel.querySelectorAll('.c-tp-item').forEach(item => {
+            const isMatch = (item.dataset.val === targetVal);
+            item.classList.toggle('is-selected', isMatch);
+            if (isMatch) {
+              item.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+            }
+          });
+        });
+        updatePreview();
+      }
+
+      function setMode(range) {
+        isRange = range;
+        if (isRange) {
+          modeRange?.classList.add('is-active');
+          modeSingle?.classList.remove('is-active');
+          if (rangeTabs) rangeTabs.style.display = 'flex';
+        } else {
+          modeSingle?.classList.add('is-active');
+          modeRange?.classList.remove('is-active');
+          if (rangeTabs) rangeTabs.style.display = 'none';
+        }
+        updateSelectionUI();
+      }
+
+      modeSingle?.addEventListener('click', (e) => { e.stopPropagation(); setMode(false); });
+      modeRange?.addEventListener('click', (e) => { e.stopPropagation(); setMode(true); });
+
+      tabStart?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        activeSubtab = 'start';
+        tabStart.classList.add('is-active');
+        tabEnd?.classList.remove('is-active');
+        updateSelectionUI();
+      });
+
+      tabEnd?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        activeSubtab = 'end';
+        tabEnd.classList.add('is-active');
+        tabStart?.classList.remove('is-active');
+        updateSelectionUI();
+      });
+
+      popover.querySelectorAll('.c-tp-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const col = item.closest('.c-tp-wheel')?.dataset.col;
+          const val = item.dataset.val;
+          const cur = getCurrentTarget();
+          if (col === 'hour') cur.hour = val;
+          if (col === 'minute') cur.minute = val;
+          if (col === 'ampm') cur.ampm = val;
+          updateSelectionUI();
+        });
+      });
+
+      function stepColumn(col, dir) {
+        const wheel = popover.querySelector(`.j-tp-wheel-${col}`);
+        if (!wheel) return;
+        const items = Array.from(wheel.querySelectorAll('.c-tp-item'));
+        const curIdx = items.findIndex(it => it.classList.contains('is-selected'));
+        if (curIdx === -1) return;
+        let nextIdx = curIdx + dir;
+        if (nextIdx < 0) nextIdx = items.length - 1;
+        if (nextIdx >= items.length) nextIdx = 0;
+        items[nextIdx].click();
+      }
+
+      popover.querySelectorAll('.j-tp-arrow-up').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          stepColumn(btn.dataset.col, -1);
+        });
+      });
+
+      popover.querySelectorAll('.j-tp-arrow-down').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          stepColumn(btn.dataset.col, 1);
+        });
+      });
+
+      popover.querySelectorAll('.c-tp-wheel').forEach(wheel => {
+        wheel.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const col = wheel.dataset.col;
+          stepColumn(col, e.deltaY > 0 ? 1 : -1);
+        }, { passive: false });
+      });
+
+      btnApply?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        timeInput.value = preview ? preview.textContent : formatTime(startTime);
+        document.getElementById('j-field-time-error')?.classList.remove('c-is-visible');
+        timeInput.dispatchEvent(new Event('input', { bubbles: true }));
+        timeInput.dispatchEvent(new Event('change', { bubbles: true }));
+        togglePopover(true);
+      });
+
+      btnClear?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        timeInput.value = '';
+        timeInput.dispatchEvent(new Event('input', { bubbles: true }));
+        timeInput.dispatchEvent(new Event('change', { bubbles: true }));
+        togglePopover(true);
+      });
+
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        togglePopover();
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!popover.contains(e.target) && !trigger.contains(e.target)) {
+          popover.style.display = 'none';
+          trigger.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+
+    initTimePickerComponent();
+
     // Attach live clash check listeners to time input
     const timeInputEl = document.getElementById('j-field-time');
     timeInputEl?.addEventListener('input', checkLiveFormClash);

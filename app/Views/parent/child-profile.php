@@ -18,6 +18,9 @@
   <link rel="stylesheet" href="/assets/css/components/calendar.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/metric-card.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/achievements.css?v=<?= time() ?>" />
+  <link rel="stylesheet" href="/assets/css/components/notice-board.css?v=<?= time() ?>" />
+  <link rel="stylesheet" href="/assets/css/components/notice-card.css?v=<?= time() ?>" />
+  <link rel="stylesheet" href="/assets/css/components/team-card.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/profile-page.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/parent-child-profile.css?v=<?= time() ?>" />
 </head>
@@ -147,7 +150,7 @@
             </div>
           </div>
 
-          <div class="sc-grid" id="sc-grid">
+          <div class="c-club-grid sc-grid" id="sc-grid">
             <?php if (!empty($childClubs)): ?>
               <?php foreach ($childClubs as $club): ?>
                 <?php 
@@ -159,6 +162,15 @@
             <?php endif; ?>
           </div>
           <p class="sc-empty" id="sc-empty" hidden>No activities match your search or filters.</p>
+
+          <!-- Extracurricular Notice Board in Sports & Clubs Overview -->
+          <div style="margin-top: 2.25rem;">
+            <?php
+            $canEdit  = false;
+            $clubName = 'Extracurricular Activities';
+            require __DIR__ . '/../components/_extracurricular_noticeboard.php';
+            ?>
+          </div>
         </div>
 
         <!-- View B: Inside Extracurricular Card (Detail View) -->
