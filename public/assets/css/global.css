@@ -121,14 +121,24 @@
 }
 
 * { box-sizing: border-box; }
-html, body { height: 100%; }
+html {
+  height: 100%;
+}
 body {
+  min-height: 100%;
   margin: 0;
   font-family: 'Poppins', system-ui, sans-serif;
   background-color: var(--cream);
   color: var(--midnight);
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Ensure body scrolling is naturally enabled whenever no active modal overlay is open */
+body:not(.c-modal-open):not(:has(.c-modal-layer.c-is-open)):not(:has(.c-modal-overlay.c-is-open)):not(:has(.c-notices-modal-layer.c-is-open)) {
+  overflow-y: auto !important;
 }
 
 img { display: block; max-width: 100%; }
@@ -488,7 +498,9 @@ button { cursor: pointer; }
    UNIVERSAL FORM FIELD & INPUT UTILITIES (.c-field-label, .c-field-input)
    Shared single source of truth for inputs, textareas, and labels.
    ========================================================================= */
-.c-field-label {
+.c-field-label,
+.c-form-field__label,
+.c-form-field-label {
   display: block;
   font-size: 0.75rem;
   font-weight: 700;
@@ -499,7 +511,8 @@ button { cursor: pointer; }
 }
 
 .c-field-input,
-.c-form-input {
+.c-form-input,
+.c-text-input {
   width: 100%;
   box-sizing: border-box;
   border-radius: var(--radius-lg, 0.5rem);

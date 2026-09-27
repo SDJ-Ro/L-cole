@@ -57,6 +57,7 @@
     }
 
     // Lock page background scrolling
+    document.body.classList.add('c-modal-open');
     document.body.style.overflow = 'hidden';
 
     // Focus the first sensible interactive element inside for accessibility
@@ -102,8 +103,9 @@
 
     // Restore body scroll only if no other modals remain open
     const remainingOpen = document.querySelectorAll('.c-modal-layer.c-is-open, .c-modal-overlay.c-is-open, .c-notices-modal-layer.c-is-open');
-    if (remainingOpen.length <= 1) {
+    if (remainingOpen.length === 0) {
       document.body.style.overflow = '';
+      document.body.classList.remove('c-modal-open');
     }
 
     modalEl.dispatchEvent(new CustomEvent('modal:closed', { bubbles: true }));

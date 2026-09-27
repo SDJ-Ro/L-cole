@@ -19,15 +19,9 @@
           <svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-arrowLeft"/></svg>
           Back to L'École
         </a>
-        <span class="ach-page-brand">
-          <span class="ach-page-brand-badge"><svg class="icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-graduationCap"/></svg></span>
-          <span class="ach-page-brand-name">L'École</span>
-        </span>
       </div>
 
-      <p class="ach-page-eyebrow">Honours board</p>
       <h1 class="ach-page-title">Student achievements across sport, stage, and study.</h1>
-      <p class="ach-page-desc">Each record below carries the full event detail our teachers log — tournament, organising body, venue, scope, age group, result, award, and the students who represented the school.</p>
     </div>
   </header>
 
