@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="/assets/css/global.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/sidebar.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/page-header.css?v=<?= time() ?>" />
+  <link rel="stylesheet" href="/assets/css/components/dropdown.css?v=<?= time() ?>" />
+  <link rel="stylesheet" href="/assets/css/components/datepicker.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/profile-modal.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/profile-page.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/feedback-banner.css?v=<?= time() ?>" />
@@ -27,6 +29,8 @@
   </main>
 </div>
 <script src="/assets/js/components/sidebar.js?v=<?= time() ?>"></script>
+<script src="/assets/js/components/dropdown.js?v=<?= time() ?>"></script>
+<script src="/assets/js/components/datepicker.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/feedback-banners.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/profile-page.js?v=<?= time() ?>"></script>
 </body>

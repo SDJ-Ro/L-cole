@@ -325,11 +325,16 @@ All events are recorded in `activity_logs` via `AuditModel::record(...)`.
 - **Update**: Modal edit mode with backend persistence (`updateTeacherProfile`), updating `teachers`, `teacher_qualifications`, and `user_accounts` in MySQL with `TEACHER_PROFILE_UPDATED` audit record.
 - **Status Toggle**: Active / Inactive dropdown directly in People Directory rows and modal footer with atomic transaction and audit logging (`USER_ACTIVATED`, `USER_DEACTIVATED`).
 
-### 10.6 Management Panel Staff CRUD (100% Production Ready)
-- **Create**: Management registration form (`_add_person_page.php` with role `management`), admin-only privilege guard, sequential ID generation (`MAN-2026-XXXX`), institutional email provisioning (`first_last@lecole.edu`), Sri Lankan NIC validation, anti-self-reference checks for emergency contacts.
-- **Read**: People Directory Management table (`#j-table-management`), full view mode in `_person_profile_modal.php` (Contact & Account, Employment & Title, Personal Information, Emergency Contact).
-- **Update**: Modal edit mode with backend persistence (`updateManagementProfile`), updating `management_profiles` and `user_accounts` in MySQL with `MANAGEMENT_PROFILE_UPDATED` audit record.
-- **Status Toggle**: Active / Inactive dropdown directly in People Directory rows and modal footer with atomic transaction and audit logging.
+### 10.7 Full Profile Card & Directory Modal Editability for All 5 Roles (100% Production Ready)
+- **Root Cause Resolution**: Student profile previously hardcoded `'editable' => false`; profile pages rendered date/select fields as static text and lacked datepicker/dropdown assets; directory modal was missing administrator support and closure state synchronization.
+- **Unified Component Integration**:
+  - `_profile_page.php`: In edit mode, all date fields dynamically render `_datepicker.php` (with matching `$roleTone`), and all select fields render `_dropdown.php` with custom dropdown options matching the Add People form design tokens.
+  - `ProfileModel.php`: Enabled `'editable' => true` across all 5 user profiles (Student, Teacher, Parent, Management, Admin); added `'type' => 'date'` (DOB, Admission Date, Joined Date) and `'type' => 'select'` (Gender, Blood Group, Religion, Educational Zone, District, Province, Primary Subject, Relationship) across all 5 roles.
+  - `datepicker.js`: Added `rootEl.setDateVal = function(newVal)` and `rootEl.getDateVal()` to dynamically synchronize datepicker internal state, month calendars, and labels; elevated popup `z-index: 99999` so it is never trapped or clipped beneath modal dialogs.
+  - `profile-page.js` & `profile-page.css`: Updated edit lifecycle (`enterEdit`, `cancelEdit`, `saveBtn`) to snapshot, restore, and mirror `.j-dp-input` and `.c-dropdown` values; styled `.c-datepicker-trigger` and `.c-dropdown__trigger` inside `.c-info-card` at 34px height with role-tinted focus rings.
+  - 5 Profile Views: Linked `dropdown.css`, `datepicker.css`, `dropdown.js`, and `datepicker.js` into `admin/profile.php`, `management/profile.php`, `parent/profile.php`, `student/profile.php`, and `teacher/profile.php`.
+  - `_profile_information_tab.php`: Added Management DOB datepicker (`j-dp-mgmt-dob`) and full Section E: Administrator Profile View / Edit (`j-section-admin`) with DOB (`j-dp-admin-dob`) and Joined Date (`j-dp-admin-joindate`).
+  - `profile-modal.js`: Added `admin` to `ROLE_THEMES`, `findPersonRecord`, and `renderRoleSection`; added `renderAdminDetails()`; updated `setFieldVal` to synchronize `dpEl.setDateVal(val)` and `window.setDropdownValue()`; triggered `window.initAllDatePickers()` on entering edit mode; updated `saveProfileChanges()` for admin and management DOB.
 
 ---
 
@@ -356,6 +361,8 @@ All events are recorded in `activity_logs` via `AuditModel::record(...)`.
 | **Batch 13** | `aae1b46` | `fix(db): make academic_schema MySQL 8.0 compliant and add Windows PowerShell guide` | • `database/academic_schema.sql`<br>• `database/seed_faculty.php`<br>• `database/README.md`<br>• `worked.md` |
 | **Batch 14** | `e4f296f` | `feat(calendar,parent): implement scrollable time picker and fix parent extracurricular noticeboard` | • `app/Views/components/_calendar.php`<br>• `public/assets/css/components/calendar.css`<br>• `public/assets/js/components/calendar.js`<br>• `app/Views/parent/child-profile.php`<br>• `app/Views/components/_extracurricular_noticeboard.php`<br>• `public/assets/js/components/parent-child-profile.js`<br>• `worked.md` |
 | **Batch 15** | `19eac86` | `feat(calendar): implement in-place expanding cyclic drum tumbler with fixed center lens` | • `app/Views/components/_calendar.php`<br>• `public/assets/css/components/calendar.css`<br>• `public/assets/js/components/calendar.js`<br>• `worked.md` |
+| **Batch 16** | `ee71523` | `feat(profile): enable editing for all 5 roles with interactive datepicker and custom dropdown components` | • `app/Models/ProfileModel.php`<br>• `app/Views/components/_profile_page.php`<br>• `app/Views/components/_profile_information_tab.php`<br>• `app/Views/admin/profile.php`<br>• `app/Views/management/profile.php`<br>• `app/Views/teacher/profile.php`<br>• `app/Views/parent/profile.php`<br>• `app/Views/student/profile.php`<br>• `public/assets/css/components/profile-modal.css`<br>• `public/assets/css/components/profile-page.css`<br>• `public/assets/js/components/datepicker.js`<br>• `public/assets/js/components/profile-modal.js`<br>• `public/assets/js/components/profile-page.js`<br>• `worked.md` |
+
 
 
 
