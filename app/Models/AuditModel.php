@@ -53,6 +53,14 @@ class AuditModel extends Model {
             $ipAddress = $ip ?: self::getClientIp();
             $ua = $userAgent ?: self::getUserAgent();
 
+            if ($accountId !== null && $accountId > 0) {
+                $check = $this->db->prepare("SELECT 1 FROM user_accounts WHERE id = ? LIMIT 1");
+                $check->execute([$accountId]);
+                if (!$check->fetchColumn()) {
+                    $accountId = null;
+                }
+            }
+
             $stmt = $this->db->prepare("
                 INSERT INTO activity_logs (account_id, identifier, action, ip_address, user_agent, details, created_at)
                 VALUES (:account_id, :identifier, :action, :ip_address, :user_agent, :details, NOW())
@@ -202,7 +210,20 @@ class AuditModel extends Model {
             'ACCOUNT_UNLOCKED_OTP',
             'ACCOUNT_UNLOCKED_LOGIN',
             'PASSWORD_RESET_COMPLETED',
-            'SESSION_EXPIRED'
+            'SESSION_EXPIRED',
+            'CALENDAR_EVENT_CREATED',
+            'CALENDAR_EVENT_UPDATED',
+            'CALENDAR_EVENT_DELETED',
+            'CALENDAR_EVENT_PARALLEL_OVERRIDDEN',
+            'CALENDAR_EVENT_CREATE_DENIED',
+            'CALENDAR_EVENT_UPDATE_DENIED',
+            'CALENDAR_EVENT_DELETE_DENIED',
+            'STUDENT_ADMITTED',
+            'PARENT_LINKED_TO_STUDENT',
+            'GUARDIAN_CHANGED',
+            'CLUB_TIC_ASSIGNED',
+            'SPORT_TIC_ASSIGNED',
+            'TIC_ASSIGNED'
         ];
     }
 

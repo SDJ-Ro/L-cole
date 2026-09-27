@@ -114,7 +114,23 @@ class Controller {
             return true;
         }
 
+        // 4. JSON request payload parameter
+        $payload = $this->getRequestPayload();
+        if (!empty($payload['_csrf_token']) && hash_equals($expected, (string)$payload['_csrf_token'])) {
+            return true;
+        }
+        if (!empty($payload['csrf_token']) && hash_equals($expected, (string)$payload['csrf_token'])) {
+            return true;
+        }
+
         return false;
+    }
+
+    /**
+     * Alias for validateCsrf() for naming consistency across traits.
+     */
+    public function validateCsrfToken(?string $token = null): bool {
+        return $this->validateCsrf($token);
     }
 
     /**
@@ -248,5 +264,43 @@ class Controller {
             $this->setFlash('notice', 'Please sign in to continue.');
             $this->redirect('/auth');
         }
+    }
+
+    /**
+     * Parse incoming JSON request payload or fallback to standard POST parameters.
+     */
+    protected function getRequestPayload(): array {
+        $raw = file_get_contents('php://input');
+        if (!empty($raw)) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+        return $_POST ?? [];
+    }
+
+    /**
+     * Send standard JSON response and terminate execution.
+     */
+    protected function sendJson(array $data, int $statusCode = 200): void {
+        http_response_code($statusCode);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($data);
+        exit;
+    }
+
+    /**
+     * Helper to get current authenticated user actor info.
+     */
+    protected function getActorDetails(): array {
+        $user = $this->getUser();
+        $email = $user['identifier'] ?? ($user['email'] ?? 'admin@lecole.edu');
+        return [
+            'id'         => (int)($user['id'] ?? 1),
+            'identifier' => $email,
+            'email'      => $email,
+            'role'       => $user['role'] ?? 'admin',
+        ];
     }
 }
