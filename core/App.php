@@ -54,9 +54,14 @@ class App {
         }
 
         // 1. Look for a matching controller file
-        if (isset($url[0]) && file_exists('../app/Controllers/' . ucfirst($url[0]) . 'Controller.php')) {
-            $this->controller = ucfirst($url[0]) . 'Controller';
-            unset($url[0]);
+        if (isset($url[0])) {
+            $controllerFile = '../app/Controllers/' . ucfirst($url[0]) . 'Controller.php';
+            if (file_exists($controllerFile)) {
+                $this->controller = ucfirst($url[0]) . 'Controller';
+                unset($url[0]);
+            } else {
+                $this->trigger404("Controller '" . htmlspecialchars($url[0]) . "' does not exist.");
+            }
         }
 
         // 2. Load and instantiate the controller
@@ -73,6 +78,8 @@ class App {
             } elseif (method_exists($this->controller, $camelCase)) {
                 $this->method = $camelCase;
                 unset($url[1]);
+            } else {
+                $this->trigger404("Action '" . htmlspecialchars($methodCandidate) . "' does not exist on " . get_class($this->controller) . ".");
             }
         }
 
@@ -81,6 +88,34 @@ class App {
 
         // 5. Execute the controller method
         call_user_func_array([$this->controller, $this->method], $this->params);
+    }
+
+    /**
+     * Dispatch HTTP 404 response.
+     * Returns JSON for AJAX/API requests and branded 404 HTML view for browser requests.
+     */
+    protected function trigger404(string $message = 'Resource not found'): void {
+        http_response_code(404);
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+               || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
+               || (isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false);
+
+        if ($isAjax) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'success' => false,
+                'error'   => $message
+            ]);
+            exit;
+        }
+
+        $errorView = dirname(__DIR__) . '/app/Views/errors/404.php';
+        if (file_exists($errorView)) {
+            require_once $errorView;
+        } else {
+            echo "<!DOCTYPE html><html><head><title>404 Not Found</title></head><body style=\"font-family:sans-serif;text-align:center;padding:50px;\"><h1>404 Not Found</h1><p>" . htmlspecialchars($message) . "</p></body></html>";
+        }
+        exit;
     }
 
     // Breaks the URL (e.g. "/auth/student" or "/landing/achievements") into an array

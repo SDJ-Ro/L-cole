@@ -8,7 +8,11 @@
  * =========================================================================
  */
 
+require_once __DIR__ . '/../../core/Database.php';
 require_once __DIR__ . '/AcademicModel.php';
+require_once __DIR__ . '/ParentModel.php';
+require_once __DIR__ . '/StudentModel.php';
+require_once __DIR__ . '/SqlJsMapper.php';
 
 class PeopleModel {
 
@@ -26,11 +30,19 @@ class PeopleModel {
     }
 
     public static function getClassEnrollments(): array {
-        return AcademicModel::getClassEnrollments();
+        $academic = AcademicModel::getClassEnrollments();
+        return $academic;
     }
 
     public static function getStudents(): array {
-        return [
+        $dbStudents = [];
+        try {
+            $dbStudents = StudentModel::getStudents();
+        } catch (\Throwable $e) {
+            error_log("Failed to load students from DB: " . $e->getMessage());
+        }
+
+        $mockStudents = [
             [
                 'firstName'   => 'Nethmi',
                 'lastName'    => 'Perera',
@@ -144,9 +156,80 @@ class PeopleModel {
                 'avatar'      => 'bg-terracotta text-white',
             ],
         ];
+
+        if (!empty($dbStudents)) {
+            $dbIndices = array_column($dbStudents, 'index');
+            $filteredMock = array_filter($mockStudents, fn($s) => !in_array($s['index'] ?? '', $dbIndices, true));
+            return array_merge($dbStudents, array_values($filteredMock));
+        }
+
+        return $mockStudents;
     }
 
     public static function getTeachers(): array {
+        $dbTeachers = [];
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->query("
+                SELECT t.*, u.activation_status, u.role as user_role,
+                       ct.class_id as homeroom_class_id,
+                       c.section_name as homeroom_class_name
+                FROM teachers t
+                JOIN user_accounts u ON u.id = t.account_id
+                LEFT JOIN class_teachers ct ON ct.teacher_id = t.id
+                LEFT JOIN classes c ON c.id = ct.class_id
+                ORDER BY t.id ASC
+            ");
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($rows)) {
+                $teacherIds = array_column($rows, 'id');
+                $inIds = implode(',', array_fill(0, count($teacherIds), '?'));
+
+                $qualMap = [];
+                $qStmt = $db->prepare("SELECT teacher_id, degree_title, institution, year_obtained FROM teacher_qualifications WHERE teacher_id IN ({$inIds})");
+                $qStmt->execute($teacherIds);
+                while ($qr = $qStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $qualMap[$qr['teacher_id']][] = [
+                        'title'       => $qr['degree_title'],
+                        'institution' => $qr['institution'],
+                        'year'        => $qr['year_obtained']
+                    ];
+                }
+
+                $clubMap = [];
+                $clStmt = $db->prepare("SELECT ct.teacher_id, c.name FROM club_teachers ct JOIN clubs c ON c.id = ct.club_id WHERE ct.teacher_id IN ({$inIds})");
+                $clStmt->execute($teacherIds);
+                while ($clr = $clStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $clubMap[$clr['teacher_id']][] = $clr['name'];
+                }
+
+                $sportMap = [];
+                $spStmt = $db->prepare("SELECT st.teacher_id, s.name FROM sport_teachers st JOIN sports s ON s.id = st.sport_id WHERE st.teacher_id IN ({$inIds})");
+                $spStmt->execute($teacherIds);
+                while ($spr = $spStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $sportMap[$spr['teacher_id']][] = $spr['name'];
+                }
+
+                foreach ($rows as $row) {
+                    $tid = (int)$row['id'];
+                    $dbTeachers[] = SqlJsMapper::teacherToJs(
+                        $row,
+                        $qualMap[$tid] ?? [],
+                        $row['homeroom_class_name'] ?? null,
+                        $clubMap[$tid] ?? [],
+                        $sportMap[$tid] ?? []
+                    );
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log("Failed to load teachers from DB: " . $e->getMessage());
+        }
+
+        if (!empty($dbTeachers)) {
+            return $dbTeachers;
+        }
+
         return [
             [
                 'firstName'        => 'James',
@@ -200,7 +283,14 @@ class PeopleModel {
     }
 
     public static function getParents(): array {
-        return [
+        $dbParents = [];
+        try {
+            $dbParents = ParentModel::getAll();
+        } catch (\Throwable $e) {
+            error_log("Failed to load parents from DB: " . $e->getMessage());
+        }
+
+        $mockParents = [
             [
                 'firstName' => 'Suresh',
                 'lastName'  => 'Perera',
@@ -241,9 +331,38 @@ class PeopleModel {
                 'tone'      => 'bg-maroon text-white',
             ],
         ];
+
+        if (!empty($dbParents)) {
+            $dbIds = array_column($dbParents, 'id');
+            $filteredMock = array_filter($mockParents, fn($p) => !in_array($p['id'] ?? '', $dbIds, true));
+            return array_merge($dbParents, array_values($filteredMock));
+        }
+
+        return $mockParents;
     }
 
     public static function getManagement(): array {
+        $dbMgmt = [];
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->query("
+                SELECT m.*, u.activation_status, u.role as user_role
+                FROM management_profiles m
+                JOIN user_accounts u ON u.id = m.account_id
+                ORDER BY m.id ASC
+            ");
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($rows as $row) {
+                $dbMgmt[] = SqlJsMapper::managementToJs($row);
+            }
+        } catch (\Throwable $e) {
+            error_log("Failed to load management from DB: " . $e->getMessage());
+        }
+
+        if (!empty($dbMgmt)) {
+            return $dbMgmt;
+        }
+
         return [
             [
                 'firstName'      => 'Alex',

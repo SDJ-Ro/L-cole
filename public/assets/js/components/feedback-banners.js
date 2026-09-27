@@ -108,4 +108,7 @@
   }
 
   window.showFeedbackBanner = showFeedbackBanner;
+  window.showToast = function (message, type = 'success', duration = 3500) {
+    return showFeedbackBanner(message, type, duration);
+  };
 })();

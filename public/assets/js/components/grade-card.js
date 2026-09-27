@@ -135,18 +135,28 @@
 
   async function apiPost(action, payload) {
     const url = getApiUrl(action);
+    const csrfToken = window.LECOLE_CSRF_TOKEN
+      || document.querySelector('input[name="_csrf_token"]')?.value
+      || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+      || '';
+
     const headers = {
       'Content-Type': 'application/json',
       'X-Requested-With': 'XMLHttpRequest'
     };
-    if (window.LECOLE_CSRF_TOKEN) {
-      headers['X-CSRF-Token'] = window.LECOLE_CSRF_TOKEN;
+    if (csrfToken) {
+      headers['X-CSRF-Token'] = csrfToken;
+    }
+
+    const bodyData = (typeof payload === 'object' && payload !== null) ? { ...payload } : {};
+    if (csrfToken && !bodyData._csrf_token) {
+      bodyData._csrf_token = csrfToken;
     }
 
     const response = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify(payload)
+      body: JSON.stringify(bodyData)
     });
 
     const data = await response.json().catch(() => ({ success: false, error: 'Network communication error.' }));
@@ -154,30 +164,12 @@
   }
 
   function showToast(message, type = 'success') {
-    let layer = document.getElementById('j-toast-layer');
-    if (!layer) {
-      layer = document.createElement('div');
-      layer.id = 'j-toast-layer';
-      layer.className = 'c-toast-layer';
-      document.body.appendChild(layer);
+    if (typeof window.showToast === 'function') {
+      return window.showToast(message, type);
     }
-
-    const toast = document.createElement('div');
-    toast.className = `c-toast c-toast--${type}`;
-    const icon = type === 'success' ? '#icon-check' : '#icon-alertTriangle';
-    toast.innerHTML = `
-      <svg class="c-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <use href="${icon}"/>
-      </svg>
-      <span>${escapeHtml(message)}</span>
-    `;
-    layer.appendChild(toast);
-
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateY(8px)';
-      setTimeout(() => toast.remove(), 250);
-    }, 3800);
+    if (typeof window.showFeedbackBanner === 'function') {
+      return window.showFeedbackBanner(message, type);
+    }
   }
 
   function updateGradeCardStats(gradeCard) {

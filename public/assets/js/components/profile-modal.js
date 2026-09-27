@@ -104,12 +104,14 @@
    */
   function bindGlobalTriggers() {
     document.addEventListener('click', function (e) {
-      // 1. View button on row
+      // 1. View button on row or clicking a person row directly
       const viewBtn = e.target.closest('.j-open-profile');
-      if (viewBtn) {
+      const rowClick = !e.target.closest('button, a, input, select, .c-dropdown, .c-select') ? e.target.closest('.j-person-row') : null;
+      const viewTarget = viewBtn || rowClick;
+      if (viewTarget) {
         e.preventDefault();
-        const role = viewBtn.getAttribute('data-role') || 'student';
-        const id = viewBtn.getAttribute('data-id') || '';
+        const role = viewTarget.getAttribute('data-role') || 'student';
+        const id = viewTarget.getAttribute('data-id') || '';
         openProfileModal(role, id, 'view');
         return;
       }
@@ -138,8 +140,10 @@
       const jumpParentBtn = e.target.closest('.j-jump-parent-profile');
       if (jumpParentBtn) {
         e.preventDefault();
-        const parentId = jumpParentBtn.getAttribute('data-parent-id') || 'P-045';
-        openProfileModal('parent', parentId, 'view');
+        const parentId = jumpParentBtn.getAttribute('data-parent-id');
+        if (parentId) {
+          openProfileModal('parent', parentId, 'view');
+        }
         return;
       }
     });
@@ -615,32 +619,24 @@
     const parents = (window.__PEOPLE_DATA__ && window.__PEOPLE_DATA__.parents) || [];
     let linkedParent = null;
 
-    if (person.student && person.student.guardian && person.student.guardian.isAvailable !== false) {
-      linkedParent = person.student.guardian;
-    } else {
-      linkedParent = parents.find(function (p) {
-        if (!p.children) return false;
-        return p.children.some(function (c) {
-          return c.indexOf(person.name) !== -1 || (person.id && c.indexOf(person.id) !== -1);
-        });
-      });
+    if (person.parentId) {
+      linkedParent = parents.find(p => (p.id === person.parentId || p.parent_id === person.parentId));
     }
-
+    if (!linkedParent && person.guardian && person.guardian.isAvailable !== false) {
+      linkedParent = person.guardian;
+    }
+    if (!linkedParent && person.student && person.student.guardian && person.student.guardian.isAvailable !== false) {
+      linkedParent = person.student.guardian;
+    }
     if (!linkedParent) {
-      if (person.name && person.name.indexOf('Perera') !== -1) {
-        linkedParent = parents.find(p => p.id === 'P-045') || {
-          id: 'P-045',
-          name: 'Suresh Perera',
-          relation: 'Father',
-          email: 's.perera@gmail.com',
-          phone: '+94 77 234 5678',
-          initials: 'SP',
-          status: 'Active',
-          avatarTone: 'bg-terracotta text-white'
-        };
-      } else if (person.guardian) {
-        linkedParent = person.guardian;
-      }
+      linkedParent = parents.find(function (p) {
+        if (!p.children && !p.linkedStudents) return false;
+        if (p.linkedStudents && p.linkedStudents.some(s => s.id === person.id || s.name === person.name)) return true;
+        if (p.children) {
+          return p.children.some(c => c.indexOf(person.name) !== -1 || (person.id && c.indexOf(person.id) !== -1));
+        }
+        return false;
+      });
     }
 
     if (!linkedParent || linkedParent.isAvailable === false) {
@@ -870,6 +866,12 @@
     if (targetPanel) {
       targetPanel.style.display = 'block';
     }
+
+    if (activeSubtab === 'academics') {
+      if (window.StudentAcademic?.renderAcademicPage) {
+        window.StudentAcademic.renderAcademicPage();
+      }
+    }
   }
 
   /**
@@ -895,6 +897,9 @@
     }
 
     renderRecordBookMarks();
+    if (window.StudentAcademic?.selectGrade) {
+      window.StudentAcademic.selectGrade(gradeNumber);
+    }
   }
 
   /**
@@ -916,6 +921,9 @@
     }
 
     renderRecordBookMarks();
+    if (window.StudentAcademic?.selectTerm) {
+      window.StudentAcademic.selectTerm(termName);
+    }
   }
 
   /**
@@ -1303,8 +1311,6 @@
 
     if (targetStudent) {
       openProfileModal('student', targetStudent.id || targetStudent.index, 'view');
-    } else {
-      openProfileModal('student', 'S2021-091', 'view');
     }
   }
 
@@ -1335,9 +1341,469 @@
   }
 
   /**
+   * Asynchronously persist edited parent profile to the database
+   */
+  async function saveParentProfile() {
+    const saveButton = document.getElementById('j-btn-save-profile');
+    if (saveButton && saveButton.disabled) return;
+
+    const nameInput = document.getElementById('j-modal-name-input');
+    const newName = nameInput ? nameInput.value.trim() : (currentPerson.name || '');
+
+    const savingParentId = activeId || currentPerson.id || currentPerson.parent_id;
+    const basePath = window.location.pathname.startsWith('/admin') ? '/admin' : '/management';
+    const csrfToken = document.querySelector('input[name="_csrf_token"]')?.value ||
+                      document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    const data = new FormData();
+    data.set('parentCode', savingParentId);
+    data.set('version', currentPerson.profileVersion || '');
+    if (csrfToken) data.set('_csrf_token', csrfToken);
+
+    data.set('fullName', newName);
+    data.set('firstName', newName ? newName.split(' ')[0] : (currentPerson.firstName || ''));
+    data.set('lastName', newName ? (newName.split(' ').slice(1).join(' ') || '') : (currentPerson.lastName || ''));
+    data.set('relationship', getFieldVal('parent-relation') || currentPerson.relation || 'Parent');
+
+    const fields = {
+      nic: 'parent-nic',
+      passport: 'parent-passport',
+      dateOfBirth: 'parent-dob',
+      occupation: 'parent-occupation',
+      employer: 'parent-employer',
+      mobile: 'parent-phone',
+      homePhone: 'parent-sphone',
+      officePhone: 'parent-officephone',
+      officeAddress: 'parent-officeaddress',
+      homeAddress: 'parent-address',
+      emergencyName: 'parent-emname',
+      emergencyContact: 'parent-emcontact'
+    };
+
+    Object.entries(fields).forEach(function ([k, fieldId]) {
+      data.set(k, getFieldVal(fieldId));
+    });
+
+    if (saveButton) {
+      saveButton.disabled = true;
+      saveButton.innerHTML = '<span>Saving changes...</span>';
+    }
+
+    try {
+      const response = await fetch(`${basePath}/updateParent`, {
+        method: 'POST',
+        body: data,
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update parent details.');
+      }
+
+      // Update in memory and directory table
+      const storedParent = (window.__PEOPLE_DATA__?.parents || []).find(function (p) {
+        return (p.id === savingParentId || p.parent_id === savingParentId);
+      });
+      if (storedParent && result.parent) {
+        Object.assign(storedParent, result.parent);
+      }
+      if (result.parent) {
+        Object.assign(currentPerson, result.parent);
+      } else {
+        currentPerson.name = newName;
+      }
+      editedDraft = JSON.parse(JSON.stringify(currentPerson));
+
+      // Sync DOM table row
+      updateTableRowDOM('parent', savingParentId, currentPerson);
+
+      // Render view mode
+      renderRoleSection('parent', currentPerson, 'view');
+      toggleModalMode('view');
+      applyModalHeaderTheme('parent', currentPerson);
+
+      if (typeof window.showFeedbackBanner === 'function') {
+        window.showFeedbackBanner('Parent profile updated successfully.', 'success');
+      }
+    } catch (err) {
+      if (typeof window.showFeedbackBanner === 'function') {
+        window.showFeedbackBanner(err.message || 'Unable to save parent changes.', 'error');
+      } else {
+        alert(err.message || 'Unable to save parent changes.');
+      }
+    } finally {
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.innerHTML = '<svg class="c-icon" width="15" height="15"><use href="#icon-check"/></svg><span>Save Changes</span>';
+      }
+    }
+  }
+
+  async function saveStudentProfile() {
+    const saveButton = document.getElementById('j-btn-save-profile');
+    if (saveButton && saveButton.disabled) return;
+
+    const nameInput = document.getElementById('j-modal-name-input');
+    const newName = nameInput ? nameInput.value.trim() : (currentPerson.name || '');
+    if (!newName) {
+      const nameError = modalEl.querySelector('.j-profile-name-error');
+      if (nameError) {
+        nameError.textContent = 'Full name is required.';
+        nameError.style.display = 'block';
+      }
+      return;
+    }
+
+    const savingStudentId = activeId || currentPerson.id || currentPerson.index;
+    const basePath = window.location.pathname.startsWith('/admin') ? '/admin' : '/management';
+    const csrfToken = document.querySelector('input[name="_csrf_token"]')?.value ||
+                      document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    // Read updated status
+    const statusSelect = document.getElementById('j-modal-status-dropdown');
+    let selectedStatus = 'Active';
+    if (statusSelect) {
+      const hiddenStatus = statusSelect.querySelector('input[type="hidden"]');
+      selectedStatus = (hiddenStatus && hiddenStatus.value) ? hiddenStatus.value : (statusSelect.value || 'Active');
+    }
+
+    const payload = {
+      studentIndex: savingStudentId,
+      fullName: newName,
+      status: selectedStatus,
+      grade: getFieldVal('student-grade') || currentPerson.grade,
+      classSection: (getFieldVal('student-class') || currentPerson.className || '').replace(/^Class\s*/i, ''),
+      dateOfBirth: getFieldVal('student-dob') || currentPerson.dateOfBirth,
+      gender: getFieldVal('student-gender') || currentPerson.gender,
+      nationalId: getFieldVal('student-bc') || currentPerson.nationalId,
+      birthCertificateNumber: getFieldVal('student-bc') || currentPerson.birthCertificateNumber,
+      religion: getFieldVal('student-religion') || currentPerson.religion,
+      nationality: getFieldVal('student-nationality') || currentPerson.nationality,
+      homeAddress: getFieldVal('student-address') || currentPerson.address,
+      educationalZone: getFieldVal('student-zone') || currentPerson.educationalZone,
+      district: getFieldVal('student-district') || currentPerson.district,
+      province: getFieldVal('student-province') || currentPerson.province,
+      previousSchool: getFieldVal('student-prevschool') || currentPerson.previousSchool,
+      bloodGroup: getFieldVal('student-blood') || currentPerson.bloodGroup,
+      medicalNotes: getFieldVal('student-medical') || currentPerson.medicalNotes,
+      _csrf_token: csrfToken
+    };
+
+    if (saveButton) {
+      saveButton.disabled = true;
+      saveButton.innerHTML = '<span>Saving changes...</span>';
+    }
+
+    try {
+      const response = await fetch(`${basePath}/updateStudentProfile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update student details.');
+      }
+
+      // Update in memory
+      if (result.student) {
+        Object.assign(currentPerson, result.student);
+      } else {
+        currentPerson.name = newName;
+        currentPerson.status = selectedStatus;
+      }
+
+      const storedStudent = (window.__PEOPLE_DATA__?.students || []).find(function (s) {
+        return (s.id === savingStudentId || s.index === savingStudentId);
+      });
+      if (storedStudent && result.student) {
+        Object.assign(storedStudent, result.student);
+      }
+
+      editedDraft = JSON.parse(JSON.stringify(currentPerson));
+
+      // Sync DOM table row
+      updateTableRowDOM('student', savingStudentId, currentPerson);
+
+      // Render view mode
+      renderRoleSection('student', currentPerson, 'view');
+      toggleModalMode('view');
+      applyModalHeaderTheme('student', currentPerson);
+
+      if (typeof window.showFeedbackBanner === 'function') {
+        window.showFeedbackBanner('Student profile updated successfully.', 'success');
+      }
+    } catch (err) {
+      if (typeof window.showFeedbackBanner === 'function') {
+        window.showFeedbackBanner(err.message || 'Unable to save student changes.', 'error');
+      } else {
+        alert(err.message || 'Unable to save student changes.');
+      }
+    } finally {
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.innerHTML = '<svg class="c-icon" width="15" height="15"><use href="#icon-check"/></svg><span>Save Changes</span>';
+      }
+    }
+  }
+
+  async function saveTeacherProfile() {
+    const saveButton = document.getElementById('j-btn-save-profile');
+    if (saveButton && saveButton.disabled) return;
+
+    const nameInput = document.getElementById('j-modal-name-input');
+    const newName = nameInput ? nameInput.value.trim() : (currentPerson.name || '');
+    if (!newName) {
+      const nameError = modalEl.querySelector('.j-profile-name-error');
+      if (nameError) {
+        nameError.textContent = 'Full name is required.';
+        nameError.style.display = 'block';
+      }
+      return;
+    }
+
+    const savingStaffId = activeId || currentPerson.id || currentPerson.staffId;
+    const basePath = window.location.pathname.startsWith('/admin') ? '/admin' : '/management';
+    const csrfToken = document.querySelector('input[name="_csrf_token"]')?.value ||
+                      document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    // Read updated status
+    const statusSelect = document.getElementById('j-modal-status-dropdown');
+    let selectedStatus = 'Active';
+    if (statusSelect) {
+      const hiddenStatus = statusSelect.querySelector('input[type="hidden"]');
+      selectedStatus = (hiddenStatus && hiddenStatus.value) ? hiddenStatus.value : (statusSelect.value || 'Active');
+    }
+
+    // Read qualifications from edit list if present
+    const qualRows = modalEl.querySelectorAll('#j-teacher-qual-edit-list .c-qual-edit-row');
+    const newQuals = [];
+    qualRows.forEach(function (row) {
+      const title = row.querySelector('.j-qual-title') ? row.querySelector('.j-qual-title').value.trim() : '';
+      const inst = row.querySelector('.j-qual-institution') ? row.querySelector('.j-qual-institution').value.trim() : '';
+      const year = row.querySelector('.j-qual-year') ? row.querySelector('.j-qual-year').value.trim() : '';
+      if (title || inst) {
+        newQuals.push({ title: title, institution: inst, year: year });
+      }
+    });
+
+    const payload = {
+      staffId: savingStaffId,
+      fullName: newName,
+      status: selectedStatus,
+      nic: getFieldVal('teacher-nic') || currentPerson.nic,
+      dateOfBirth: getFieldVal('teacher-dob') || currentPerson.dateOfBirth,
+      phone: getFieldVal('teacher-phone') || currentPerson.phone,
+      personalEmail: getFieldVal('teacher-pemail') || getFieldVal('teacher-pemail2') || currentPerson.personalEmail,
+      officeAddress: currentPerson.officeAddress || '',
+      subjects: getFieldVal('teacher-subject') || currentPerson.subjects || currentPerson.subject,
+      experience: getFieldVal('teacher-exp') || currentPerson.experience,
+      joinDate: getFieldVal('teacher-joindate') || currentPerson.joinDate,
+      emergencyName: getFieldVal('teacher-emname') || currentPerson.emergencyName,
+      emergencyPhone: getFieldVal('teacher-emphone') || currentPerson.emergencyPhone,
+      qualifications: newQuals.length ? newQuals : (currentPerson.qualifications || []),
+      _csrf_token: csrfToken
+    };
+
+    if (saveButton) {
+      saveButton.disabled = true;
+      saveButton.innerHTML = '<span>Saving changes...</span>';
+    }
+
+    try {
+      const response = await fetch(`${basePath}/updateTeacherProfile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update teacher details.');
+      }
+
+      // Update in memory
+      if (result.teacher) {
+        Object.assign(currentPerson, result.teacher);
+      } else {
+        currentPerson.name = newName;
+        currentPerson.status = selectedStatus;
+      }
+
+      const storedTeacher = (window.__PEOPLE_DATA__?.teachers || []).find(function (t) {
+        return (t.id === savingStaffId || t.staffId === savingStaffId);
+      });
+      if (storedTeacher && result.teacher) {
+        Object.assign(storedTeacher, result.teacher);
+      }
+
+      editedDraft = JSON.parse(JSON.stringify(currentPerson));
+
+      // Sync DOM table row
+      updateTableRowDOM('teacher', savingStaffId, currentPerson);
+
+      // Render view mode
+      renderRoleSection('teacher', currentPerson, 'view');
+      toggleModalMode('view');
+      applyModalHeaderTheme('teacher', currentPerson);
+
+      if (typeof window.showFeedbackBanner === 'function') {
+        window.showFeedbackBanner('Teacher profile updated successfully.', 'success');
+      }
+    } catch (err) {
+      if (typeof window.showFeedbackBanner === 'function') {
+        window.showFeedbackBanner(err.message || 'Unable to save teacher changes.', 'error');
+      } else {
+        alert(err.message || 'Unable to save teacher changes.');
+      }
+    } finally {
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.innerHTML = '<svg class="c-icon" width="15" height="15"><use href="#icon-check"/></svg><span>Save Changes</span>';
+      }
+    }
+  }
+
+  async function saveManagementProfile() {
+    const saveButton = document.getElementById('j-btn-save-profile');
+    if (saveButton && saveButton.disabled) return;
+
+    const nameInput = document.getElementById('j-modal-name-input');
+    const newName = nameInput ? nameInput.value.trim() : (currentPerson.name || '');
+    if (!newName) {
+      const nameError = modalEl.querySelector('.j-profile-name-error');
+      if (nameError) {
+        nameError.textContent = 'Full name is required.';
+        nameError.style.display = 'block';
+      }
+      return;
+    }
+
+    const savingStaffId = activeId || currentPerson.id || currentPerson.staffId;
+    const basePath = window.location.pathname.startsWith('/admin') ? '/admin' : '/management';
+    const csrfToken = document.querySelector('input[name="_csrf_token"]')?.value ||
+                      document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    // Read updated status
+    const statusSelect = document.getElementById('j-modal-status-dropdown');
+    let selectedStatus = 'Active';
+    if (statusSelect) {
+      const hiddenStatus = statusSelect.querySelector('input[type="hidden"]');
+      selectedStatus = (hiddenStatus && hiddenStatus.value) ? hiddenStatus.value : (statusSelect.value || 'Active');
+    }
+
+    const payload = {
+      staffId: savingStaffId,
+      fullName: newName,
+      status: selectedStatus,
+      nic: getFieldVal('mgmt-nic') || currentPerson.nic,
+      phone: getFieldVal('mgmt-phone') || currentPerson.phone,
+      personalEmail: getFieldVal('mgmt-pemail') || currentPerson.personalEmail,
+      title: getFieldVal('mgmt-title') || currentPerson.jobTitle || currentPerson.title,
+      officeLocation: getFieldVal('mgmt-office') || currentPerson.officeLocation,
+      joinDate: getFieldVal('mgmt-joining') || currentPerson.joinDate,
+      emergencyName: getFieldVal('mgmt-emname') || currentPerson.emergencyName,
+      emergencyPhone: getFieldVal('mgmt-emergency') || currentPerson.emergencyPhone,
+      _csrf_token: csrfToken
+    };
+
+    if (saveButton) {
+      saveButton.disabled = true;
+      saveButton.innerHTML = '<span>Saving changes...</span>';
+    }
+
+    try {
+      const response = await fetch(`${basePath}/updateManagementProfile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update staff details.');
+      }
+
+      // Update in memory
+      if (result.management) {
+        Object.assign(currentPerson, result.management);
+      } else {
+        currentPerson.name = newName;
+        currentPerson.status = selectedStatus;
+      }
+
+      const storedStaff = (window.__PEOPLE_DATA__?.management || []).find(function (m) {
+        return (m.id === savingStaffId || m.staffId === savingStaffId);
+      });
+      if (storedStaff && result.management) {
+        Object.assign(storedStaff, result.management);
+      }
+
+      editedDraft = JSON.parse(JSON.stringify(currentPerson));
+
+      // Sync DOM table row
+      updateTableRowDOM('management', savingStaffId, currentPerson);
+
+      // Render view mode
+      renderRoleSection('management', currentPerson, 'view');
+      toggleModalMode('view');
+      applyModalHeaderTheme('management', currentPerson);
+
+      if (typeof window.showFeedbackBanner === 'function') {
+        window.showFeedbackBanner('Staff profile updated successfully.', 'success');
+      }
+    } catch (err) {
+      if (typeof window.showFeedbackBanner === 'function') {
+        window.showFeedbackBanner(err.message || 'Unable to save staff changes.', 'error');
+      } else {
+        alert(err.message || 'Unable to save staff changes.');
+      }
+    } finally {
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.innerHTML = '<svg class="c-icon" width="15" height="15"><use href="#icon-check"/></svg><span>Save Changes</span>';
+      }
+    }
+  }
+
+  /**
    * Save Profile Changes in place
    */
   function saveProfileChanges() {
+    if (activeRole === 'parent' && (currentPerson.persisted || (currentPerson.id && currentPerson.id.startsWith('PAR-')))) {
+      saveParentProfile();
+      return;
+    }
+    if (activeRole === 'student' && (currentPerson.persisted || (currentPerson.id && currentPerson.id.startsWith('STU-')) || (currentPerson.index && currentPerson.index.startsWith('S20')))) {
+      saveStudentProfile();
+      return;
+    }
+    if (activeRole === 'teacher' && (currentPerson.persisted || (currentPerson.id && (currentPerson.id.startsWith('TEA-') || currentPerson.id.startsWith('T-'))))) {
+      saveTeacherProfile();
+      return;
+    }
+    if (activeRole === 'management' && (currentPerson.persisted || (currentPerson.id && (currentPerson.id.startsWith('MAN-') || currentPerson.id.startsWith('M-'))))) {
+      saveManagementProfile();
+      return;
+    }
+
     const nameInput = document.getElementById('j-modal-name-input');
     const nameError = modalEl.querySelector('.j-profile-name-error');
     const newName = nameInput ? nameInput.value.trim() : '';
@@ -1604,6 +2070,36 @@
     if (statusPill && person.status) {
       statusPill.textContent = person.status;
       statusPill.className = 'c-status-pill ' + (person.status === 'Active' ? 'c-status-active' : 'c-status-inactive');
+    }
+    const statusDropdown = row.querySelector('.c-dropdown--status');
+    if (statusDropdown && person.status) {
+      statusDropdown.classList.remove('c-dropdown--status-active', 'c-dropdown--status-deactivated');
+      statusDropdown.classList.add(person.status === 'Active' ? 'c-dropdown--status-active' : 'c-dropdown--status-deactivated');
+      const trigText = statusDropdown.querySelector('.c-dropdown__trigger-text');
+      if (trigText) trigText.textContent = person.status;
+    }
+
+    // Role-specific updates: Teacher
+    if (role === 'teacher') {
+      const subj = person.subject || person.subjects;
+      if (subj) {
+        row.setAttribute('data-subject', subj);
+        const subjP = row.querySelector('td:nth-child(3) p');
+        if (subjP) subjP.textContent = subj;
+      }
+      const phoneSpan = row.querySelectorAll('.c-contact-line span')[1];
+      if (phoneSpan && person.phone) phoneSpan.textContent = person.phone;
+    }
+
+    // Role-specific updates: Management
+    if (role === 'management') {
+      const jobTitle = person.jobTitle || person.title;
+      if (jobTitle) {
+        const titleP = row.querySelector('.c-subtext');
+        if (titleP) titleP.textContent = jobTitle;
+      }
+      const phoneSpan = row.querySelectorAll('.c-contact-line span')[1];
+      if (phoneSpan && person.phone) phoneSpan.textContent = person.phone;
     }
   }
 

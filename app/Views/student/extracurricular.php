@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/assets/css/components/sidebar.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/page-header.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/extracurricular-card.css?v=<?= time() ?>" />
+  <link rel="stylesheet" href="/assets/css/components/reject-modal.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/calendar.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/extracurricular-detail.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/feedback-banner.css?v=<?= time() ?>" />
@@ -34,7 +35,7 @@
       ?>
 
       <!-- View 1: Extracurricular Activities Overview -->
-      <div id="j-view-overview">
+      <div id="j-view-overview" style="<?= !empty($_GET['id']) ? 'display: none;' : '' ?>">
         <!-- Search & Filter Toolbar -->
         <section class="c-extracurricular-toolbar" aria-label="Filter activities">
           <div class="c-search-field">
@@ -55,7 +56,11 @@
         <div class="c-club-grid" id="j-club-grid">
           <?php if (!empty($clubs)): ?>
             <?php foreach ($clubs as $club): ?>
-              <?php require __DIR__ . '/../components/_extracurricular_card.php'; ?>
+              <?php 
+                $currentRole = 'student';
+                $canModerate = true;
+                require __DIR__ . '/../components/_extracurricular_card.php'; 
+              ?>
             <?php endforeach; ?>
           <?php else: ?>
             <p style="color: rgba(15,65,74,0.6); grid-column: 1 / -1; text-align: center; padding: 3rem 0;">No activities found.</p>
@@ -64,23 +69,10 @@
       </div>
 
       <!-- View 3: Inside Extracurricular Card (Detail View for Enrolled Activities) -->
-      <div id="j-view-club-detail" style="display: none;" data-clubs="<?= htmlspecialchars(json_encode($clubs ?? []), ENT_QUOTES, 'UTF-8') ?>">
+      <div id="j-view-club-detail" style="<?= !empty($_GET['id']) ? 'display: block;' : 'display: none;' ?>" data-clubs="<?= htmlspecialchars(json_encode($clubs ?? []), ENT_QUOTES, 'UTF-8') ?>">
         <!-- Common Header Component (Read-only for Students) -->
         <?php
-        $club = null;
-        if (!empty($clubs)) {
-            foreach ($clubs as $c) {
-                if (($c['id'] ?? 0) === 3) {
-                    $club = $c;
-                    break;
-                }
-            }
-            if (!$club) {
-                $club = $clubs[0];
-            }
-        } else {
-            $club = [];
-        }
+        $club = !empty($club) ? $club : (!empty($clubs) ? $clubs[0] : []);
         $canEdit = false;
         require __DIR__ . '/../components/_extracurricular_card_header.php';
         ?>
@@ -111,19 +103,13 @@
               <!-- Calendar Component (Read-only for Students) -->
               <?php
               $calendarConfig = [
-                  'canAddEvent'  => false,
-                  'initialDate'  => '2026-06-17',
-                  'viewDate'     => '2026-06-01',
-                  'events'       => [
-                      [
-                          'id'       => 'ev-1',
-                          'title'    => 'Regular Team Training',
-                          'date'     => '2026-06-17',
-                          'time'     => '15:30–17:30',
-                          'details'  => 'Weekly training on main pitch',
-                          'category' => 'Extracurricular'
-                      ]
-                  ],
+                  'canAddEvent' => false,
+                  'initialDate' => date('Y-m-d'),
+                  'viewDate'    => date('Y-m-01'),
+                  'events'      => ($scopeType ?? 'club') === 'sport'
+                      ? CalendarEventModel::getEventsForSport((int)($club['id'] ?? 0))
+                      : CalendarEventModel::getEventsForClub((int)($club['id'] ?? 0)),
+                  'fixedScope'  => ['type' => $scopeType ?? 'club', 'id' => (int)($club['id'] ?? 0)],
               ];
               require __DIR__ . '/../components/_calendar.php';
               ?>
@@ -144,6 +130,9 @@
 
       <!-- View 4: Achievement Detail Page Component -->
       <?php require __DIR__ . '/../components/_extracurricular_card_achievement_page.php'; ?>
+
+      <!-- Rejection Feedback Modal Component -->
+      <?php require __DIR__ . '/../components/_reject_modal.php'; ?>
 
     </div>
   </main>

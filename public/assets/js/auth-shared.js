@@ -63,6 +63,16 @@
     return input ? input.value : '';
   }
 
+  function postJson(url, data) {
+    data = data || {};
+    data._csrf_token = getCsrfToken();
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+      body: JSON.stringify(data)
+    }).then(function (res) { return res.json(); });
+  }
+
   /* ---------------- forgot-password modal (shared by every page) ---------------- */
   function injectForgotPasswordModal(defaultEmail) {
     var root = document.getElementById('fp-modal-root');
@@ -205,6 +215,22 @@
       }
     } catch (e) {}
 
+    function getContextRole() {
+      var activePanel = document.querySelector('.gw-panel.is-active');
+      if (activePanel) {
+        var pRole = activePanel.getAttribute('data-role-panel');
+        if (pRole) return pRole.toLowerCase();
+      }
+      var roleInput = document.querySelector('input[name="role"]');
+      if (roleInput && roleInput.value) return roleInput.value.toLowerCase();
+      var pathname = window.location.pathname.toLowerCase();
+      var roles = ['student', 'teacher', 'parent', 'management', 'admin'];
+      for (var i = 0; i < roles.length; i++) {
+        if (pathname.indexOf(roles[i]) !== -1) return roles[i];
+      }
+      return '';
+    }
+
     qs('#fp-send-code').addEventListener('click', function () {
       var email = qs('#fp-email').value.trim();
       var alertEl = qs('#fp-email-alert');
@@ -220,7 +246,7 @@
           'Content-Type': 'application/json',
           'X-CSRF-Token': getCsrfToken()
         },
-        body: JSON.stringify({ email: email, _csrf_token: getCsrfToken() })
+        body: JSON.stringify({ email: email, role: getContextRole(), _csrf_token: getCsrfToken() })
       })
       .then(function (res) { return res.json(); })
       .then(function (data) {
@@ -236,7 +262,7 @@
           showStep('code');
           wirePasswordToggles(overlay);
         } else {
-          alertEl.textContent = data.error || 'Failed to send reset code.';
+          alertEl.textContent = data.error || 'You have not registered with us';
           alertEl.classList.add('is-visible');
         }
       })
@@ -288,6 +314,7 @@
           code: code, 
           password: password, 
           is_reset: isChangePw,
+          role: getContextRole(),
           _csrf_token: getCsrfToken() 
         })
       })
@@ -453,21 +480,33 @@
       submitBtn.disabled = true;
       submitBtn.textContent = isSignUp ? 'Activating account…' : 'Signing in…';
 
-      if (!payload._csrf_token) {
-        payload._csrf_token = getCsrfToken();
-      }
-
-      fetch(endpoint, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': getCsrfToken()
-        },
-        body: JSON.stringify(payload)
-      })
-      .then(function (res) { return res.json(); })
+      postJson(endpoint, payload)
       .then(function (data) {
         if (data.success) {
+          if (isSignUp && data.step === 'verify_otp') {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+            hideAlert();
+
+            var stepDetails = document.getElementById('j-signup-step-details');
+            var stepOtp = document.getElementById('j-signup-step-otp');
+            var maskedTarget = document.getElementById('j-signup-masked-target');
+            var otpInput = document.getElementById('j-signup-otp-input');
+
+            if (stepDetails && stepOtp) {
+              stepDetails.style.display = 'none';
+              stepOtp.style.display = 'block';
+              if (maskedTarget && data.masked_email) {
+                maskedTarget.textContent = data.masked_email;
+              }
+              if (otpInput) {
+                otpInput.value = '';
+                otpInput.focus();
+              }
+            }
+            return;
+          }
+
           if (successEl) {
             var msgSpan = qs('span', successEl);
             if (msgSpan && data.message) msgSpan.textContent = data.message;
@@ -477,10 +516,55 @@
             window.location.href = data.redirect || '/landing';
           }, 600);
         } else if (data.needs_activation && data.redirect) {
-          showAlert(data.error || 'Account pending activation. Redirecting…');
-          setTimeout(function () {
-            window.location.href = data.redirect;
-          }, 1200);
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnHtml;
+          showAlert(
+            '<div style="padding:0.75rem 0.85rem;background:rgba(32,124,130,0.08);border:1.5px solid var(--sky, #207C82);border-radius:0.5rem;text-align:left;color:var(--midnight,#0F414A);">' +
+              '<div style="font-weight:700;font-size:0.875rem;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.4rem;">' +
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--sky,#207C82)" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
+                'First time logging in?' +
+              '</div>' +
+              '<p style="font-size:0.8125rem;margin:0 0 0.65rem 0;line-height:1.45;color:rgba(15,65,74,0.85);">' +
+                'Your account has been registered by the school office, but you haven\'t created a password yet. Please complete activation to choose your password.' +
+              '</p>' +
+              '<a href="' + data.redirect + '" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.45rem 0.85rem;background:var(--sky,#207C82);color:#fff;border-radius:0.375rem;font-size:0.8125rem;font-weight:600;text-decoration:none;">' +
+                'Set up password &amp; activate account &rarr;' +
+              '</a>' +
+            '</div>'
+          );
+        } else if (data.already_active && isSignUp) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnHtml;
+          showAlert(
+            '<div style="padding:0.75rem 0.85rem;background:rgba(32,124,130,0.08);border:1.5px solid var(--sky, #207C82);border-radius:0.5rem;text-align:left;color:var(--midnight,#0F414A);">' +
+              '<div style="font-weight:700;font-size:0.875rem;margin-bottom:0.25rem;">Account Already Active</div>' +
+              '<p style="font-size:0.8125rem;margin:0 0 0.5rem 0;line-height:1.4;">' +
+                (data.error || 'This account is already activated and ready to use.') +
+              '</p>' +
+              '<a href="' + (data.redirect || ('/auth/' + roleVal)) + '" style="font-weight:700;text-decoration:underline;color:var(--sky,#207C82);font-size:0.8125rem;">' +
+                'Go to Sign In &rarr;' +
+              '</a>' +
+            '</div>'
+          );
+        } else if (data.code === 'ROLE_MISMATCH') {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnHtml;
+          var actualRoleName = data.actual_role ? (data.actual_role.charAt(0).toUpperCase() + data.actual_role.slice(1)) : 'Designated';
+          var destUrl = data.correct_url || ('/auth/' + (data.actual_role || ''));
+          showAlert(
+            '<div style="padding:0.75rem 0.85rem;background:rgba(184,80,66,0.08);border:1.5px solid var(--maroon, #B85042);border-radius:0.5rem;text-align:left;color:var(--midnight,#0F414A);">' +
+              '<div style="font-weight:700;font-size:0.875rem;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.4rem;color:var(--maroon,#B85042);">' +
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+                'Access Restricted: Role Mismatch' +
+              '</div>' +
+              '<p style="font-size:0.8125rem;margin:0 0 0.65rem 0;line-height:1.45;color:rgba(15,65,74,0.85);">' +
+                escapeHtml(data.error || ('This account is registered as ' + actualRoleName + '. Please use the ' + actualRoleName + ' portal.')) +
+              '</p>' +
+              '<a href="' + destUrl + '" class="auth-submit-btn auth-submit-btn--block" style="display:inline-flex;align-items:center;justify-content:center;gap:0.35rem;padding:0.45rem 0.85rem;background:var(--midnight,#0F414A);color:#fff;border-radius:0.375rem;font-size:0.8125rem;font-weight:600;text-decoration:none;">' +
+                'Go to ' + actualRoleName + ' Portal &rarr;' +
+              '</a>' +
+            '</div>'
+          );
         } else {
           submitBtn.disabled = false;
           submitBtn.innerHTML = originalBtnHtml;
@@ -495,7 +579,15 @@
               });
             }
           } else {
-            showAlert(data.error || 'Authentication failed. Please check your credentials.');
+            var errMsg = data.error || (data.code === 'NOT_REGISTERED' ? 'You have not registered with us' : 'Authentication failed. Please check your credentials.');
+            if (!isSignUp && (data.code === 'INVALID_CREDENTIALS' || data.code === 'AUTH_FAILED')) {
+              var signupHref = data.signup_url || ('/auth/' + roleVal + 'Signup' + (payload.identifier ? ('?identifier=' + encodeURIComponent(payload.identifier)) : ''));
+              errMsg = '<div style="margin-bottom:0.35rem;">' + escapeHtml(errMsg) + '</div>' +
+                '<div style="margin-top:0.4rem;font-size:0.785rem;border-top:1px solid rgba(220,53,69,0.25);padding-top:0.4rem;">' +
+                  'First time logging in? <a href="' + signupHref + '" style="font-weight:700;text-decoration:underline;color:inherit;">Activate your account &amp; set password &rarr;</a>' +
+                '</div>';
+            }
+            showAlert(errMsg);
           }
         }
       })
@@ -505,6 +597,99 @@
         showAlert('Network or server error. Please try again.');
       });
     });
+
+    // Wire OTP Verification step buttons on Sign-Up form
+    var backBtn = document.getElementById('j-signup-back-btn');
+    if (backBtn) {
+      backBtn.addEventListener('click', function () {
+        var stepDetails = document.getElementById('j-signup-step-details');
+        var stepOtp = document.getElementById('j-signup-step-otp');
+        if (stepDetails && stepOtp) {
+          stepOtp.style.display = 'none';
+          stepDetails.style.display = 'block';
+          hideAlert();
+        }
+      });
+    }
+
+    var verifyBtn = document.getElementById('j-signup-verify-btn');
+    if (verifyBtn) {
+      verifyBtn.addEventListener('click', function () {
+        var otpInput = document.getElementById('j-signup-otp-input');
+        var code = (otpInput ? otpInput.value : '').trim();
+        if (!code || code.length < 6) {
+          showAlert('Please enter the 6-digit verification code.');
+          if (otpInput) otpInput.focus();
+          return;
+        }
+
+        var urlParams = new URLSearchParams(window.location.search);
+        var identifier = (qs('input[name="identifier"]', form)?.value || urlParams.get('identifier') || '').trim();
+        var role = (qs('input[name="role"]', form)?.value || (window.location.pathname.toLowerCase().indexOf('parent') !== -1 ? 'parent' : '') || '').toLowerCase();
+
+        hideAlert();
+        verifyBtn.disabled = true;
+        var originalVerifyHtml = verifyBtn.innerHTML;
+        verifyBtn.textContent = 'Verifying code…';
+
+        postJson('/auth/handleVerifyActivation', { identifier: identifier, otp: code, role: role })
+          .then(function (data) {
+            if (data.success) {
+              if (successEl) {
+                var msgSpan = qs('span', successEl);
+                if (msgSpan && data.message) msgSpan.textContent = data.message;
+                successEl.classList.add('is-visible');
+              }
+              setTimeout(function () { window.location.href = data.redirect || ('/' + role); }, 600);
+            } else {
+              verifyBtn.disabled = false;
+              verifyBtn.innerHTML = originalVerifyHtml;
+              showAlert(data.error || 'Verification code failed. Please check the code.');
+            }
+          })
+          .catch(function () {
+            verifyBtn.disabled = false;
+            verifyBtn.innerHTML = originalVerifyHtml;
+            showAlert('Network or server error verifying code.');
+          });
+      });
+    }
+
+    var resendBtn = document.getElementById('j-signup-resend-btn');
+    if (resendBtn) {
+      resendBtn.addEventListener('click', function () {
+        var identifier = (qs('input[name="identifier"]', form)?.value || '').trim();
+        var role = (qs('input[name="role"]', form)?.value || '').toLowerCase();
+
+        resendBtn.disabled = true;
+        resendBtn.textContent = 'Dispatching code…';
+
+        postJson('/auth/handleResendActivationOtp', { identifier: identifier, role: role })
+          .then(function (data) {
+            if (data.success) {
+              showAlert('<span style="color:#1b7936;font-weight:600;">' + (data.message || 'New verification code dispatched.') + '</span>');
+              resendBtn.textContent = 'Code resent!';
+              setTimeout(function () { resendBtn.disabled = false; resendBtn.textContent = 'Resend code'; }, 10000);
+            } else {
+              resendBtn.disabled = false;
+              resendBtn.textContent = 'Resend code';
+              showAlert(data.error || 'Could not resend verification code.');
+            }
+          })
+          .catch(function () {
+            resendBtn.disabled = false;
+            resendBtn.textContent = 'Resend code';
+            showAlert('Network error resending code.');
+          });
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, function (m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+      });
+    }
 
     function showAlert(msg) { if (alertEl) { alertEl.innerHTML = msg; alertEl.classList.add('is-visible'); } }
     function hideAlert() { if (alertEl) alertEl.classList.remove('is-visible'); }
@@ -519,31 +704,38 @@
     var headlineEl = document.getElementById('gw-visual-headline');
     var defaultEyebrow = eyebrowEl ? eyebrowEl.textContent : '';
     var badgeEl = qs('.gw-visual-badge');
+    var backBtn = document.getElementById('gw-main-back-btn');
+    var backBtnText = document.getElementById('gw-back-btn-text');
 
-    function activate(role, label, tagline) {
+    function activate(role, label, tagline, push) {
       qsa('.gw-panel').forEach(function (p) { p.classList.toggle('is-active', p.getAttribute('data-role-panel') === role); });
       if (rolesView) rolesView.classList.remove('is-active');
-      qsa('.gw-visual img').forEach(function (img) { img.classList.toggle('is-active', img.getAttribute('data-role-image') === role); });
+      qsa('.gw-visual > img').forEach(function (img) { img.classList.toggle('is-active', img.getAttribute('data-role-image') === role); });
       if (eyebrowEl) eyebrowEl.textContent = "L'École for " + label;
       if (headlineEl) headlineEl.textContent = tagline;
       var roleData = ROLES[role];
       if (badgeEl && roleData && roleData.icon) {
         badgeEl.innerHTML = '<svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-' + roleData.icon + '"/></svg>';
       }
+      if (backBtnText) backBtnText.textContent = "Who's signing in";
+      if (push !== false && window.history && window.history.pushState) {
+        history.pushState({ role: role }, '', '#role-' + role);
+      }
     }
     function resetVisual() {
-      qsa('.gw-visual img').forEach(function (img) { img.classList.toggle('is-active', img.getAttribute('data-role-image') === ''); });
+      qsa('.gw-visual > img').forEach(function (img) { img.classList.toggle('is-active', img.getAttribute('data-role-image') === ''); });
       if (eyebrowEl) eyebrowEl.textContent = defaultEyebrow;
       if (headlineEl) headlineEl.textContent = defaultHeadline;
       if (badgeEl) {
         badgeEl.innerHTML = '<svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-graduationCap"/></svg>';
       }
+      if (backBtnText) backBtnText.textContent = "L'École home";
     }
     roleButtons.forEach(function (btn) {
       btn.addEventListener('click', function () {
         var label = qs('.gw-role-name', btn) ? qs('.gw-role-name', btn).textContent : '';
         var tagline = qs('.gw-role-tagline', btn) ? qs('.gw-role-tagline', btn).textContent : '';
-        activate(btn.getAttribute('data-role'), label, tagline);
+        activate(btn.getAttribute('data-role'), label, tagline, true);
       });
     });
     qsa('.j-gw-back-to-roles').forEach(function (btn) {
@@ -551,7 +743,40 @@
         qsa('.gw-panel').forEach(function (p) { p.classList.remove('is-active'); });
         if (rolesView) rolesView.classList.add('is-active');
         resetVisual();
+        if (window.location.hash && history.replaceState) {
+          history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
       });
+    });
+
+    if (backBtn) {
+      backBtn.addEventListener('click', function (e) {
+        var isPanelActive = !!qs('.gw-panel.is-active');
+        if (isPanelActive) {
+          e.preventDefault();
+          qsa('.gw-panel').forEach(function (p) { p.classList.remove('is-active'); });
+          if (rolesView) rolesView.classList.add('is-active');
+          resetVisual();
+          if (window.location.hash && history.replaceState) {
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+          }
+        }
+      });
+    }
+
+    window.addEventListener('popstate', function (e) {
+      if (e.state && e.state.role) {
+        var roleBtn = qs('.j-gw-role-btn[data-role="' + e.state.role + '"]');
+        if (roleBtn) {
+          var label = qs('.gw-role-name', roleBtn) ? qs('.gw-role-name', roleBtn).textContent : '';
+          var tagline = qs('.gw-role-tagline', roleBtn) ? qs('.gw-role-tagline', roleBtn).textContent : '';
+          activate(e.state.role, label, tagline, false);
+        }
+      } else {
+        qsa('.gw-panel').forEach(function (p) { p.classList.remove('is-active'); });
+        if (rolesView) rolesView.classList.add('is-active');
+        resetVisual();
+      }
     });
 
     var paramRole = new URLSearchParams(window.location.search).get('role');

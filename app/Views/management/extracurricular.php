@@ -39,7 +39,7 @@
       ?>
 
       <!-- View 1: Extracurricular Activities Overview -->
-      <div id="j-view-overview">
+      <div id="j-view-overview" style="<?= !empty($_GET['id']) ? 'display: none;' : '' ?>">
         <!-- Search & Filter Toolbar -->
         <section class="c-extracurricular-toolbar" aria-label="Filter activities">
           <div class="c-search-field">
@@ -82,10 +82,10 @@
 
 
       <!-- View 3: Inside Extracurricular Card (Detail View) -->
-      <div id="j-view-club-detail" style="display: none;" data-clubs="<?= htmlspecialchars(json_encode($clubs ?? []), ENT_QUOTES, 'UTF-8') ?>">
+      <div id="j-view-club-detail" style="<?= !empty($_GET['id']) ? 'display: block;' : 'display: none;' ?>" data-clubs="<?= htmlspecialchars(json_encode($clubs ?? []), ENT_QUOTES, 'UTF-8') ?>">
         <!-- Common Header Component -->
         <?php
-        $club    = !empty($clubs) ? $clubs[0] : [];
+        $club    = !empty($club) ? $club : (!empty($clubs) ? $clubs[0] : []);
         $canEdit = true;
         require __DIR__ . '/../components/_extracurricular_card_header.php';
         ?>
@@ -98,20 +98,15 @@
 
         <!-- Schedule & Events Section -->
         <?php
+        $selectedScopeType = (!empty($club['type']) && stripos($club['type'], 'sport') !== false) ? 'sport' : ($scopeType ?? 'club');
         $calendarConfig = [
-            'canAddEvent'  => true,
-            'initialDate'  => '2026-06-17',
-            'viewDate'     => '2026-06-01',
-            'events'       => [
-                [
-                    'id'       => 'ev-1',
-                    'title'    => 'Regular Team Training',
-                    'date'     => '2026-06-17',
-                    'time'     => '15:30–17:30',
-                    'details'  => 'Weekly training on main pitch',
-                    'category' => 'Extracurricular'
-                ]
-            ],
+            'canAddEvent' => true,
+            'initialDate' => date('Y-m-d'),
+            'viewDate'    => date('Y-m-01'),
+            'events'      => $selectedScopeType === 'sport'
+                ? CalendarEventModel::getEventsForSport((int)($club['id'] ?? 0))
+                : CalendarEventModel::getEventsForClub((int)($club['id'] ?? 0)),
+            'fixedScope'  => ['type' => $selectedScopeType, 'id' => (int)($club['id'] ?? 0)],
         ];
         $canEdit = true;
         require __DIR__ . '/../components/_extracurricular_schedule_panel.php';

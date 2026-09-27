@@ -95,8 +95,15 @@ try {
         ]
     ];
 
+    $teacherNameToId = [];
+    foreach ($db->query("SELECT id, full_name FROM teachers")->fetchAll(PDO::FETCH_ASSOC) as $t) {
+        $teacherNameToId[$t['full_name']] = (int)$t['id'];
+        $cleanName = trim(str_replace(['Mr. ', 'Mrs. ', 'Ms. '], '', $t['full_name']));
+        $teacherNameToId[$cleanName] = (int)$t['id'];
+    }
+
     $stmtClass = $db->prepare("INSERT INTO classes (grade_id, section_name, student_count) VALUES (?, ?, ?)");
-    $stmtCT = $db->prepare("INSERT INTO class_teachers (class_id, teacher_name) VALUES (?, ?)");
+    $stmtCT = $db->prepare("INSERT INTO class_teachers (class_id, teacher_id) VALUES (?, ?)");
 
     $classIdMap = [];
     foreach ($classesData as $gid => $clsList) {
@@ -104,14 +111,14 @@ try {
             $stmtClass->execute([$gid, $cls['name'], $cls['count']]);
             $cid = $db->lastInsertId();
             $classIdMap[$cls['name']] = $cid;
-            if (!empty($cls['teacher'])) {
-                $stmtCT->execute([$cid, $cls['teacher']]);
+            if (!empty($cls['teacher']) && isset($teacherNameToId[$cls['teacher']])) {
+                $stmtCT->execute([$cid, $teacherNameToId[$cls['teacher']]]);
             }
         }
     }
 
     // 4. Seed Subject Teachers
-    $stmtCST = $db->prepare("INSERT INTO class_subject_teachers (class_id, subject_name, teacher_name) VALUES (?, ?, ?)");
+    $stmtCST = $db->prepare("INSERT INTO class_subject_teachers (class_id, subject_name, teacher_id) VALUES (?, ?, ?)");
     $subjectAssignments = [
         '6-A' => ['Science' => 'James Wilson', 'Mathematics' => 'Rohan Dias', 'English' => 'Sarah Peiris', 'ICT' => 'Shanthi Silva'],
         '6-B' => ['Science' => 'James Wilson', 'English' => 'Sarah Peiris', 'Mathematics' => 'Rohan Dias'],
@@ -132,7 +139,9 @@ try {
         if (!isset($classIdMap[$cName])) continue;
         $cid = $classIdMap[$cName];
         foreach ($subjs as $sName => $tName) {
-            $stmtCST->execute([$cid, $sName, $tName]);
+            if (isset($teacherNameToId[$tName])) {
+                $stmtCST->execute([$cid, $sName, $teacherNameToId[$tName]]);
+            }
         }
     }
 

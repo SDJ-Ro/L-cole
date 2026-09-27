@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf-token" content="<?= htmlspecialchars($csrf_token ?? '') ?>" />
   <title>People Directory — L'École Management</title>
   <link rel="stylesheet" href="/assets/css/global.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/sidebar.css?v=<?= time() ?>" />
@@ -13,6 +14,8 @@
   <link rel="stylesheet" href="/assets/css/components/datepicker.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/export-pdf-button.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/profile-modal.css?v=<?= time() ?>" />
+  <link rel="stylesheet" href="/assets/css/components/student-academic.css?v=<?= time() ?>" />
+  <link rel="stylesheet" href="/assets/css/components/feedback-banner.css?v=<?= time() ?>" />
 </head>
 <body>
 
@@ -99,7 +102,11 @@
 <script src="/assets/js/components/dropdown.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/datepicker.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/people-directory.js?v=<?= time() ?>"></script>
+<script src="/assets/js/components/parent-picker.js?v=<?= time() ?>"></script>
+<script src="/assets/js/components/parent-deactivation.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/profile-modal.js?v=<?= time() ?>"></script>
+<script src="/assets/js/components/student-academic.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/export-pdf.js?v=<?= time() ?>"></script>
+<script src="/assets/js/components/feedback-banners.js?v=<?= time() ?>"></script>
 </body>
 </html>

@@ -56,10 +56,21 @@
       menu.style.right = '0';
     }
 
-    // 2. Vertical check (flip upwards if bottom overflows and there's space above)
-    const spaceBelow = bounds.maxBottom - triggerRect.bottom;
+    // 2. Vertical check (flip upwards if bottom overflows container or viewport)
+    const scrollContainer = root.closest('.c-table-scroll, .c-people-panel');
+    let maxContainerBottom = bounds.maxBottom;
+    if (scrollContainer) {
+      const cRect = scrollContainer.getBoundingClientRect();
+      if (cRect.bottom < maxContainerBottom) {
+        maxContainerBottom = cRect.bottom - 4;
+      }
+    }
+
+    const menuHeight = menuRect.height || 85;
+    const spaceBelow = maxContainerBottom - triggerRect.bottom;
     const spaceAbove = triggerRect.top - bounds.minTop;
-    if (menuRect.bottom > bounds.maxBottom && spaceAbove > spaceBelow) {
+
+    if ((menuRect.bottom > maxContainerBottom || spaceBelow < menuHeight) && spaceAbove >= menuHeight) {
       menu.style.top = 'auto';
       menu.style.bottom = 'calc(100% + 4px)';
     }
@@ -78,31 +89,49 @@
         menu.style.bottom = '';
       }
     });
+    document.querySelectorAll('.c-has-open-dropdown').forEach((el) => {
+      el.classList.remove('c-has-open-dropdown');
+    });
+  }
+
+  function getDropdownOptionLabel(root, val) {
+    if (!root) return val;
+    const opt = root.querySelector(`[data-value="${val}"]`);
+    if (opt) {
+      const sp = opt.querySelector('span') || opt.querySelector('.c-dropdown__option-label');
+      return (sp ? sp.textContent : opt.textContent).trim();
+    }
+    return val;
   }
 
   function toggleMultiSelectOption(root, targetVal, forceState) {
     if (!root) return;
     const inputName = root.getAttribute('data-name') || 'audience[]';
     const hiddenWrap = root.querySelector('.j-dropdown-hidden-inputs') || root;
+    const hasAllOption = Boolean(root.querySelector('[data-value="All"], [data-value="all"]'));
+    const isAll = String(targetVal).toLowerCase() === 'all';
 
     let currentValues = Array.from(root.querySelectorAll('.c-select__option.c-is-selected, .c-dropdown__option.c-is-selected'))
       .map((opt) => opt.getAttribute('data-value') ?? opt.textContent.trim());
 
-    const isCurrentlySelected = currentValues.includes(targetVal);
+    const isCurrentlySelected = currentValues.includes(String(targetVal));
     const shouldSelect = typeof forceState === 'boolean' ? forceState : !isCurrentlySelected;
 
-    if (targetVal.toLowerCase() === 'all') {
+    if (hasAllOption && isAll) {
       if (shouldSelect) {
         currentValues = ['All'];
       }
     } else {
-      currentValues = currentValues.filter((v) => v.toLowerCase() !== 'all');
-      if (shouldSelect) {
-        if (!currentValues.includes(targetVal)) currentValues.push(targetVal);
-      } else {
-        currentValues = currentValues.filter((v) => v !== targetVal);
+      if (hasAllOption) {
+        currentValues = currentValues.filter((v) => String(v).toLowerCase() !== 'all');
       }
-      if (currentValues.length === 0) {
+      const strTarget = String(targetVal);
+      if (shouldSelect) {
+        if (!currentValues.includes(strTarget)) currentValues.push(strTarget);
+      } else {
+        currentValues = currentValues.filter((v) => v !== strTarget);
+      }
+      if (hasAllOption && currentValues.length === 0) {
         currentValues = ['All'];
       }
     }
@@ -125,14 +154,17 @@
         if (placeholderEl) placeholderEl.style.display = 'inline';
       } else {
         if (placeholderEl) placeholderEl.style.display = 'none';
-        chipsContainer.innerHTML = currentValues.map((val) => `
-          <span class="c-chip">
-            <span>${val}</span>
-            <span role="button" tabindex="0" class="c-chip__remove j-chip-remove" data-val="${val}" aria-label="Remove ${val}">
-              <svg width="10" height="10"><use href="#icon-close"/></svg>
+        chipsContainer.innerHTML = currentValues.map((val) => {
+          const label = getDropdownOptionLabel(root, val);
+          return `
+            <span class="c-chip">
+              <span>${label}</span>
+              <span role="button" tabindex="0" class="c-chip__remove j-chip-remove" data-val="${val}" aria-label="Remove ${label}">
+                <svg width="10" height="10"><use href="#icon-close"/></svg>
+              </span>
             </span>
-          </span>
-        `).join('');
+          `;
+        }).join('');
       }
     }
 
@@ -160,10 +192,13 @@
   }
 
   function setDropdownMultiValues(dropdownId, targetValues) {
-    const root = document.getElementById(dropdownId);
+    const root = typeof dropdownId === 'string' ? document.getElementById(dropdownId) : dropdownId;
     if (!root) return;
-    let vals = Array.isArray(targetValues) ? targetValues : [targetValues];
-    if (vals.length === 0) vals = ['All'];
+    const hasAllOption = Boolean(root.querySelector('[data-value="All"], [data-value="all"]'));
+    let vals = Array.isArray(targetValues) ? targetValues.map(v => String(v)) : (targetValues ? [String(targetValues)] : []);
+    if (vals.length === 0 && hasAllOption) {
+      vals = ['All'];
+    }
 
     const inputName = root.getAttribute('data-name') || 'audience[]';
     const hiddenWrap = root.querySelector('.j-dropdown-hidden-inputs') || root;
@@ -186,14 +221,17 @@
         if (placeholderEl) placeholderEl.style.display = 'inline';
       } else {
         if (placeholderEl) placeholderEl.style.display = 'none';
-        chipsContainer.innerHTML = vals.map((val) => `
-          <span class="c-chip">
-            <span>${val}</span>
-            <span role="button" tabindex="0" class="c-chip__remove j-chip-remove" data-val="${val}" aria-label="Remove ${val}">
-              <svg width="10" height="10"><use href="#icon-close"/></svg>
+        chipsContainer.innerHTML = vals.map((val) => {
+          const label = getDropdownOptionLabel(root, val);
+          return `
+            <span class="c-chip">
+              <span>${label}</span>
+              <span role="button" tabindex="0" class="c-chip__remove j-chip-remove" data-val="${val}" aria-label="Remove ${label}">
+                <svg width="10" height="10"><use href="#icon-close"/></svg>
+              </span>
             </span>
-          </span>
-        `).join('');
+          `;
+        }).join('');
       }
     }
 
@@ -247,6 +285,13 @@
       if (!wasOpen) {
         root.classList.add('c-is-open');
         trigger.setAttribute('aria-expanded', 'true');
+
+        // Hoist table row and cell to prevent being cut off by sibling rows
+        const parentRow = root.closest('tr');
+        const parentCell = root.closest('td');
+        if (parentRow) parentRow.classList.add('c-has-open-dropdown');
+        if (parentCell) parentCell.classList.add('c-has-open-dropdown');
+
         adjustDropdownPosition(root, trigger);
       }
       return;
@@ -332,12 +377,17 @@
     const root = typeof dropdownId === 'string' ? document.getElementById(dropdownId) : dropdownId;
     if (!root) return;
 
+    if (Array.isArray(targetVal) || root.classList.contains('c-dropdown--multi') || root.classList.contains('c-select--multi') || root.getAttribute('data-multi') === 'true') {
+      return setDropdownMultiValues(root, targetVal);
+    }
+
     const options = root.querySelectorAll('.c-select__option, .c-dropdown__option');
     let matched = null;
+    const targetStr = String(targetVal ?? '').toLowerCase();
 
     options.forEach((opt) => {
       const val = opt.getAttribute('data-value') ?? opt.textContent.trim();
-      if (val.toLowerCase() === (targetVal || '').toLowerCase()) {
+      if (val.toLowerCase() === targetStr) {
         matched = opt;
         opt.classList.add('c-is-selected');
         opt.setAttribute('aria-selected', 'true');
@@ -362,6 +412,17 @@
   function getDropdownValue(dropdownId) {
     const root = typeof dropdownId === 'string' ? document.getElementById(dropdownId) : dropdownId;
     if (!root) return '';
+    if (root.classList.contains('c-dropdown--multi') || root.classList.contains('c-select--multi') || root.getAttribute('data-multi') === 'true') {
+      const hiddenInputs = root.querySelectorAll('input[type="hidden"]');
+      if (hiddenInputs.length > 0) {
+        return Array.from(hiddenInputs).map(i => i.value).filter(Boolean);
+      }
+      const selectedOpts = root.querySelectorAll('.c-select__option.c-is-selected, .c-dropdown__option.c-is-selected');
+      if (selectedOpts.length > 0) {
+        return Array.from(selectedOpts).map(o => o.getAttribute('data-value') ?? o.textContent.trim());
+      }
+      return [];
+    }
     const hiddenInput = root.querySelector('input[type="hidden"]');
     if (hiddenInput && hiddenInput.value !== '') return hiddenInput.value;
     const selectedOpt = root.querySelector('.c-select__option.c-is-selected, .c-dropdown__option.c-is-selected');

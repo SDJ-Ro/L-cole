@@ -101,28 +101,15 @@
 
         <!-- Schedule & Events Section -->
         <?php
+        $selectedScopeType = (!empty($club['type']) && stripos($club['type'], 'sport') !== false) ? 'sport' : ($scopeType ?? 'club');
         $calendarConfig = [
-            'canAddEvent'  => !empty($canCreate),
-            'initialDate'  => '2026-06-17',
-            'viewDate'     => '2026-06-01',
-            'events'       => [
-                [
-                    'id'       => 'ev-1',
-                    'title'    => 'Weekly Team Training',
-                    'date'     => '2026-06-17',
-                    'time'     => '15:30–17:30',
-                    'details'  => 'Weekly training on main pitch',
-                    'category' => 'Extracurricular'
-                ],
-                [
-                    'id'       => 'ev-2',
-                    'title'    => 'Upcoming Friendly Tournament',
-                    'date'     => '2026-06-25',
-                    'time'     => '14:30–17:00',
-                    'details'  => 'Friendly warmup fixture',
-                    'category' => 'Extracurricular'
-                ]
-            ],
+            'canAddEvent' => !empty($canCreate),
+            'initialDate' => date('Y-m-d'),
+            'viewDate'    => date('Y-m-01'),
+            'events'      => $selectedScopeType === 'sport'
+                ? CalendarEventModel::getEventsForSport((int)($club['id'] ?? 0))
+                : CalendarEventModel::getEventsForClub((int)($club['id'] ?? 0)),
+            'fixedScope'  => ['type' => $selectedScopeType, 'id' => (int)($club['id'] ?? 0)],
         ];
         $canEdit = true;
         require __DIR__ . '/../components/_extracurricular_schedule_panel.php';

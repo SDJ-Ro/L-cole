@@ -219,7 +219,7 @@ if (!function_exists('renderProfileDatepicker')) {
           <span class="c-contact-line"><svg class="c-icon" width="13" height="13" viewBox="0 0 24 24"><use href="#icon-phone"/></svg><span id="j-card-guardian-phone">+94 77 234 5678</span></span>
         </div>
       </div>
-      <button type="button" class="c-btn-solid-tone c-tone-terracotta j-jump-parent-profile" id="j-btn-view-parent" data-parent-id="P-045" style="flex-shrink: 0;">
+      <button type="button" class="c-btn-solid-tone c-tone-terracotta j-jump-parent-profile" id="j-btn-view-parent" data-parent-id="" style="display: none; flex-shrink: 0;">
         Open parent account
       </button>
       <span class="c-status-pill c-status-unknown-pill" id="j-guardian-unavailable-pill" style="display: none; width: fit-content;">Account unavailable</span>
