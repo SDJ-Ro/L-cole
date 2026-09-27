@@ -671,6 +671,13 @@ if (!function_exists('renderProfileDatepicker')) {
         <input type="text" class="c-info-card-input j-edit-only" id="j-input-mgmt-nic" style="display: none;" />
       </div>
       <div class="c-info-card">
+        <p class="c-info-card-label">Date of birth</p>
+        <p class="c-info-card-value j-view-only" id="j-card-mgmt-dob">1970-08-15</p>
+        <div class="j-edit-only" style="display: none; margin-top: 0.375rem;">
+          <?php renderProfileDatepicker('j-dp-mgmt-dob', 'mgmt_dob', '1970-08-15', 'maroon', 'Select birth date'); ?>
+        </div>
+      </div>
+      <div class="c-info-card">
         <p class="c-info-card-label"><svg class="c-icon" width="14" height="14" aria-hidden="true"><use href="#icon-mail"/></svg> Personal email</p>
         <p class="c-info-card-value j-view-only" id="j-card-mgmt-pemail">malik.personal@gmail.com</p>
         <input type="email" class="c-info-card-input j-edit-only" id="j-input-mgmt-pemail" style="display: none;" />
@@ -699,6 +706,127 @@ if (!function_exists('renderProfileDatepicker')) {
         <p class="c-info-card-label">Emergency contact</p>
         <p class="c-info-card-value j-view-only" id="j-card-mgmt-emergency">+94 77 000 0091</p>
         <input type="tel" class="c-info-card-input j-edit-only" id="j-input-mgmt-emergency" style="display: none;" />
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- =======================================================================
+     E. ADMINISTRATOR PROFILE VIEW / EDIT
+     Supports viewing and editing Admin directory records with same components
+     ======================================================================= -->
+<div class="j-profile-role-section j-role-section-admin" id="j-section-admin" style="display: none;">
+
+  <!-- 1. Contact & account -->
+  <section>
+    <div class="c-section-title-row">
+      <span class="c-icon-accent"><svg class="c-icon" width="16" height="16" aria-hidden="true"><use href="#icon-usersRound"/></svg></span>
+      <h3 class="c-section-title">Contact &amp; account</h3>
+    </div>
+    <div class="c-info-grid" style="margin-top: 0.75rem;">
+      <div class="c-info-card">
+        <p class="c-info-card-label">Reg. Number</p>
+        <p class="c-info-card-value" id="j-card-admin-id">ADM-001</p>
+      </div>
+      <div class="c-info-card">
+        <p class="c-info-card-label"><svg class="c-icon" width="14" height="14" aria-hidden="true"><use href="#icon-mail"/></svg> Institutional mail</p>
+        <p class="c-info-card-value j-view-only" id="j-card-admin-email">admin@lecole.edu</p>
+        <input type="email" class="c-info-card-input j-edit-only" id="j-input-admin-email" style="display: none;" />
+      </div>
+      <div class="c-info-card">
+        <p class="c-info-card-label"><svg class="c-icon" width="14" height="14" aria-hidden="true"><use href="#icon-phone"/></svg> Mobile number</p>
+        <p class="c-info-card-value j-view-only" id="j-card-admin-phone">+94 77 123 4567</p>
+        <input type="tel" class="c-info-card-input j-edit-only" id="j-input-admin-phone" style="display: none;" />
+      </div>
+      <div class="c-info-card">
+        <p class="c-info-card-label"><svg class="c-icon" width="14" height="14" aria-hidden="true"><use href="#icon-phone"/></svg> Central IT / NOC Line</p>
+        <p class="c-info-card-value j-view-only" id="j-card-admin-noc">+94 11 234 5678</p>
+        <input type="tel" class="c-info-card-input j-edit-only" id="j-input-admin-noc" style="display: none;" />
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. System Administration & Scope -->
+  <section>
+    <div class="c-section-title-row">
+      <span class="c-icon-accent"><svg class="c-icon" width="16" height="16" aria-hidden="true"><use href="#icon-shieldCheck"/></svg></span>
+      <h3 class="c-section-title">System Administration &amp; Scope</h3>
+    </div>
+    <div class="c-info-grid" style="margin-top: 0.75rem;">
+      <div class="c-info-card">
+        <p class="c-info-card-label">Job title / Role</p>
+        <p class="c-info-card-value j-view-only" id="j-card-admin-title">System Administrator &amp; IT Director</p>
+        <input type="text" class="c-info-card-input j-edit-only" id="j-input-admin-title" style="display: none;" />
+      </div>
+      <div class="c-info-card">
+        <p class="c-info-card-label">Joining date</p>
+        <p class="c-info-card-value j-view-only" id="j-card-admin-joindate">2021-01-01</p>
+        <div class="j-edit-only" style="display: none; margin-top: 0.375rem;">
+          <?php renderProfileDatepicker('j-dp-admin-joindate', 'admin_joindate', '2021-01-01', 'maroon', 'Select join date'); ?>
+        </div>
+      </div>
+      <div class="c-info-card">
+        <p class="c-info-card-label">Primary Station / Office</p>
+        <p class="c-info-card-value j-view-only" id="j-card-admin-office">Central Server Facility · Room A</p>
+        <input type="text" class="c-info-card-input j-edit-only" id="j-input-admin-office" style="display: none;" />
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Personal information -->
+  <section>
+    <div class="c-section-title-row">
+      <span class="c-icon-accent"><svg class="c-icon" width="16" height="16" aria-hidden="true"><use href="#icon-mapPin"/></svg></span>
+      <h3 class="c-section-title">Personal information</h3>
+    </div>
+    <div class="c-info-grid" style="margin-top: 0.75rem;">
+      <div class="c-info-card">
+        <p class="c-info-card-label">Full name</p>
+        <p class="c-info-card-value j-view-only" id="j-card-admin-fullname">Alex Mendis</p>
+        <input type="text" class="c-info-card-input j-edit-only" id="j-input-admin-fullname" style="display: none;" />
+      </div>
+      <div class="c-info-card">
+        <p class="c-info-card-label">NIC</p>
+        <p class="c-info-card-value j-view-only" id="j-card-admin-nic">198516503921</p>
+        <input type="text" class="c-info-card-input j-edit-only" id="j-input-admin-nic" style="display: none;" />
+      </div>
+      <div class="c-info-card">
+        <p class="c-info-card-label">Date of birth</p>
+        <p class="c-info-card-value j-view-only" id="j-card-admin-dob">1985-06-14</p>
+        <div class="j-edit-only" style="display: none; margin-top: 0.375rem;">
+          <?php renderProfileDatepicker('j-dp-admin-dob', 'admin_dob', '1985-06-14', 'maroon', 'Select birth date'); ?>
+        </div>
+      </div>
+      <div class="c-info-card">
+        <p class="c-info-card-label"><svg class="c-icon" width="14" height="14" aria-hidden="true"><use href="#icon-mail"/></svg> Personal email</p>
+        <p class="c-info-card-value j-view-only" id="j-card-admin-pemail">alex.personal@gmail.com</p>
+        <input type="email" class="c-info-card-input j-edit-only" id="j-input-admin-pemail" style="display: none;" />
+      </div>
+      <div class="c-info-card" style="grid-column: 1 / -1;">
+        <p class="c-info-card-label">Residential address</p>
+        <p class="c-info-card-value j-view-only" id="j-card-admin-resaddress">42 Alfred House Gardens, Colombo 03</p>
+        <input type="text" class="c-info-card-input j-edit-only" id="j-input-admin-resaddress" style="display: none;" />
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Emergency account -->
+  <section>
+    <div class="c-section-title-row">
+      <span class="c-icon-accent"><svg class="c-icon" width="16" height="16" aria-hidden="true"><use href="#icon-usersRound"/></svg></span>
+      <h3 class="c-section-title">Emergency account</h3>
+    </div>
+    <div class="c-info-grid" style="margin-top: 0.75rem;">
+      <div class="c-info-card">
+        <p class="c-info-card-label">Emergency name</p>
+        <p class="c-info-card-value j-view-only" id="j-card-admin-emname">P. Mendis</p>
+        <input type="text" class="c-info-card-input j-edit-only" id="j-input-admin-emname" style="display: none;" />
+      </div>
+      <div class="c-info-card">
+        <p class="c-info-card-label">Emergency contact</p>
+        <p class="c-info-card-value j-view-only" id="j-card-admin-emergency">+94 77 999 1122</p>
+        <input type="tel" class="c-info-card-input j-edit-only" id="j-input-admin-emergency" style="display: none;" />
       </div>
     </div>
   </section>

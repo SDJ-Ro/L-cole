@@ -52,6 +52,14 @@
       pillColor: '#7F0303',
       softBg: 'rgba(127, 3, 3, 0.08)',
       tone: 'maroon'
+    },
+    admin: {
+      label: 'Administrator profile',
+      headerClass: 'c-header-maroon',
+      pillBg: 'rgba(15, 65, 74, 0.2)',
+      pillColor: '#0F414A',
+      softBg: 'rgba(15, 65, 74, 0.1)',
+      tone: 'maroon'
     }
   };
 
@@ -363,6 +371,7 @@
     else if (role === 'teacher') list = data.teachers || [];
     else if (role === 'parent') list = data.parents || [];
     else if (role === 'management') list = data.management || [];
+    else if (role === 'admin') list = data.admins || data.admin || [];
 
     // Match by id or index
     let found = list.find(function (p) {
@@ -547,6 +556,10 @@
       const sec = document.getElementById('j-section-management');
       if (sec) sec.style.display = 'block';
       renderManagementDetails(person, mode);
+    } else if (role === 'admin') {
+      const sec = document.getElementById('j-section-admin');
+      if (sec) sec.style.display = 'block';
+      renderAdminDetails(person, mode);
     }
   }
 
@@ -1221,6 +1234,7 @@
     // Personal information
     setFieldVal('mgmt-fullname', person.name || 'Dr. Malik Samarasinghe');
     setFieldVal('mgmt-nic', person.nic || '197039201948');
+    setFieldVal('mgmt-dob', person.dateOfBirth || person.dob || '1970-08-15');
     setFieldVal('mgmt-pemail', person.personalEmail || 'malik.personal@gmail.com');
     setFieldVal('mgmt-resaddress', person.personalAddress || person.address || '14 Palm Grove, Colombo 07');
 
@@ -1229,6 +1243,34 @@
     const emPhone = person.emergencyPhone || (person.emergencyContact || '').split(' · ')[1] || (person.emergencyContact || '').split(' - ')[1] || '+94 77 000 0091';
     setFieldVal('mgmt-emname', emName);
     setFieldVal('mgmt-emergency', emPhone);
+  }
+
+  /**
+   * Render Admin Section (Contact, System Scope, Personal, Emergency)
+   */
+  function renderAdminDetails(person, mode) {
+    setCardVal('j-card-admin-id', person.id || person.index || 'ADM-001');
+    setFieldVal('admin-email', person.email || 'admin@lecole.edu');
+    setFieldVal('admin-phone', person.phone || '+94 77 123 4567');
+    setFieldVal('admin-noc', person.nocPhone || person.centralItPhone || '+94 11 234 5678');
+
+    // System Administration & Scope
+    setFieldVal('admin-title', person.jobTitle || person.title || 'System Administrator & IT Director');
+    setFieldVal('admin-joindate', person.joiningDate || person.joinDate || '2021-01-01');
+    setFieldVal('admin-office', person.officeLocation || person.officeAddress || 'Central Server Facility · Room A');
+
+    // Personal information
+    setFieldVal('admin-fullname', person.name || 'Alex Mendis');
+    setFieldVal('admin-nic', person.nic || '198516503921');
+    setFieldVal('admin-dob', person.dateOfBirth || person.dob || '1985-06-14');
+    setFieldVal('admin-pemail', person.personalEmail || 'alex.personal@gmail.com');
+    setFieldVal('admin-resaddress', person.personalAddress || person.address || '42 Alfred House Gardens, Colombo 03');
+
+    // Emergency account
+    const emName = person.emergencyName || (person.emergencyContact || '').split(' · ')[0] || (person.emergencyContact || '').split(' - ')[0] || 'P. Mendis';
+    const emPhone = person.emergencyPhone || (person.emergencyContact || '').split(' · ')[1] || (person.emergencyContact || '').split(' - ')[1] || '+94 77 999 1122';
+    setFieldVal('admin-emname', emName);
+    setFieldVal('admin-emergency', emPhone);
   }
 
   /**
@@ -1289,6 +1331,10 @@
       btnSave.style.display = isEdit ? 'inline-flex' : 'none';
       const theme = ROLE_THEMES[activeRole] || ROLE_THEMES.student;
       btnSave.className = 'c-btn-accent c-tone-' + theme.tone + ' j-save-profile-btn';
+    }
+
+    if (isEdit && typeof window.initAllDatePickers === 'function') {
+      window.initAllDatePickers();
     }
   }
 
@@ -1709,6 +1755,7 @@
       fullName: newName,
       status: selectedStatus,
       nic: getFieldVal('mgmt-nic') || currentPerson.nic,
+      dob: getFieldVal('mgmt-dob') || currentPerson.dateOfBirth || currentPerson.dob,
       phone: getFieldVal('mgmt-phone') || currentPerson.phone,
       personalEmail: getFieldVal('mgmt-pemail') || currentPerson.personalEmail,
       title: getFieldVal('mgmt-title') || currentPerson.jobTitle || currentPerson.title,
@@ -2011,7 +2058,7 @@
     } else if (activeRole === 'management') {
       const mFields = [
         'mgmt-email', 'mgmt-phone', 'mgmt-title', 'mgmt-joining',
-        'mgmt-office', 'mgmt-fullname', 'mgmt-nic', 'mgmt-pemail',
+        'mgmt-office', 'mgmt-fullname', 'mgmt-nic', 'mgmt-dob', 'mgmt-pemail',
         'mgmt-resaddress', 'mgmt-emname', 'mgmt-emergency'
       ];
       mFields.forEach(function (f) {
@@ -2027,6 +2074,7 @@
       currentPerson.officeLocation = getFieldVal('mgmt-office') || currentPerson.officeLocation;
       currentPerson.officeAddress = currentPerson.officeLocation;
       currentPerson.nic = getFieldVal('mgmt-nic') || currentPerson.nic;
+      currentPerson.dateOfBirth = getFieldVal('mgmt-dob') || currentPerson.dateOfBirth;
       currentPerson.personalEmail = getFieldVal('mgmt-pemail') || currentPerson.personalEmail;
       currentPerson.personalAddress = getFieldVal('mgmt-resaddress') || currentPerson.personalAddress;
       currentPerson.address = currentPerson.personalAddress;
@@ -2040,6 +2088,39 @@
       const subEl = document.getElementById('j-modal-subtitle');
       if (subEl) {
         subEl.textContent = currentPerson.jobTitle || 'Principal · Administrative Scope';
+      }
+    } else if (activeRole === 'admin') {
+      const aFields = [
+        'admin-email', 'admin-phone', 'admin-noc', 'admin-title',
+        'admin-joindate', 'admin-office', 'admin-fullname', 'admin-nic',
+        'admin-dob', 'admin-pemail', 'admin-resaddress', 'admin-emname', 'admin-emergency'
+      ];
+      aFields.forEach(function (f) {
+        const val = getFieldVal(f);
+        if (val !== '') {
+          setFieldVal(f, val);
+        }
+      });
+      currentPerson.email = getFieldVal('admin-email') || currentPerson.email;
+      currentPerson.phone = getFieldVal('admin-phone') || currentPerson.phone;
+      currentPerson.nocPhone = getFieldVal('admin-noc') || currentPerson.nocPhone;
+      currentPerson.jobTitle = getFieldVal('admin-title') || currentPerson.jobTitle;
+      currentPerson.joinDate = getFieldVal('admin-joindate') || currentPerson.joinDate;
+      currentPerson.officeLocation = getFieldVal('admin-office') || currentPerson.officeLocation;
+      currentPerson.officeAddress = currentPerson.officeLocation;
+      currentPerson.name = getFieldVal('admin-fullname') || currentPerson.name;
+      currentPerson.nic = getFieldVal('admin-nic') || currentPerson.nic;
+      currentPerson.dateOfBirth = getFieldVal('admin-dob') || currentPerson.dateOfBirth;
+      currentPerson.personalEmail = getFieldVal('admin-pemail') || currentPerson.personalEmail;
+      currentPerson.personalAddress = getFieldVal('admin-resaddress') || currentPerson.personalAddress;
+      currentPerson.address = currentPerson.personalAddress;
+      currentPerson.emergencyName = getFieldVal('admin-emname') || currentPerson.emergencyName;
+      currentPerson.emergencyContact = getFieldVal('admin-emergency') || currentPerson.emergencyContact;
+
+      // Subtitle
+      const subEl = document.getElementById('j-modal-subtitle');
+      if (subEl) {
+        subEl.textContent = currentPerson.jobTitle || 'System Administrator · IT Director';
       }
     }
 
@@ -2101,6 +2182,17 @@
       const phoneSpan = row.querySelectorAll('.c-contact-line span')[1];
       if (phoneSpan && person.phone) phoneSpan.textContent = person.phone;
     }
+
+    // Role-specific updates: Admin
+    if (role === 'admin') {
+      const jobTitle = person.jobTitle || person.title;
+      if (jobTitle) {
+        const titleP = row.querySelector('.c-subtext');
+        if (titleP) titleP.textContent = jobTitle;
+      }
+      const phoneSpan = row.querySelectorAll('.c-contact-line span')[1];
+      if (phoneSpan && person.phone) phoneSpan.textContent = person.phone;
+    }
   }
 
   /**
@@ -2135,34 +2227,42 @@
     // Check custom dropdown
     const selectEl = document.getElementById('j-select-' + fieldKey);
     if (selectEl && val) {
-      const valLabel = selectEl.querySelector('.j-select-value, .c-dropdown__value, .c-select__trigger span');
-      if (valLabel) {
-        valLabel.textContent = val;
-        valLabel.classList.remove('c-dropdown__placeholder');
-      }
-      const hidden = selectEl.querySelector('input[type="hidden"]');
-      if (hidden) hidden.value = val;
-      const trigger = selectEl.querySelector('.c-dropdown__trigger');
-      if (trigger) {
-        trigger.classList.add('has-value');
-        trigger.classList.remove('is-placeholder');
+      if (typeof window.setDropdownValue === 'function') {
+        window.setDropdownValue(selectEl, val);
+      } else {
+        const valLabel = selectEl.querySelector('.j-select-value, .c-dropdown__value, .c-select__trigger span');
+        if (valLabel) {
+          valLabel.textContent = val;
+          valLabel.classList.remove('c-dropdown__placeholder');
+        }
+        const hidden = selectEl.querySelector('input[type="hidden"]');
+        if (hidden) hidden.value = val;
+        const trigger = selectEl.querySelector('.c-dropdown__trigger');
+        if (trigger) {
+          trigger.classList.add('has-value');
+          trigger.classList.remove('is-placeholder');
+        }
       }
     }
 
     // Check datepicker
     const dpEl = document.getElementById('j-dp-' + fieldKey);
     if (dpEl && val) {
-      const dpInput = dpEl.querySelector('input');
-      if (dpInput) dpInput.value = val;
-      const dpLabel = dpEl.querySelector('.j-dp-label');
-      if (dpLabel) {
-        const d = new Date(val);
-        if (!isNaN(d.getTime())) {
-          dpLabel.textContent = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-        } else {
-          dpLabel.textContent = val;
+      if (typeof dpEl.setDateVal === 'function') {
+        dpEl.setDateVal(val);
+      } else {
+        const dpInput = dpEl.querySelector('input');
+        if (dpInput) dpInput.value = val;
+        const dpLabel = dpEl.querySelector('.j-dp-label');
+        if (dpLabel) {
+          const d = new Date(val);
+          if (!isNaN(d.getTime())) {
+            dpLabel.textContent = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+          } else {
+            dpLabel.textContent = val;
+          }
+          dpLabel.classList.remove('c-dp-placeholder');
         }
-        dpLabel.classList.remove('c-dp-placeholder');
       }
     }
   }

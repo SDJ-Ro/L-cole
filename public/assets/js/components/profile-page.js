@@ -43,7 +43,25 @@
     snapshot = {};
     page.querySelectorAll('.c-info-card-input').forEach((input) => {
       const id = input.id || input.name;
-      snapshot[id] = input.value;
+      if (id) snapshot[id] = input.value;
+    });
+
+    page.querySelectorAll('.c-datepicker').forEach((dp) => {
+      const hidden = dp.querySelector('.j-dp-input');
+      const id = dp.id || (hidden && hidden.name);
+      if (id && hidden) snapshot[id] = hidden.value;
+    });
+
+    page.querySelectorAll('.c-dropdown').forEach((dd) => {
+      const hidden = dd.querySelector('input[type="hidden"]');
+      const textVal = dd.querySelector('.c-dropdown__value, .j-select-value');
+      const id = dd.id || (hidden && hidden.name);
+      if (id) {
+        snapshot[id] = {
+          val: hidden ? hidden.value : '',
+          text: textVal ? textVal.textContent.trim() : ''
+        };
+      }
     });
 
     page.classList.add('c-profile-page--editing');
@@ -52,13 +70,40 @@
       editBtn.dataset.editing = 'true';
     }
     if (actionsRow) actionsRow.classList.add('c-is-open');
+
+    // Ensure all datepickers inside page are initialized
+    if (typeof window.initAllDatePickers === 'function') {
+      window.initAllDatePickers();
+    }
   }
 
   function cancelEdit() {
     // Restore snapshot values
     page.querySelectorAll('.c-info-card-input').forEach((input) => {
       const id = input.id || input.name;
-      if (snapshot[id] !== undefined) input.value = snapshot[id];
+      if (id && snapshot[id] !== undefined) input.value = snapshot[id];
+    });
+
+    page.querySelectorAll('.c-datepicker').forEach((dp) => {
+      const hidden = dp.querySelector('.j-dp-input');
+      const id = dp.id || (hidden && hidden.name);
+      if (id && snapshot[id] !== undefined) {
+        if (typeof dp.setDateVal === 'function') {
+          dp.setDateVal(snapshot[id]);
+        } else if (hidden) {
+          hidden.value = snapshot[id];
+        }
+      }
+    });
+
+    page.querySelectorAll('.c-dropdown').forEach((dd) => {
+      const hidden = dd.querySelector('input[type="hidden"]');
+      const textVal = dd.querySelector('.c-dropdown__value, .j-select-value');
+      const id = dd.id || (hidden && hidden.name);
+      if (id && snapshot[id]) {
+        if (hidden) hidden.value = snapshot[id].val;
+        if (textVal) textVal.textContent = snapshot[id].text;
+      }
     });
 
     exitEditMode();
@@ -81,11 +126,34 @@
   // -------------------------------------------------------------------------
   if (saveBtn) {
     saveBtn.addEventListener('click', function () {
-      // Mirror input → display value for each editable card
+      // Mirror input / datepicker / dropdown → display value for each editable card
       page.querySelectorAll('.c-info-card:not(.c-info-card--readonly)').forEach((card) => {
-        const input   = card.querySelector('.c-info-card-input');
         const display = card.querySelector('.c-info-card-value');
-        if (input && display && input.value.trim()) {
+        if (!display) return;
+
+        // 1. Datepicker
+        const dpInput = card.querySelector('.j-dp-input');
+        if (dpInput && dpInput.value.trim()) {
+          const iso = dpInput.value.trim();
+          const d = new Date(iso + 'T00:00:00');
+          if (!isNaN(d.getTime())) {
+            display.textContent = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+          } else {
+            display.textContent = iso;
+          }
+          return;
+        }
+
+        // 2. Custom dropdown
+        const ddVal = card.querySelector('.c-dropdown__value, .j-select-value');
+        if (ddVal && ddVal.textContent.trim()) {
+          display.textContent = ddVal.textContent.trim();
+          return;
+        }
+
+        // 3. Text/email/tel input
+        const input = card.querySelector('.c-info-card-input');
+        if (input && input.value.trim()) {
           display.textContent = input.value.trim();
         }
       });
