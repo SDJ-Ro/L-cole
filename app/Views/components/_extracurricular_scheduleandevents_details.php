@@ -163,30 +163,34 @@ $createdAt = $clubData['createdAt'] ?? '15 Jan 2024';
      ========================================================================= -->
 <div class="c-modal-layer" id="j-staff-edit-modal" role="presentation">
   <button type="button" class="c-modal-backdrop j-modal-backdrop" aria-label="Close editor"></button>
-  <section class="c-modal" role="dialog" aria-modal="true" aria-labelledby="j-staff-modal-title" style="width: min(38rem, 94vw); max-width: 38rem; max-height: 90vh; padding: 0; overflow: visible; border: none; background: transparent; display: flex; flex-direction: column;">
-    <form class="c-form-card" id="j-staff-edit-form" novalidate style="margin: 0; display: flex; flex-direction: column; max-height: 90vh; background: #ffffff; border-radius: var(--radius-2xl, 1.25rem); overflow: hidden; box-shadow: 0 20px 45px rgba(15, 65, 74, 0.22); border: 1px solid var(--color-border, #EFE8DF);">
+  <section class="c-modal c-modal--staff-edit c-form-card c-form-card--modal" role="dialog" aria-modal="true" aria-labelledby="j-staff-modal-title" style="width: min(38rem, 94vw); max-width: 38rem; max-height: 90vh; border-radius: 1.25rem; overflow: hidden; display: flex; flex-direction: column;">
+    <form class="c-form-card" id="j-staff-edit-form" novalidate style="margin: 0; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; background: #ffffff; border: none; box-shadow: none;">
       <!-- Universal Form Header (Sand Theme) -->
-      <header class="c-form-header c-form-header--sand" style="flex-shrink: 0;">
-        <div class="c-form-header-row">
-          <div>
-            <h2 class="c-form-header-title c-font-display" id="j-staff-modal-title">Edit Details</h2>
-            <p class="c-form-header-subtitle" id="j-staff-modal-desc">Update the details below and save.</p>
+      <header class="c-form-header c-form-header--sand c-modal__header" style="flex-shrink: 0; background: #F7F3EC !important; border-bottom: 1px solid #E5DFD7; padding: 1.25rem 1.75rem; display: flex !important; flex-direction: row !important; align-items: flex-start !important; justify-content: space-between !important; gap: 1rem !important;">
+        <div class="c-modal__heading-group" style="display: flex; align-items: flex-start; gap: 0.875rem;">
+          <div class="c-modal__icon-badge" id="j-staff-modal-badge" aria-hidden="true" style="flex-shrink: 0; width: 2.75rem; height: 2.75rem; border-radius: var(--radius-xl, 0.875rem); background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(184, 151, 108, 0.3); color: #8C5A24; display: flex; align-items: center; justify-content: center;">
+            <svg class="c-icon" width="20" height="20" id="j-staff-modal-badge-icon"><use href="#icon-clock"/></svg>
           </div>
-          <button type="button" class="c-modal__close-btn j-modal-close" aria-label="Close" style="color: var(--midnight, #0F414A); background: rgba(255,255,255,0.6); border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 150ms ease;">
-            <svg class="c-icon" width="18" height="18"><use href="#icon-close"/></svg>
-          </button>
+          <div>
+            <p class="c-modal__eyebrow" id="j-staff-modal-eyebrow" style="margin: 0; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(15, 65, 74, 0.55);">Schedule &amp; Venue</p>
+            <h2 class="c-form-header-title c-modal__title c-font-display" id="j-staff-modal-title" style="margin: 0.15rem 0 0 0; font-size: 1.25rem; font-weight: 800; color: #0F414A;">Edit Details</h2>
+            <p class="c-form-header-subtitle c-modal__description" id="j-staff-modal-desc" style="margin: 0.25rem 0 0 0; font-size: 0.8125rem; color: rgba(15, 65, 74, 0.7);">Update the details below and save.</p>
+          </div>
         </div>
+        <button type="button" class="c-modal__close-btn j-modal-close" aria-label="Close" style="background: none; border: none; padding: 0.25rem; cursor: pointer; color: rgba(15,65,74,0.6); display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 32px; height: 32px; transition: background-color 150ms ease;">
+          <svg class="c-icon" width="18" height="18"><use href="#icon-close"/></svg>
+        </button>
       </header>
 
       <!-- Clean White Form Body Surface with Auto-Scroll -->
-      <div class="c-form-body" style="padding: 1.5rem; overflow-y: auto; flex: 1 1 auto; max-height: calc(90vh - 140px); overscroll-behavior: contain;">
-        <div id="j-staff-modal-fields" class="c-form-grid c-form-grid--2col"></div>
+      <div class="c-form-body" style="padding: 1.5rem 1.75rem; overflow-y: auto; flex: 1 1 auto; min-height: 0; overscroll-behavior: contain;">
+        <div id="j-staff-modal-fields" class="c-form-grid c-form-grid--2col" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem;"></div>
       </div>
 
       <!-- Actions Footer -->
-      <footer class="c-form-footer" style="flex-shrink: 0; padding: 1rem 1.5rem; background: #FAF7F2; border-top: 1px solid var(--color-border, #EFE8DF); display: flex; justify-content: flex-end; gap: 0.75rem;">
+      <footer class="c-form-footer" style="flex-shrink: 0; padding: 1.125rem 1.75rem; background: #FAF7F2; border-top: 1px solid var(--color-border, #EFE8DF); display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; border-bottom-left-radius: 1.25rem; border-bottom-right-radius: 1.25rem;">
         <button type="button" class="c-btn c-btn--ghost j-modal-close">Cancel</button>
-        <button type="submit" class="c-btn c-btn--solid c-btn--sky">Save changes</button>
+        <button type="submit" class="c-btn c-btn--solid">Save changes</button>
       </footer>
     </form>
   </section>
@@ -244,12 +248,12 @@ $createdAt = $clubData['createdAt'] ?? '15 Jan 2024';
       if (e.key === 'Escape' && modal.classList.contains('c-is-open')) closeModal();
     });
 
-    // ---- Field builder helpers (reusing standard c-form-field & c-text-input) ----
+    // ---- Field builder helpers (using standard c-field-label & c-field-input) ----
     function field(id, label, value, type = 'text', placeholder = '', span2 = false) {
       return `
-        <div class="c-form-field ${span2 ? 'c-form-field--span-2' : ''}">
-          <label class="c-form-field__label" for="${id}">${label}</label>
-          <input class="c-text-input" id="${id}" type="${type}" value="${value.replace(/"/g, '&quot;')}" placeholder="${placeholder}" />
+        <div class="c-form-field ${span2 ? 'c-form-field--span-2' : ''}" style="${span2 ? 'grid-column: 1 / -1;' : ''}">
+          <label class="c-field-label" for="${id}">${label}</label>
+          <input class="c-field-input" id="${id}" type="${type}" value="${value.replace(/"/g, '&quot;')}" placeholder="${placeholder}" />
         </div>`;
     }
 
