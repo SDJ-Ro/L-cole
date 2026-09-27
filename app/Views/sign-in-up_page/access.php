@@ -12,7 +12,7 @@
 
 <?php require_once __DIR__ . '/../components/_icon_logos.php'; ?>
 
-<a class="gw-back-btn" href="/landing"><svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-arrowLeft"/></svg>L'École home</a>
+<a class="gw-back-btn" id="gw-main-back-btn" href="/landing"><svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-arrowLeft"/></svg><span id="gw-back-btn-text">L'École home</span></a>
 
 <div class="auth-shell">
   <aside class="gw-visual">
