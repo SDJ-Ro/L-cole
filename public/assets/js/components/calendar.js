@@ -1151,19 +1151,68 @@
         return `${pad2(t.hour)}:${pad2(t.minute)} ${t.ampm}`;
       }
 
+      function timeToTotalMinutes(t) {
+        if (!t) return 0;
+        let h = parseInt(t.hour, 10);
+        if (h === 12) h = 0;
+        if (String(t.ampm).toUpperCase() === 'PM') h += 12;
+        return h * 60 + parseInt(t.minute, 10);
+      }
+
+      function checkRangeValidity() {
+        if (!isRange) return { isValid: true };
+        const sMin = timeToTotalMinutes(startTime);
+        const eMin = timeToTotalMinutes(endTime);
+        if (eMin <= sMin) {
+          return {
+            isValid: false,
+            sMin,
+            eMin,
+            error: `End time (${formatTimeString(endTime)}) must be later than start time (${formatTimeString(startTime)}). Please check AM/PM.`
+          };
+        }
+        return { isValid: true, sMin, eMin };
+      }
+
       function updateDisplayAndInput() {
         let fullStr = '';
+        const warningEl = document.getElementById('j-drum-range-warning');
+        const warningTextEl = document.getElementById('j-drum-range-warning-text');
+        const timeErrorEl = document.getElementById('j-field-time-error');
+
         if (isRange) {
           fullStr = `${formatTimeString(startTime)} – ${formatTimeString(endTime)}`;
           if (subtabStart) subtabStart.textContent = `Start: ${formatTimeString(startTime)}`;
           if (subtabEnd) subtabEnd.textContent = `End: ${formatTimeString(endTime)}`;
+
+          const validity = checkRangeValidity();
+          if (!validity.isValid) {
+            if (warningEl) {
+              if (warningTextEl) warningTextEl.textContent = validity.error;
+              warningEl.style.display = 'flex';
+            }
+            if (timeErrorEl) {
+              timeErrorEl.textContent = validity.error;
+              timeErrorEl.classList.add('c-is-visible');
+            }
+            subtabEnd?.classList.add('c-drum-subtab--invalid');
+            trigger.classList.add('c-drum-trigger--invalid');
+          } else {
+            if (warningEl) warningEl.style.display = 'none';
+            if (timeErrorEl) timeErrorEl.classList.remove('c-is-visible');
+            subtabEnd?.classList.remove('c-drum-subtab--invalid');
+            trigger.classList.remove('c-drum-trigger--invalid');
+          }
         } else {
           fullStr = formatTimeString(startTime);
+          if (warningEl) warningEl.style.display = 'none';
+          if (timeErrorEl) timeErrorEl.classList.remove('c-is-visible');
+          subtabEnd?.classList.remove('c-drum-subtab--invalid');
+          trigger.classList.remove('c-drum-trigger--invalid');
         }
 
         if (displayVal) displayVal.textContent = fullStr;
         hiddenTimeInput.value = fullStr;
-        document.getElementById('j-field-time-error')?.classList.remove('c-is-visible');
 
         // Fire live validation & clash check listeners
         hiddenTimeInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -1224,7 +1273,7 @@
         renderDrumSlots();
       }
 
-      // Slot Click delegation
+      // Slot Click delegation & calibrated smooth scrolling controls
       drawer.querySelectorAll('.j-drum-col').forEach(colEl => {
         const col = colEl.dataset.col;
 
@@ -1239,12 +1288,28 @@
           }
         });
 
-        // Mouse Wheel on column (continuous cyclic roll)
+        // Mouse Wheel with velocity deceleration and delta accumulator
+        // Smoothly slows the motion down so choosing values is easy and tactile
+        let wheelAccumulator = 0;
+        let lastStepTime = 0;
+        const WHEEL_THRESHOLD = 50;  // Deliberate threshold to prevent runaway spinning
+        const WHEEL_COOLDOWN = 110;  // Milliseconds cooldown between notch steps
+
         colEl.addEventListener('wheel', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const dir = e.deltaY > 0 ? 1 : -1;
-          stepDrum(col, dir);
+
+          const now = Date.now();
+          wheelAccumulator += e.deltaY;
+
+          if (Math.abs(wheelAccumulator) >= WHEEL_THRESHOLD && (now - lastStepTime > WHEEL_COOLDOWN)) {
+            const dir = wheelAccumulator > 0 ? 1 : -1;
+            stepDrum(col, dir);
+            wheelAccumulator = 0;
+            lastStepTime = now;
+          } else if (now - lastStepTime > 250) {
+            wheelAccumulator = 0;
+          }
         }, { passive: false });
 
         // Keyboard arrow navigation
@@ -1258,20 +1323,43 @@
           }
         });
 
-        // Touch swipe drag support
-        let startY = 0;
-        colEl.addEventListener('touchstart', (e) => {
-          startY = e.touches[0].clientY;
-        }, { passive: true });
+        // Pointer Drag (Mouse click & drag + touch drag) with controlled notch threshold
+        let dragStartY = null;
+        let isDragging = false;
 
-        colEl.addEventListener('touchmove', (e) => {
-          const currentY = e.touches[0].clientY;
-          const diff = startY - currentY;
-          if (Math.abs(diff) >= 24) {
+        colEl.addEventListener('pointerdown', (e) => {
+          if (e.target.closest('.c-drum-arrow')) return;
+          dragStartY = e.clientY;
+          isDragging = true;
+          try {
+            colEl.setPointerCapture(e.pointerId);
+          } catch (_) {}
+        });
+
+        colEl.addEventListener('pointermove', (e) => {
+          if (!isDragging || dragStartY === null) return;
+          const diff = dragStartY - e.clientY;
+          const DRAG_THRESHOLD = 26; // Pixels per notch step
+          if (Math.abs(diff) >= DRAG_THRESHOLD) {
             stepDrum(col, diff > 0 ? 1 : -1);
-            startY = currentY;
+            dragStartY = e.clientY;
           }
-        }, { passive: true });
+        });
+
+        const stopDrag = (e) => {
+          if (isDragging) {
+            isDragging = false;
+            dragStartY = null;
+            try {
+              if (e && colEl.hasPointerCapture(e.pointerId)) {
+                colEl.releasePointerCapture(e.pointerId);
+              }
+            } catch (_) {}
+          }
+        };
+
+        colEl.addEventListener('pointerup', stopDrag);
+        colEl.addEventListener('pointercancel', stopDrag);
       });
 
       // Arrow Up/Down buttons
@@ -1312,6 +1400,17 @@
 
       btnDone?.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (isRange) {
+          const validity = checkRangeValidity();
+          if (!validity.isValid) {
+            showFormError(validity.error);
+            activeTarget = 'end';
+            subtabEnd?.classList.add('is-active');
+            subtabStart?.classList.remove('is-active');
+            renderDrumSlots();
+            return;
+          }
+        }
         toggleDrawer(false);
       });
 
@@ -1331,6 +1430,19 @@
         modeRange.classList.add('is-active');
         modeSingle?.classList.remove('is-active');
         if (rangeTabs) rangeTabs.style.display = 'flex';
+        // Auto-nudge endTime if it is <= startTime upon entering range mode
+        const sMin = timeToTotalMinutes(startTime);
+        const eMin = timeToTotalMinutes(endTime);
+        if (eMin <= sMin) {
+          const nudged = (sMin + 60) % (24 * 60);
+          const nudgedHour24 = Math.floor(nudged / 60);
+          const nudgedM = nudged % 60;
+          endTime = {
+            hour: nudgedHour24 === 0 ? 12 : (nudgedHour24 > 12 ? nudgedHour24 - 12 : nudgedHour24),
+            minute: nudgedM,
+            ampm: nudgedHour24 >= 12 ? 'PM' : 'AM'
+          };
+        }
         renderDrumSlots();
       });
 
@@ -1434,6 +1546,24 @@
           hasError = true;
         } else {
           document.getElementById('j-field-time-error')?.classList.remove('c-is-visible');
+          // Time Range AM/PM validation: End time must strictly exceed start time
+          const rangeParts = String(time).split(/[-–—]/);
+          if (rangeParts.length >= 2) {
+            const sMin = parseTimeToMinutes(rangeParts[0]);
+            const eMin = parseTimeToMinutes(rangeParts[1]);
+            if (sMin !== null && eMin !== null && eMin <= sMin) {
+              const msg = `End time (${rangeParts[1].trim()}) must be later than start time (${rangeParts[0].trim()}). Please check AM / PM.`;
+              showFormError(msg);
+              const timeErr = document.getElementById('j-field-time-error');
+              if (timeErr) {
+                timeErr.textContent = msg;
+                timeErr.classList.add('c-is-visible');
+              }
+              const submitBtn = eventForm.querySelector('button[type="submit"]');
+              if (submitBtn) submitBtn.disabled = false;
+              return;
+            }
+          }
         }
 
         // Resolve multi-scopes from progressive UI
