@@ -74,6 +74,13 @@ class ParentActions {
             $data['mobile'] = trim($input['phone']);
         }
 
+        // Secondary emergency phone fallback for admission form
+        if (empty($data['emergencyContact']) && !empty($input['emergencyNumber'])) {
+            $cCode = trim($input['guardianEmergencyCountryCode'] ?? '+94');
+            $mNum  = ltrim(trim($input['emergencyNumber']), '0');
+            $data['emergencyContact'] = $cCode . $mNum;
+        }
+
         // Mandatory fields for parent creation
         $required = ['fullName', 'firstName', 'lastName', 'relationship', 'occupation', 'mobile', 'email'];
         if (!$isUpdate) {
@@ -85,15 +92,33 @@ class ParentActions {
             }
         }
 
-        // Name validation (letters, spaces, dots, hyphens, apostrophes)
+        // Name validation (letters, spaces, dots, hyphens, apostrophes - strictly no digits)
         if (!preg_match('/^[A-Za-z\s.\'-]{2,150}$/', $data['fullName'])) {
             throw new InvalidArgumentException("Full name should only contain letters, spaces, hyphens, and dots.");
+        }
+        if (preg_match('/[0-9]/', $data['fullName']) || preg_match('/[0-9]/', $data['firstName']) || preg_match('/[0-9]/', $data['lastName'])) {
+            throw new InvalidArgumentException("Parent/guardian names cannot contain numbers.");
+        }
+        if (!empty($data['emergencyName']) && preg_match('/[0-9]/', $data['emergencyName'])) {
+            throw new InvalidArgumentException("Secondary emergency contact name cannot contain numbers.");
+        }
+
+        // Phone format validation
+        $cleanMobile = preg_replace('/[^0-9+]/', '', $data['mobile']);
+        if (strlen(preg_replace('/[^0-9]/', '', $cleanMobile)) < 9) {
+            throw new InvalidArgumentException("Primary mobile number must contain at least 9 digits.");
+        }
+        if (!empty($data['emergencyContact'])) {
+            $cleanEm = preg_replace('/[^0-9+]/', '', $data['emergencyContact']);
+            if (strlen(preg_replace('/[^0-9]/', '', $cleanEm)) < 9) {
+                throw new InvalidArgumentException("Secondary emergency contact phone must contain at least 9 digits.");
+            }
         }
 
         // Email validation
         $data['email'] = strtolower($data['email']);
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidArgumentException("Enter a valid email address.");
+        if (strpos($data['email'], '@') === false || !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException("Enter a valid email address containing '@'.");
         }
 
         // Check duplicate email in user_accounts on new registration

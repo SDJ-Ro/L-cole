@@ -88,6 +88,9 @@ class StudentActions {
         if (!preg_match('/^[A-Za-z\s.\'-]{2,150}$/', $student['fullName'])) {
             throw new InvalidArgumentException("Student full name should only contain letters, spaces, hyphens, and dots.");
         }
+        if (preg_match('/[0-9]/', $student['fullName']) || preg_match('/[0-9]/', $student['firstName']) || preg_match('/[0-9]/', $student['lastName'])) {
+            throw new InvalidArgumentException("Student names cannot contain numbers.");
+        }
 
         // Dates
         $dob = DateTimeImmutable::createFromFormat('!Y-m-d', $student['dateOfBirth']);
@@ -153,6 +156,11 @@ class StudentActions {
             }
             if (empty(trim($input['guardian']['emergencyName'] ?? ''))) {
                 throw new InvalidArgumentException("Secondary emergency contact name is compulsory.");
+            }
+            if (empty(trim($input['guardian']['emergencyContact'] ?? '')) && !empty(trim($input['guardian']['emergencyNumber'] ?? ''))) {
+                $cCode = trim($input['guardianEmergencyCountryCode'] ?? '+94');
+                $mNum  = ltrim(trim($input['guardian']['emergencyNumber']), '0');
+                $input['guardian']['emergencyContact'] = $cCode . $mNum;
             }
             if (empty(trim($input['guardian']['emergencyContact'] ?? ''))) {
                 throw new InvalidArgumentException("Secondary emergency contact phone number is compulsory.");

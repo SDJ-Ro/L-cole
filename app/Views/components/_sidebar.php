@@ -67,7 +67,7 @@ if (!isset($roleConfig)) {
         <span class="c-profile-btn__status-dot j-collapsible-text" aria-label="Account active"></span>
       </a>
 
-      <a href="/auth" class="c-logout-btn logout-link j-logout-link" id="j-logout-btn" title="Logout" aria-label="Logout">
+      <a href="/logout" class="c-logout-btn logout-link j-logout-link" id="j-logout-btn" title="Logout" aria-label="Logout">
         <span class="c-logout-btn__icon" aria-hidden="true">
           <svg class="c-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <use href="#icon-logOut"/>

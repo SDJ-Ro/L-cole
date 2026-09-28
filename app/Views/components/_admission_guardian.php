@@ -141,19 +141,19 @@
       <!-- 2. Full Name -->
       <div class="c-form-field c-span-2">
         <label class="c-form-field-label">Full Name <span class="c-required-mark">*</span></label>
-        <input type="text" class="c-form-input j-guardian-input" name="guardian[fullName]" id="guardian-fullName" placeholder="e.g. Suresh Kamal Perera" maxlength="150" />
+        <input type="text" class="c-form-input j-guardian-input j-name-letters" name="guardian[fullName]" id="guardian-fullName" placeholder="e.g. Suresh Kamal Perera" maxlength="150" />
       </div>
 
       <!-- 3. First Name -->
       <div class="c-form-field">
         <label class="c-form-field-label">First Name <span class="c-required-mark">*</span></label>
-        <input type="text" class="c-form-input j-guardian-input" name="guardian[firstName]" id="guardian-firstName" placeholder="e.g. Suresh" maxlength="75" />
+        <input type="text" class="c-form-input j-guardian-input j-name-letters" name="guardian[firstName]" id="guardian-firstName" placeholder="e.g. Suresh" maxlength="75" />
       </div>
 
       <!-- 4. Last Name -->
       <div class="c-form-field">
         <label class="c-form-field-label">Last Name <span class="c-required-mark">*</span></label>
-        <input type="text" class="c-form-input j-guardian-input" name="guardian[lastName]" id="guardian-lastName" placeholder="e.g. Perera" maxlength="75" />
+        <input type="text" class="c-form-input j-guardian-input j-name-letters" name="guardian[lastName]" id="guardian-lastName" placeholder="e.g. Perera" maxlength="75" />
       </div>
 
       <!-- 5. White-Labeled Identity Selector (NIC vs Foreign Passport) -->
@@ -249,7 +249,7 @@
           $dropdownClass = 'c-select-terracotta c-phone-code-dropdown';
           require __DIR__ . '/_dropdown.php';
           ?>
-          <input type="tel" class="c-form-input j-guardian-input" name="guardian[mobileNumber]" id="guardian-mobile" placeholder="77 123 4567" maxlength="25" />
+          <input type="tel" class="c-form-input j-guardian-input j-phone-digits" name="guardian[mobileNumber]" id="guardian-mobile" placeholder="77 123 4567" maxlength="9" />
           <input type="hidden" name="guardian[mobile]" id="j-guardian-mobile-full" />
         </div>
         <p class="c-field-hint">Primary number used for school SMS alerts and notifications.</p>
@@ -291,13 +291,26 @@
       <!-- 14. Emergency Contact Info (Compulsory) -->
       <div class="c-form-field">
         <label class="c-form-field-label">Secondary Emergency Contact Name <span class="c-required-mark">*</span></label>
-        <input type="text" class="c-form-input j-guardian-input" name="guardian[emergencyName]" id="guardian-emergencyName" placeholder="e.g. Kamal Perera (Uncle)" maxlength="150" required />
+        <input type="text" class="c-form-input j-guardian-input j-name-letters" name="guardian[emergencyName]" id="guardian-emergencyName" placeholder="e.g. Kamal Perera (Uncle)" maxlength="150" required />
         <p class="c-field-hint" id="j-guardian-emname-hint">Alternative contact person (must be different from parent/guardian).</p>
       </div>
 
       <div class="c-form-field">
         <label class="c-form-field-label">Secondary Emergency Phone <span class="c-required-mark">*</span></label>
-        <input type="tel" class="c-form-input j-guardian-input" name="guardian[emergencyContact]" id="guardian-emergencyContact" placeholder="e.g. +94 77 987 6543" maxlength="30" required />
+        <div class="c-phone-input-group">
+          <?php
+          $dropdownId    = 'j-guardian-em-country-code';
+          $name          = 'guardianEmergencyCountryCode';
+          $options       = $countryCodeOptions;
+          $selectedValue = '+94';
+          $placeholder   = 'Code';
+          $dropdownLabel = 'Country Code';
+          $dropdownClass = 'c-select-terracotta c-phone-code-dropdown';
+          require __DIR__ . '/_dropdown.php';
+          ?>
+          <input type="tel" class="c-form-input j-guardian-input j-phone-digits" name="guardian[emergencyNumber]" id="guardian-emergencyNumber" placeholder="77 987 6543" maxlength="9" required />
+          <input type="hidden" name="guardian[emergencyContact]" id="guardian-emergencyContact" />
+        </div>
         <p class="c-field-hint" id="j-guardian-emphone-hint">Alternative phone number (cannot be the parent's contact number).</p>
       </div>
     </div>
