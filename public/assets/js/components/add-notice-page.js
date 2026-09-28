@@ -293,12 +293,27 @@
         const titleVal = titleInput ? titleInput.value.trim() : '';
         const bodyVal = bodyInput ? bodyInput.value.trim() : '';
 
-        // Validate required fields
+        // Validate required fields and lengths
         if (!titleVal) {
           if (titleInput) {
             titleInput.focus();
             titleInput.classList.add('c-is-invalid');
             setTimeout(() => titleInput.classList.remove('c-is-invalid'), 2000);
+          }
+          if (window.showFeedbackBanner) {
+            window.showFeedbackBanner('Notice title is required.', 'error');
+          }
+          return;
+        }
+
+        if (titleVal.length < 3) {
+          if (titleInput) {
+            titleInput.focus();
+            titleInput.classList.add('c-is-invalid');
+            setTimeout(() => titleInput.classList.remove('c-is-invalid'), 2000);
+          }
+          if (window.showFeedbackBanner) {
+            window.showFeedbackBanner('Notice title must be between 3 and 200 characters.', 'error');
           }
           return;
         }
@@ -308,6 +323,21 @@
             bodyInput.focus();
             bodyInput.classList.add('c-is-invalid');
             setTimeout(() => bodyInput.classList.remove('c-is-invalid'), 2000);
+          }
+          if (window.showFeedbackBanner) {
+            window.showFeedbackBanner('Notice body is required.', 'error');
+          }
+          return;
+        }
+
+        if (bodyVal.length < 10) {
+          if (bodyInput) {
+            bodyInput.focus();
+            bodyInput.classList.add('c-is-invalid');
+            setTimeout(() => bodyInput.classList.remove('c-is-invalid'), 2000);
+          }
+          if (window.showFeedbackBanner) {
+            window.showFeedbackBanner('Notice body must be between 10 and 5,000 characters.', 'error');
           }
           return;
         }

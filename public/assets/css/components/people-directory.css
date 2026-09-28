@@ -524,35 +524,30 @@
   border-color: rgba(175, 80, 49, 0.35) !important;
 }
 
-/* Ensure row and cell containing an active status dropdown are elevated above sibling rows */
+/* Ensure row and cell containing an active status dropdown don't clip it */
+/* (The dropdown menu is rendered as position:fixed via JS, escaping table stacking entirely) */
 .c-table tbody tr:has(.c-dropdown.c-is-open),
 .c-table tbody tr.c-has-open-dropdown {
-  position: relative !important;
-  z-index: 1000 !important;
-}
-
-.c-table tbody tr:has(.c-dropdown.c-is-open) td,
-.c-table tbody tr.c-has-open-dropdown td {
-  position: relative !important;
-  z-index: 1000 !important;
-  overflow: visible !important;
-}
-
-.c-table td:has(.c-dropdown.c-is-open),
-.c-table td.c-has-open-dropdown {
-  position: relative !important;
-  z-index: 1001 !important;
-  overflow: visible !important;
+  position: relative;
 }
 
 .c-dropdown.c-dropdown--status.c-is-open {
-  z-index: 1050 !important;
-  position: relative !important;
+  position: relative;
 }
 
+/* Fixed-position menu sits above all page content */
 .c-dropdown.c-dropdown--status .c-dropdown__menu,
 .c-dropdown.c-dropdown--status .c-select__menu {
-  z-index: 1060 !important;
+  z-index: 9999 !important;
+  min-width: 9rem !important;
+}
+
+/* When the menu is repositioned as fixed (inside a table), the base
+   "width: 100% / min-width: 100%" resolves against the viewport and makes
+   the menu full-width. Override back to auto so it sizes from its content. */
+.c-dropdown__menu[data-fixed-dropdown],
+.c-select__menu[data-fixed-dropdown] {
+  width: auto !important;
   min-width: 9rem !important;
 }
 

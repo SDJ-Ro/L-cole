@@ -341,3 +341,225 @@
   box-shadow: none !important;
 }
 
+/* =========================================================================
+   Smart Curriculum Delete & Grade Carving Modal Styles
+   ========================================================================= */
+.c-curr-del-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  text-align: left;
+}
+
+.c-curr-del-option {
+  display: block;
+  position: relative;
+  background: #ffffff;
+  border: 1.5px solid rgba(15, 65, 74, 0.14);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  transition: all 0.18s ease-in-out;
+}
+
+.c-curr-del-option:hover:not(.c-curr-del-option--disabled) {
+  border-color: rgba(10, 82, 93, 0.45);
+  background: rgba(127, 199, 204, 0.05);
+}
+
+.c-curr-del-option.c-is-active {
+  border-color: var(--deepsea, #0A525D);
+  background: rgba(127, 199, 204, 0.09);
+  box-shadow: 0 2px 8px rgba(10, 82, 93, 0.08);
+}
+
+.c-curr-del-option--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: rgba(15, 65, 74, 0.02);
+  border-style: dashed;
+}
+
+.c-curr-del-option__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.c-curr-del-option__radio {
+  margin-top: 0.2rem;
+  accent-color: var(--deepsea, #0A525D);
+  cursor: pointer;
+}
+
+.c-curr-del-option--disabled .c-curr-del-option__radio {
+  cursor: not-allowed;
+}
+
+.c-curr-del-option__label-wrap {
+  flex: 1;
+}
+
+.c-curr-del-option__title {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--midnight, #0F414A);
+  line-height: 1.25;
+}
+
+.c-curr-del-option__desc {
+  display: block;
+  font-size: 0.775rem;
+  color: rgba(15, 65, 74, 0.68);
+  margin-top: 0.25rem;
+  line-height: 1.35;
+}
+
+.c-curr-del-option--disabled .c-curr-del-option__desc {
+  color: #B42318;
+  font-weight: 500;
+}
+
+/* Grade Pills List */
+.c-curr-del-grades-container {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(15, 65, 74, 0.1);
+}
+
+.c-curr-del-grades-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(15, 65, 74, 0.7);
+  margin-bottom: 0.45rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.c-curr-del-grades-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.c-curr-del-grade-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  background: #f7fafb;
+  border: 1px solid rgba(15, 65, 74, 0.16);
+  color: var(--midnight, #0F414A);
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  user-select: none;
+}
+
+.c-curr-del-grade-pill:hover:not(.c-is-locked) {
+  border-color: var(--deepsea, #0A525D);
+  background: rgba(127, 199, 204, 0.15);
+  transform: translateY(-1px);
+}
+
+.c-curr-del-grade-pill.c-is-repeating {
+  border-color: rgba(224, 159, 62, 0.6);
+  background: rgba(224, 159, 62, 0.1);
+  color: #8D5400;
+}
+
+.c-curr-del-grade-pill.c-is-repeating:hover {
+  background: rgba(224, 159, 62, 0.2);
+  border-color: #B57400;
+}
+
+.c-curr-del-grade-pill.c-is-selected {
+  background: var(--midnight, #0F414A) !important;
+  color: #ffffff !important;
+  border-color: var(--midnight, #0F414A) !important;
+  box-shadow: 0 2px 6px rgba(15, 65, 74, 0.3);
+}
+
+.c-curr-del-grade-pill.c-is-selected .c-curr-del-grade-pill__badge {
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+.c-curr-del-grade-pill.c-is-locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #eee;
+  border-color: #ddd;
+}
+
+.c-curr-del-grade-pill__badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
+.c-curr-del-grade-pill.c-is-repeating .c-curr-del-grade-pill__badge {
+  background: rgba(224, 159, 62, 0.22);
+  color: #8D5400;
+}
+
+.c-curr-del-grade-pill.c-is-locked .c-curr-del-grade-pill__badge {
+  background: rgba(0, 0, 0, 0.08);
+  color: #666;
+}
+
+/* Split Preview Box */
+.c-curr-del-split-preview {
+  margin-top: 0.75rem;
+  background: #ffffff;
+  border: 1px solid rgba(10, 82, 93, 0.22);
+  border-left: 3.5px solid var(--deepsea, #0A525D);
+  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.775rem;
+  line-height: 1.4;
+  color: var(--midnight, #0F414A);
+  animation: fadeInDown 0.2s ease-out;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.c-curr-del-split-preview__title {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--deepsea, #0A525D);
+  margin-bottom: 0.3rem;
+}
+
+.c-curr-del-split-preview__stages {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.35rem 0;
+}
+
+.c-curr-del-split-preview__chip {
+  background: rgba(127, 199, 204, 0.2);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: var(--midnight, #0F414A);
+}
+

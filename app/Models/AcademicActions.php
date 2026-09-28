@@ -948,8 +948,21 @@ class AcademicActions extends Model {
     }
 
     /**
+     * Compute standard range label (e.g. 6 to 9 -> 'Years 6–9', 8 to 8 -> 'Year 8')
+     */
+    public static function computeRangeLabel(int $startYear, int $endYear): string {
+        $min = min($startYear, $endYear);
+        $max = max($startYear, $endYear);
+        if ($min === $max) {
+            return "Year {$min}";
+        }
+        return "Years {$min}–{$max}";
+    }
+
+    /**
      * Delete a curriculum group.
-     * Hard-blocked if any grades depend on it.
+     * Blocked if any active grades depend solely on it.
+     * Allowed if all active grades are covered by another curriculum group (or no grades exist).
      */
     public static function deleteCurriculumGroup(string $rangeLabel, ?int $actorId = null, ?string $actorIdentifier = null): array {
         $rangeLabel = trim($rangeLabel);
@@ -974,17 +987,55 @@ class AcademicActions extends Model {
                 $params[] = $rangeBounds['min'];
                 $params[] = $rangeBounds['max'];
             }
-            $stmtGrades = $db->prepare("SELECT id, name FROM grades WHERE group_id = ? {$boundCondition}");
+            $stmtGrades = $db->prepare("SELECT id, name, sort_order, group_id FROM grades WHERE group_id = ? {$boundCondition}");
             $stmtGrades->execute($params);
             $existingGrades = $stmtGrades->fetchAll(PDO::FETCH_ASSOC);
 
-            if (!empty($existingGrades)) {
+            // Check if any other curriculum group covers these grades
+            $stmtOtherGroups = $db->prepare("SELECT id, range_label FROM curriculum_groups WHERE id != ?");
+            $stmtOtherGroups->execute([$groupId]);
+            $otherGroups = $stmtOtherGroups->fetchAll(PDO::FETCH_ASSOC);
+
+            $otherBounds = [];
+            foreach ($otherGroups as $og) {
+                $ob = self::parseRangeBounds($og['range_label']);
+                if ($ob) {
+                    $otherBounds[] = ['min' => $ob['min'], 'max' => $ob['max'], 'id' => (int)$og['id'], 'range_label' => $og['range_label']];
+                }
+            }
+
+            $orphanedGradeNames = [];
+            $relinkMap = []; // grade_id => new_group_id
+
+            foreach ($existingGrades as $gradeRow) {
+                $gSort = (int)($gradeRow['sort_order'] ?? 0);
+                $coveredBy = null;
+                foreach ($otherBounds as $ob) {
+                    if ($gSort >= $ob['min'] && $gSort <= $ob['max']) {
+                        $coveredBy = $ob['id'];
+                        break;
+                    }
+                }
+                if ($coveredBy === null) {
+                    $orphanedGradeNames[] = $gradeRow['name'];
+                } else {
+                    $relinkMap[$gradeRow['id']] = $coveredBy;
+                }
+            }
+
+            if (!empty($orphanedGradeNames)) {
                 $db->rollBack();
-                $names = implode(', ', array_unique(array_column($existingGrades, 'name')));
+                $names = implode(', ', array_unique($orphanedGradeNames));
                 return [
                     'success' => false,
-                    'error'   => "Cannot delete curriculum stage '{$rangeLabel}'. Active grades ({$names}) currently exist under this curriculum. In L'École, you cannot delete the curriculum of an existing grade. Please remove those grades first."
+                    'error'   => "Cannot delete curriculum stage '{$rangeLabel}'. Active grades ({$names}) depend solely on it. Every active grade must belong to an academic curriculum stage."
                 ];
+            }
+
+            // Safe to delete! Re-link any grades pointing to this group to their alternative group
+            foreach ($relinkMap as $gradeId => $newGroupId) {
+                $stmtRelink = $db->prepare("UPDATE grades SET group_id = ? WHERE id = ? AND group_id = ?");
+                $stmtRelink->execute([$newGroupId, $gradeId, $groupId]);
             }
 
             // Clean up curriculum subjects first (foreign key cascade safety)
@@ -1011,6 +1062,273 @@ class AcademicActions extends Model {
             $db->rollBack();
             error_log("[AcademicActions Error] deleteCurriculumGroup: " . $e->getMessage());
             return ['success' => false, 'error' => 'Failed to delete curriculum stage: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Remove / Carve out a specific grade from a curriculum group.
+     * Implements Way A (Range Splitting / Carving).
+     *
+     * - If single-grade stage: Deletes the stage (if covered elsewhere).
+     * - If start boundary (grade == min): Shrinks stage to (min+1)–max.
+     * - If end boundary (grade == max): Shrinks stage to min–(max-1).
+     * - If middle grade (min < grade < max): Splits into Stage 1 (min–[grade-1]) and Stage 2 ([grade+1]–max).
+     */
+    public static function removeGradeFromCurriculumGroup(
+        string $rangeLabel, 
+        int $gradeNumber, 
+        ?int $actorId = null, 
+        ?string $actorIdentifier = null
+    ): array {
+        $rangeLabel = trim($rangeLabel);
+        if ($gradeNumber <= 0) {
+            return ['success' => false, 'error' => 'Invalid grade number specified.'];
+        }
+
+        $db = Database::getConnection();
+
+        $stmtGroup = $db->prepare("SELECT id, range_label, description FROM curriculum_groups WHERE range_label = ?");
+        $stmtGroup->execute([$rangeLabel]);
+        $group = $stmtGroup->fetch(PDO::FETCH_ASSOC);
+
+        if (!$group) {
+            return ['success' => false, 'error' => "Curriculum stage '{$rangeLabel}' not found."];
+        }
+        $groupId = (int)$group['id'];
+        $description = $group['description'] ?? '';
+
+        $bounds = self::parseRangeBounds($rangeLabel);
+        if (!$bounds || $gradeNumber < $bounds['min'] || $gradeNumber > $bounds['max']) {
+            return ['success' => false, 'error' => "Grade {$gradeNumber} is not part of curriculum stage '{$rangeLabel}'."];
+        }
+
+        $min = $bounds['min'];
+        $max = $bounds['max'];
+
+        // Check if grade is active in school
+        $stmtGrade = $db->prepare("SELECT id, name, sort_order, group_id FROM grades WHERE sort_order = ? LIMIT 1");
+        $stmtGrade->execute([$gradeNumber]);
+        $gradeRow = $stmtGrade->fetch(PDO::FETCH_ASSOC);
+
+        // Find alternative curriculum group covering this grade
+        $stmtOther = $db->prepare("SELECT id, range_label FROM curriculum_groups WHERE id != ?");
+        $stmtOther->execute([$groupId]);
+        $otherGroups = $stmtOther->fetchAll(PDO::FETCH_ASSOC);
+
+        $altGroupId = null;
+        $altGroupLabel = null;
+        foreach ($otherGroups as $og) {
+            $ob = self::parseRangeBounds($og['range_label']);
+            if ($ob && $gradeNumber >= $ob['min'] && $gradeNumber <= $ob['max']) {
+                $altGroupId = (int)$og['id'];
+                $altGroupLabel = $og['range_label'];
+                break;
+            }
+        }
+
+        // If grade is active in school and has NO other curriculum, removal is prohibited!
+        if ($gradeRow && $altGroupId === null) {
+            return [
+                'success' => false,
+                'error'   => "Cannot remove Grade {$gradeNumber} from '{$rangeLabel}': It has no other curriculum stage assigned. Every active grade must belong to an academic curriculum stage."
+            ];
+        }
+
+        // Fetch subjects of this group to copy if splitting
+        $stmtSubjs = $db->prepare("SELECT subject_name FROM curriculum_group_subjects WHERE group_id = ? ORDER BY sort_order ASC");
+        $stmtSubjs->execute([$groupId]);
+        $subjects = $stmtSubjs->fetchAll(PDO::FETCH_COLUMN);
+
+        $db->beginTransaction();
+        try {
+            // Case 1: Single-grade stage (min == max) -> delete the stage
+            if ($min === $max) {
+                if ($gradeRow && $altGroupId) {
+                    $stmtRelink = $db->prepare("UPDATE grades SET group_id = ? WHERE id = ?");
+                    $stmtRelink->execute([$altGroupId, $gradeRow['id']]);
+                }
+
+                $stmtDelSubjs = $db->prepare("DELETE FROM curriculum_group_subjects WHERE group_id = ?");
+                $stmtDelSubjs->execute([$groupId]);
+
+                $stmtDelGroup = $db->prepare("DELETE FROM curriculum_groups WHERE id = ?");
+                $stmtDelGroup->execute([$groupId]);
+
+                $db->commit();
+                AuditModel::record(
+                    $actorId,
+                    $actorIdentifier,
+                    'CURRICULUM_GRADE_REMOVED',
+                    "Removed Grade {$gradeNumber} from '{$rangeLabel}' (Stage deleted as it was single-grade)"
+                );
+
+                return [
+                    'success'       => true,
+                    'action'        => 'deleted',
+                    'originalRange' => $rangeLabel,
+                    'removedGrade'  => $gradeNumber,
+                    'stages'        => []
+                ];
+            }
+
+            // Case 2: Start boundary ($gradeNumber === $min) -> Shrink to (min+1) to max
+            if ($gradeNumber === $min) {
+                $newRangeLabel = self::computeRangeLabel($min + 1, $max);
+
+                $stmtCol = $db->prepare("SELECT id FROM curriculum_groups WHERE range_label = ? AND id != ?");
+                $stmtCol->execute([$newRangeLabel, $groupId]);
+                if ($stmtCol->fetchColumn()) {
+                    $db->rollBack();
+                    return ['success' => false, 'error' => "Cannot shrink to '{$newRangeLabel}': A curriculum stage with this range already exists."];
+                }
+
+                $stmtUpd = $db->prepare("UPDATE curriculum_groups SET range_label = ? WHERE id = ?");
+                $stmtUpd->execute([$newRangeLabel, $groupId]);
+
+                if ($gradeRow && $altGroupId) {
+                    $stmtRelink = $db->prepare("UPDATE grades SET group_id = ? WHERE id = ?");
+                    $stmtRelink->execute([$altGroupId, $gradeRow['id']]);
+                }
+
+                $db->commit();
+                AuditModel::record(
+                    $actorId,
+                    $actorIdentifier,
+                    'CURRICULUM_GRADE_REMOVED',
+                    "Removed Grade {$gradeNumber} from '{$rangeLabel}', updated to '{$newRangeLabel}'"
+                );
+
+                return [
+                    'success'       => true,
+                    'action'        => 'shrink',
+                    'originalRange' => $rangeLabel,
+                    'removedGrade'  => $gradeNumber,
+                    'stages'        => [
+                        [
+                            'range'       => $newRangeLabel,
+                            'description' => $description,
+                            'subjects'    => $subjects
+                        ]
+                    ]
+                ];
+            }
+
+            // Case 3: End boundary ($gradeNumber === $max) -> Shrink to min to (max-1)
+            if ($gradeNumber === $max) {
+                $newRangeLabel = self::computeRangeLabel($min, $max - 1);
+
+                $stmtCol = $db->prepare("SELECT id FROM curriculum_groups WHERE range_label = ? AND id != ?");
+                $stmtCol->execute([$newRangeLabel, $groupId]);
+                if ($stmtCol->fetchColumn()) {
+                    $db->rollBack();
+                    return ['success' => false, 'error' => "Cannot shrink to '{$newRangeLabel}': A curriculum stage with this range already exists."];
+                }
+
+                $stmtUpd = $db->prepare("UPDATE curriculum_groups SET range_label = ? WHERE id = ?");
+                $stmtUpd->execute([$newRangeLabel, $groupId]);
+
+                if ($gradeRow && $altGroupId) {
+                    $stmtRelink = $db->prepare("UPDATE grades SET group_id = ? WHERE id = ?");
+                    $stmtRelink->execute([$altGroupId, $gradeRow['id']]);
+                }
+
+                $db->commit();
+                AuditModel::record(
+                    $actorId,
+                    $actorIdentifier,
+                    'CURRICULUM_GRADE_REMOVED',
+                    "Removed Grade {$gradeNumber} from '{$rangeLabel}', updated to '{$newRangeLabel}'"
+                );
+
+                return [
+                    'success'       => true,
+                    'action'        => 'shrink',
+                    'originalRange' => $rangeLabel,
+                    'removedGrade'  => $gradeNumber,
+                    'stages'        => [
+                        [
+                            'range'       => $newRangeLabel,
+                            'description' => $description,
+                            'subjects'    => $subjects
+                        ]
+                    ]
+                ];
+            }
+
+            // Case 4: Middle grade ($min < $gradeNumber < $max) -> SPLIT (Way A)
+            $stage1Label = self::computeRangeLabel($min, $gradeNumber - 1);
+            $stage2Label = self::computeRangeLabel($gradeNumber + 1, $max);
+
+            $stmtCol = $db->prepare("SELECT id, range_label FROM curriculum_groups WHERE range_label IN (?, ?) AND id != ?");
+            $stmtCol->execute([$stage1Label, $stage2Label, $groupId]);
+            $colRows = $stmtCol->fetchAll(PDO::FETCH_ASSOC);
+            if (!empty($colRows)) {
+                $db->rollBack();
+                $colNames = implode(', ', array_column($colRows, 'range_label'));
+                return ['success' => false, 'error' => "Cannot split stage: Stage(s) '{$colNames}' already exist."];
+            }
+
+            // 1. Update current group to Stage 1
+            $stmtUpd = $db->prepare("UPDATE curriculum_groups SET range_label = ? WHERE id = ?");
+            $stmtUpd->execute([$stage1Label, $groupId]);
+
+            // 2. Create Stage 2 group
+            $stmtInsert = $db->prepare("INSERT INTO curriculum_groups (range_label, description) VALUES (?, ?)");
+            $stmtInsert->execute([$stage2Label, $description]);
+            $stage2Id = (int)$db->lastInsertId();
+
+            // 3. Copy subjects to Stage 2
+            if (!empty($subjects)) {
+                $stmtAddSubj = $db->prepare("INSERT INTO curriculum_group_subjects (group_id, subject_name, sort_order) VALUES (?, ?, ?)");
+                foreach ($subjects as $i => $subj) {
+                    $stmtAddSubj->execute([$stage2Id, $subj, $i]);
+                }
+            }
+
+            // 4. Re-link Stage 2 grades (sort_order >= gradeNumber + 1 AND sort_order <= max) to Stage 2 ID
+            $stmtRelinkStage2 = $db->prepare("
+                UPDATE grades 
+                SET group_id = ? 
+                WHERE group_id = ? AND sort_order >= ? AND sort_order <= ?
+            ");
+            $stmtRelinkStage2->execute([$stage2Id, $groupId, $gradeNumber + 1, $max]);
+
+            // 5. Re-link removed grade to alternative group
+            if ($gradeRow && $altGroupId) {
+                $stmtRelink = $db->prepare("UPDATE grades SET group_id = ? WHERE id = ?");
+                $stmtRelink->execute([$altGroupId, $gradeRow['id']]);
+            }
+
+            $db->commit();
+            AuditModel::record(
+                $actorId,
+                $actorIdentifier,
+                'CURRICULUM_GRADE_REMOVED',
+                "Removed Grade {$gradeNumber} from '{$rangeLabel}', split stage into '{$stage1Label}' and '{$stage2Label}'"
+            );
+
+            return [
+                'success'       => true,
+                'action'        => 'split',
+                'originalRange' => $rangeLabel,
+                'removedGrade'  => $gradeNumber,
+                'stages'        => [
+                    [
+                        'range'       => $stage1Label,
+                        'description' => $description,
+                        'subjects'    => $subjects
+                    ],
+                    [
+                        'range'       => $stage2Label,
+                        'description' => $description,
+                        'subjects'    => $subjects
+                    ]
+                ]
+            ];
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            error_log("[AcademicActions Error] removeGradeFromCurriculumGroup: " . $e->getMessage());
+            return ['success' => false, 'error' => 'Failed to remove grade from curriculum stage: ' . $e->getMessage()];
         }
     }
 

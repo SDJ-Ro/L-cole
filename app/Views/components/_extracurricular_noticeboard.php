@@ -42,7 +42,7 @@ $clubNotices = !empty($liveNotices) ? $liveNotices : ($n_club['notices'] ?? []);
 
 // Fallback to active extracurricular notices or demo cards if none present
 if (empty($clubNotices)) {
-    $clubNotices = NoticeModel::getForRole('parent', 'Extracurricular');
+    $clubNotices = NoticeModel::getForRole($currentRole ?? 'parent', 'Extracurricular');
 }
 if (empty($clubNotices)) {
     $clubNotices = [
