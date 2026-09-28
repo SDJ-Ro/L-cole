@@ -644,15 +644,18 @@ $countryCodeOptions = [
           </div>
 
           <!-- Submit Button Row with Save Draft -->
-          <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; border-top: 1px solid var(--color-border, #EFE8DF); padding-top: 1rem;">
-            <button id="j-teacher-save-draft" class="c-btn-outline-sunshine j-btn-save-draft" data-role="teacher" type="button">
-              <svg class="c-icon" width="16" height="16"><use href="#icon-save"/></svg>
-              <span>Save draft</span>
-            </button>
-            <button class="c-btn-solid-tone c-tone-sunshine j-btn-submit-person" type="submit" id="j-teacher-submit">
-              <svg class="c-icon" width="16" height="16"><use href="#icon-save"/></svg>
-              <span>Save Account</span>
-            </button>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; border-top: 1px solid var(--color-border, #EFE8DF); padding-top: 1rem;">
+            <div class="c-form-footer-notice j-form-footer-notice" style="display: none; width: 100%; padding: 0.625rem 0.875rem; border-radius: var(--radius-md, 0.375rem); font-size: 0.8125rem; font-weight: 600;"></div>
+            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem;">
+              <button id="j-teacher-save-draft" class="c-btn-outline-sunshine j-btn-save-draft" data-role="teacher" type="button">
+                <svg class="c-icon" width="16" height="16"><use href="#icon-save"/></svg>
+                <span>Save draft</span>
+              </button>
+              <button class="c-btn-solid-tone c-tone-sunshine j-btn-submit-person" type="submit" id="j-teacher-submit">
+                <svg class="c-icon" width="16" height="16"><use href="#icon-save"/></svg>
+                <span>Save Account</span>
+              </button>
+            </div>
           </div>
 
         <?php elseif ($role === 'parent'): ?>
@@ -790,15 +793,18 @@ $countryCodeOptions = [
           <p class="c-form-warning-box">A temporary password would be sent to the personal email after verification.</p>
 
           <!-- Submit Button Row with Save Draft -->
-          <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; border-top: 1px solid var(--color-border, #EFE8DF); padding-top: 1rem;">
-            <button id="j-mgmt-save-draft" class="c-btn-outline-maroon j-btn-save-draft" data-role="management" type="button">
-              <svg class="c-icon" width="16" height="16"><use href="#icon-save"/></svg>
-              <span>Save draft</span>
-            </button>
-            <button class="c-btn-solid-tone c-tone-maroon j-btn-submit-person" type="submit" id="j-mgmt-submit">
-              <svg class="c-icon" width="16" height="16"><use href="#icon-save"/></svg>
-              <span>Save Account</span>
-            </button>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; border-top: 1px solid var(--color-border, #EFE8DF); padding-top: 1rem;">
+            <div class="c-form-footer-notice j-form-footer-notice" style="display: none; width: 100%; padding: 0.625rem 0.875rem; border-radius: var(--radius-md, 0.375rem); font-size: 0.8125rem; font-weight: 600;"></div>
+            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem;">
+              <button id="j-mgmt-save-draft" class="c-btn-outline-maroon j-btn-save-draft" data-role="management" type="button">
+                <svg class="c-icon" width="16" height="16"><use href="#icon-save"/></svg>
+                <span>Save draft</span>
+              </button>
+              <button class="c-btn-solid-tone c-tone-maroon j-btn-submit-person" type="submit" id="j-mgmt-submit">
+                <svg class="c-icon" width="16" height="16"><use href="#icon-save"/></svg>
+                <span>Save Account</span>
+              </button>
+            </div>
           </div>
         <?php endif; ?>
 
