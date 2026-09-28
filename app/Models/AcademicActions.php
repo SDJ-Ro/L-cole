@@ -59,14 +59,8 @@ class AcademicActions extends Model {
             return ['success' => false, 'error' => "{$canonicalName} already exists in the academic structure."];
         }
 
-        // Automatic curriculum linking by grade number
+        // Automatic curriculum linking by grade number (optional: null if no curriculum stage covers it yet)
         $curriculumGroupId = self::findCurriculumGroupIdForGradeNumber($gradeNum);
-        if (!$curriculumGroupId) {
-            return [
-                'success' => false,
-                'error'   => "No curriculum stage covers Grade {$gradeNum}. In L'École, every grade must belong to a curriculum. Please add or expand a curriculum stage (e.g. Years 12–13) under Curriculum Stages below first."
-            ];
-        }
 
         // 4. Transaction
         $db->beginTransaction();
@@ -79,10 +73,13 @@ class AcademicActions extends Model {
             $stmtClass = $db->prepare("INSERT INTO classes (grade_id, section_name, student_count) VALUES (?, ?, 30)");
             $stmtClass->execute([$gradeId, $initialSection]);
 
-            // Retrieve curriculum subjects for the linked group
-            $stmtCurSubj = $db->prepare("SELECT subject_name FROM curriculum_group_subjects WHERE group_id = ? ORDER BY sort_order ASC, id ASC");
-            $stmtCurSubj->execute([$curriculumGroupId]);
-            $curriculumSubjects = $stmtCurSubj->fetchAll(PDO::FETCH_COLUMN) ?: [];
+            // Retrieve curriculum subjects for the linked group (if linked)
+            $curriculumSubjects = [];
+            if ($curriculumGroupId) {
+                $stmtCurSubj = $db->prepare("SELECT subject_name FROM curriculum_group_subjects WHERE group_id = ? ORDER BY sort_order ASC, id ASC");
+                $stmtCurSubj->execute([$curriculumGroupId]);
+                $curriculumSubjects = $stmtCurSubj->fetchAll(PDO::FETCH_COLUMN) ?: [];
+            }
 
             $db->commit();
 
@@ -91,7 +88,7 @@ class AcademicActions extends Model {
                 $actorId,
                 $actorIdentifier,
                 'GRADE_CREATED',
-                "Created {$canonicalName} (ID: {$gradeId}) linked to curriculum group #{$curriculumGroupId} with initial section {$initialSection}"
+                "Created {$canonicalName} (ID: {$gradeId})" . ($curriculumGroupId ? " linked to curriculum group #{$curriculumGroupId}" : " without curriculum stage") . " with initial section {$initialSection}"
             );
 
             // 6. Return Success
@@ -210,15 +207,16 @@ class AcademicActions extends Model {
         // Check grade exists
         $stmtGrade = $db->prepare("SELECT name FROM grades WHERE id = ?");
         $stmtGrade->execute([$gradeId]);
-        if (!$stmtGrade->fetchColumn()) {
+        $gradeName = $stmtGrade->fetchColumn();
+        if (!$gradeName) {
             return ['success' => false, 'error' => "Grade '{$gradeId}' does not exist."];
         }
 
-        // Check section uniqueness within this grade
-        $stmtCheck = $db->prepare("SELECT id FROM classes WHERE grade_id = ? AND section_name = ?");
+        // Check section uniqueness within this grade (case-insensitive)
+        $stmtCheck = $db->prepare("SELECT id FROM classes WHERE grade_id = ? AND LOWER(TRIM(section_name)) = LOWER(TRIM(?))");
         $stmtCheck->execute([$gradeId, $sectionName]);
         if ($stmtCheck->fetchColumn()) {
-            return ['success' => false, 'error' => "Class '{$sectionName}' already exists in this grade."];
+            return ['success' => false, 'error' => "Class '{$sectionName}' already exists in {$gradeName}. You cannot have duplicate class sections in the same grade."];
         }
 
 
@@ -323,10 +321,10 @@ class AcademicActions extends Model {
 
         // Check collision if renaming within this grade
         if (strcasecmp($oldSectionName, $newSectionName) !== 0) {
-            $stmtCollision = $db->prepare("SELECT id FROM classes WHERE grade_id = ? AND section_name = ? AND id != ?");
+            $stmtCollision = $db->prepare("SELECT id FROM classes WHERE grade_id = ? AND LOWER(TRIM(section_name)) = LOWER(TRIM(?)) AND id != ?");
             $stmtCollision->execute([$gradeId, $newSectionName, $classId]);
             if ($stmtCollision->fetchColumn()) {
-                return ['success' => false, 'error' => "Class '{$newSectionName}' already exists in this grade."];
+                return ['success' => false, 'error' => "Class '{$newSectionName}' already exists in this grade. You cannot have duplicate class sections in the same grade."];
             }
         }
 
@@ -694,6 +692,22 @@ class AcademicActions extends Model {
 
         $db = Database::getConnection();
 
+        $rangeBounds = self::parseRangeBounds($rangeLabel);
+        if ($rangeBounds) {
+            $stmtCheckGrades = $db->prepare("SELECT COUNT(*) FROM grades WHERE sort_order >= ? AND sort_order <= ?");
+            $stmtCheckGrades->execute([$rangeBounds['min'], $rangeBounds['max']]);
+            $matchingGradeCount = (int)$stmtCheckGrades->fetchColumn();
+            if ($matchingGradeCount === 0) {
+                $stageHint = ($rangeBounds['min'] === $rangeBounds['max']) 
+                    ? "Grade {$rangeBounds['min']}" 
+                    : "Grade {$rangeBounds['min']} or Grade {$rangeBounds['max']}";
+                return [
+                    'success' => false,
+                    'error'   => "Cannot add curriculum stage '{$rangeLabel}': No existing grades found in this range. In L'École, at least one grade (e.g. {$stageHint}) must exist before creating its curriculum stage. Please add the grade first."
+                ];
+            }
+        }
+
         $stmtCheck = $db->prepare("SELECT id FROM curriculum_groups WHERE range_label = ?");
         $stmtCheck->execute([$rangeLabel]);
         if ($stmtCheck->fetchColumn()) {
@@ -799,7 +813,26 @@ class AcademicActions extends Model {
                 }
             }
 
-            // Grade re-linking and orphan protection when range bounds change (e.g. Years 6–9 -> Years 6–8)
+            // Check that new range has at least one existing grade
+            if (strcasecmp($rangeLabel, $newRangeLabel) !== 0) {
+                $newBounds = self::parseRangeBounds($newRangeLabel);
+                if ($newBounds) {
+                    $stmtCheckGrades = $db->prepare("SELECT COUNT(*) FROM grades WHERE sort_order >= ? AND sort_order <= ?");
+                    $stmtCheckGrades->execute([$newBounds['min'], $newBounds['max']]);
+                    if ((int)$stmtCheckGrades->fetchColumn() === 0) {
+                        $db->rollBack();
+                        $stageHint = ($newBounds['min'] === $newBounds['max']) 
+                            ? "Grade {$newBounds['min']}" 
+                            : "Grade {$newBounds['min']} or Grade {$newBounds['max']}";
+                        return [
+                            'success' => false,
+                            'error'   => "Cannot change range to '{$newRangeLabel}': No existing grades found in this range. In L'École, at least one grade (e.g. {$stageHint}) must exist before creating its curriculum stage. Please add the grade first."
+                        ];
+                    }
+                }
+            }
+
+            // Grade re-linking when range bounds change (e.g. Years 6–9 -> Years 6–8)
             if (strcasecmp($rangeLabel, $newRangeLabel) !== 0) {
                 $newBounds = self::parseRangeBounds($newRangeLabel);
                 if ($newBounds) {
@@ -824,16 +857,9 @@ class AcademicActions extends Model {
                                 }
                             }
 
-                            if ($newGroupIdForGrade) {
-                                $stmtRelink = $db->prepare("UPDATE grades SET group_id = ? WHERE id = ?");
-                                $stmtRelink->execute([$newGroupIdForGrade, $lGrade['id']]);
-                            } else {
-                                $db->rollBack();
-                                return [
-                                    'success' => false,
-                                    'error'   => "Cannot change range to '{$newRangeLabel}' because {$lGrade['name']} would be left without a curriculum stage. Every grade must have a curriculum stage. Please create or update another stage (e.g. expand 'Years 10–11' to 'Years 9–11') to cover {$lGrade['name']} first."
-                                ];
-                            }
+                            // Relink to matching group or set to NULL (standalone)
+                            $stmtRelink = $db->prepare("UPDATE grades SET group_id = ? WHERE id = ?");
+                            $stmtRelink->execute([$newGroupIdForGrade, $lGrade['id']]);
                         }
                     }
 
@@ -939,52 +965,31 @@ class AcademicActions extends Model {
 
         $db->beginTransaction();
         try {
-            // Find all linked grades and check whether they can be covered by another existing curriculum stage
-            $stmtGrades = $db->prepare("SELECT id, name, sort_order FROM grades WHERE group_id = ?");
-            $stmtGrades->execute([$groupId]);
-            $linkedGrades = $stmtGrades->fetchAll(PDO::FETCH_ASSOC);
-
-            if (!empty($linkedGrades)) {
-                $stmtOtherGroups = $db->prepare("SELECT id, range_label FROM curriculum_groups WHERE id != ?");
-                $stmtOtherGroups->execute([$groupId]);
-                $otherGroups = $stmtOtherGroups->fetchAll(PDO::FETCH_ASSOC);
-
-                $orphanGrades = [];
-                $reassignments = []; // [grade_id => newGroupId]
-
-                foreach ($linkedGrades as $lg) {
-                    $order = (int)$lg['sort_order'];
-                    $newGroupId = null;
-                    foreach ($otherGroups as $og) {
-                        $bounds = self::parseRangeBounds($og['range_label']);
-                        if ($bounds && $order >= $bounds['min'] && $order <= $bounds['max']) {
-                            $newGroupId = (int)$og['id'];
-                            break;
-                        }
-                    }
-                    if ($newGroupId !== null) {
-                        $reassignments[$lg['id']] = $newGroupId;
-                    } else {
-                        $orphanGrades[] = $lg['name'];
-                    }
-                }
-
-                // If any grade would be left without a curriculum stage, block deletion strictly!
-                if (!empty($orphanGrades)) {
-                    $db->rollBack();
-                    $names = implode(', ', $orphanGrades);
-                    return [
-                        'success' => false,
-                        'error'   => "Cannot delete curriculum stage '{$rangeLabel}'. Active grades ({$names}) depend solely on it. Every grade must belong to a curriculum. To delete this stage, remove those grades first or cover them with another curriculum stage."
-                    ];
-                }
-
-                // All grades are safely covered by other curriculums; reassign them now
-                $stmtUpdateGrade = $db->prepare("UPDATE grades SET group_id = ? WHERE id = ?");
-                foreach ($reassignments as $gId => $nGroupId) {
-                    $stmtUpdateGrade->execute([$nGroupId, $gId]);
-                }
+            // Find all grades currently linked or matching this stage's range
+            $rangeBounds = self::parseRangeBounds($rangeLabel);
+            $boundCondition = "";
+            $params = [$groupId];
+            if ($rangeBounds) {
+                $boundCondition = " OR (sort_order >= ? AND sort_order <= ?)";
+                $params[] = $rangeBounds['min'];
+                $params[] = $rangeBounds['max'];
             }
+            $stmtGrades = $db->prepare("SELECT id, name FROM grades WHERE group_id = ? {$boundCondition}");
+            $stmtGrades->execute($params);
+            $existingGrades = $stmtGrades->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($existingGrades)) {
+                $db->rollBack();
+                $names = implode(', ', array_unique(array_column($existingGrades, 'name')));
+                return [
+                    'success' => false,
+                    'error'   => "Cannot delete curriculum stage '{$rangeLabel}'. Active grades ({$names}) currently exist under this curriculum. In L'École, you cannot delete the curriculum of an existing grade. Please remove those grades first."
+                ];
+            }
+
+            // Clean up curriculum subjects first (foreign key cascade safety)
+            $stmtDelSubjs = $db->prepare("DELETE FROM curriculum_group_subjects WHERE group_id = ?");
+            $stmtDelSubjs->execute([$groupId]);
 
             $stmtDelete = $db->prepare("DELETE FROM curriculum_groups WHERE id = ?");
             $stmtDelete->execute([$groupId]);

@@ -170,6 +170,26 @@
     if (typeof window.showFeedbackBanner === 'function') {
       return window.showFeedbackBanner(message, type);
     }
+    // Safety fallback toast banner
+    console.warn(`[L'École Toast ${type.toUpperCase()}]:`, message);
+    let banner = document.getElementById('j-fallback-toast');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'j-fallback-toast';
+      banner.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.18);transition:opacity 0.3s;max-width:360px;';
+      document.body.appendChild(banner);
+    }
+    banner.style.background = (type === 'error') ? '#fee2e2' : '#dcfce7';
+    banner.style.color = (type === 'error') ? '#991b1b' : '#166534';
+    banner.style.border = (type === 'error') ? '1px solid #f87171' : '1px solid #86efac';
+    banner.textContent = message;
+    banner.style.display = 'block';
+    banner.style.opacity = '1';
+    clearTimeout(banner._timeout);
+    banner._timeout = setTimeout(() => {
+      banner.style.opacity = '0';
+      setTimeout(() => banner.style.display = 'none', 300);
+    }, 4000);
   }
 
   function updateGradeCardStats(gradeCard) {
@@ -322,6 +342,14 @@
       }
     });
 
+    // Reset error styling on class name input
+    document.addEventListener('input', (e) => {
+      if (e.target.matches('.j-class-name-input')) {
+        e.target.style.borderColor = '';
+        e.target.style.boxShadow = '';
+      }
+    });
+
     // Form submission (Add & Edit)
     document.addEventListener('submit', async (e) => {
       const form = e.target.closest('.j-inline-class-form');
@@ -350,7 +378,36 @@
 
       if (!secName) {
         if (secInput) secInput.focus();
-        if (submitBtn) submitBtn.disabled = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = submitBtn.dataset.originalText || '<svg class="c-icon" width="14" height="14"><use href="#icon-check"/></svg> Save';
+        }
+        return;
+      }
+
+      // Client-side duplicate check within the same grade
+      const gradeCard = form.closest('.c-grade-card');
+      const existingClasses = gradeCard ? Array.from(gradeCard.querySelectorAll('.c-class-details')).map(row => {
+        return (row.dataset.className || row.querySelector('.c-class-row__badge')?.textContent || '').trim().toUpperCase();
+      }) : [];
+
+      const isDuplicate = existingClasses.some(cName => {
+        if (isEdit && cName === oldSection.toUpperCase()) return false;
+        return cName === secName.toUpperCase();
+      });
+
+      if (isDuplicate) {
+        const gTitle = gradeCard?.querySelector('.c-grade-card__name')?.textContent?.trim() || 'this grade';
+        showToast(`Class "${secName}" already exists in ${gTitle}. You cannot have duplicate class sections in the same grade.`, 'error');
+        if (secInput) {
+          secInput.focus();
+          secInput.style.borderColor = '#dc2626';
+          secInput.style.boxShadow = '0 0 0 2px rgba(220, 38, 38, 0.2)';
+        }
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = submitBtn.dataset.originalText || '<svg class="c-icon" width="14" height="14"><use href="#icon-check"/></svg> Save';
+        }
         return;
       }
 
@@ -375,7 +432,12 @@
           showToast(res.error || 'Failed to update class section.', 'error');
           if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = submitBtn.dataset.originalText || 'Save';
+            submitBtn.innerHTML = submitBtn.dataset.originalText || '<svg class="c-icon" width="14" height="14"><use href="#icon-check"/></svg> Save';
+          }
+          if (secInput) {
+            secInput.focus();
+            secInput.style.borderColor = '#dc2626';
+            secInput.style.boxShadow = '0 0 0 2px rgba(220, 38, 38, 0.2)';
           }
           return;
         }
@@ -454,7 +516,15 @@
         const res = await apiPost('addClass', payload);
         if (!res.success) {
           showToast(res.error || 'Failed to add class section.', 'error');
-          if (submitBtn) submitBtn.disabled = false;
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = submitBtn.dataset.originalText || '<svg class="c-icon" width="14" height="14"><use href="#icon-check"/></svg> Save';
+          }
+          if (secInput) {
+            secInput.focus();
+            secInput.style.borderColor = '#dc2626';
+            secInput.style.boxShadow = '0 0 0 2px rgba(220, 38, 38, 0.2)';
+          }
           return;
         }
 
@@ -1884,6 +1954,12 @@
         } else {
           modal.classList.remove('c-is-open');
           modal.style.display = 'none';
+        }
+
+        if (nameInput) nameInput.value = '';
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = submitBtn.dataset.originalHtml || '<svg class="c-icon" width="13" height="13"><use href="#icon-plus"/></svg> Create grade';
         }
 
         updateCurriculumCardDeleteTooltips();
