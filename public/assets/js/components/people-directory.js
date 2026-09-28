@@ -509,10 +509,33 @@
 
     document.addEventListener('change', function (e) {
       if (e.target.matches('.j-photo-input')) {
+        const file = e.target.files && e.target.files[0];
         const photoField = e.target.closest('.c-photo-field');
         const filenameEl = photoField?.querySelector('.j-photo-filename');
+        if (!file) {
+          if (filenameEl) filenameEl.textContent = 'No file chosen';
+          return;
+        }
+
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          e.target.value = '';
+          if (filenameEl) filenameEl.textContent = 'No file chosen';
+          showToast('Invalid photo format. Only JPG, PNG, and WEBP images are allowed.', 'error');
+          return;
+        }
+
+        const maxSize = 2 * 1024 * 1024; // 2MB
+        if (file.size > maxSize) {
+          e.target.value = '';
+          if (filenameEl) filenameEl.textContent = 'No file chosen';
+          const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+          showToast(`Profile photo is too large (${sizeMB} MB). Maximum allowed size is 2 MB.`, 'error');
+          return;
+        }
+
         if (filenameEl) {
-          filenameEl.textContent = e.target.files && e.target.files.length > 0 ? e.target.files[0].name : 'No file chosen';
+          filenameEl.textContent = file.name;
         }
       }
     });
@@ -1173,6 +1196,27 @@
   function findFieldFromErrorMessage(form, msg) {
     if (!form || !msg) return null;
     const m = msg.toLowerCase();
+    if (m.includes('grade')) {
+      return document.getElementById('j-student-grade')?.querySelector('button') || form.querySelector('[name="grade"]');
+    }
+    if (m.includes('class') || m.includes('section')) {
+      return document.getElementById('j-student-class')?.querySelector('button') || form.querySelector('[name="classSection"]');
+    }
+    if (m.includes('gender')) {
+      return document.getElementById('j-student-gender')?.querySelector('button') || form.querySelector('[name="gender"]');
+    }
+    if (m.includes('relationship')) {
+      return document.getElementById('j-guardian-relation')?.querySelector('button') || form.querySelector('[name="guardian[relationship]"]');
+    }
+    if (m.includes('qualification') || m.includes('degree') || m.includes('institution') || m.includes('graduation year')) {
+      return form.querySelector('.j-qual-input') || form.querySelector('[name="qualTitle[]"]');
+    }
+    if (m.includes('join date')) {
+      return form.querySelector('[name="joinDate"]');
+    }
+    if (m.includes('photo')) {
+      return form.querySelector('.j-photo-input') || form.querySelector('.j-photo-choose');
+    }
     if (m.includes('birth certificate') || m.includes('birth cert')) {
       return form.querySelector('[name="birthCertificateNumber"]');
     }
@@ -1337,6 +1381,85 @@
       return null;
     }
 
+    function checkSriLankanNIC(input, label, expectedGender = null, expectedDob = null) {
+      if (!input) return null;
+      const val = input.value.trim();
+      if (!val) return null;
+
+      const is12 = /^[0-9]{12}$/.test(val);
+      const is9v = /^[0-9]{9}[vVxX]$/.test(val);
+      if (!is12 && !is9v) {
+        return {
+          isValid: false,
+          error: `${label} must be a valid Sri Lankan NIC (12 digits modern, or 9 digits followed by V/X).`,
+          targetInput: input
+        };
+      }
+
+      let birthYear, daysVal;
+      if (is9v) {
+        birthYear = 1900 + parseInt(val.substring(0, 2), 10);
+        daysVal = parseInt(val.substring(2, 5), 10);
+      } else {
+        birthYear = parseInt(val.substring(0, 4), 10);
+        daysVal = parseInt(val.substring(4, 7), 10);
+      }
+
+      // Check day of year (001–366 for Male, 501–866 for Female)
+      if (daysVal < 1 || (daysVal > 366 && daysVal < 501) || daysVal > 866) {
+        return {
+          isValid: false,
+          error: `${label} is invalid. The day code (${daysVal}) is out of range (001–366 for male, 501–866 for female).`,
+          targetInput: input
+        };
+      }
+
+      const nicGender = daysVal > 500 ? 'Female' : 'Male';
+
+      // Gender cross-check
+      if (expectedGender && (expectedGender === 'Male' || expectedGender === 'Female')) {
+        if (expectedGender !== nicGender) {
+          return {
+            isValid: false,
+            error: `${label} gender mismatch: The entered NIC indicates a ${nicGender} holder, but selected gender is ${expectedGender}.`,
+            targetInput: input
+          };
+        }
+      }
+
+      // Birth year cross-check
+      if (expectedDob) {
+        const dobDate = new Date(expectedDob + 'T00:00:00');
+        if (!isNaN(dobDate.getTime())) {
+          const dobYear = dobDate.getFullYear();
+          if (dobYear !== birthYear) {
+            return {
+              isValid: false,
+              error: `${label} birth year mismatch: The entered NIC indicates birth year ${birthYear}, but Date of Birth has year ${dobYear}.`,
+              targetInput: input
+            };
+          }
+        }
+      }
+
+      return { isValid: true, birthYear, nicGender, daysVal };
+    }
+
+    function checkPhotoFile(photoInput) {
+      if (!photoInput || !photoInput.files || photoInput.files.length === 0) return null;
+      const file = photoInput.files[0];
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        return { isValid: false, error: 'Profile Photo must be a valid image file (JPG, PNG, or WEBP).', targetInput: photoInput };
+      }
+      const maxBytes = 2 * 1024 * 1024;
+      if (file.size > maxBytes) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        return { isValid: false, error: `Profile Photo (${sizeMB} MB) exceeds maximum allowed size of 2 MB.`, targetInput: photoInput };
+      }
+      return null;
+    }
+
     if (role === 'student' || form.id === 'j-enrollment-form') {
       const fullNameInput = form.querySelector('input[name="fullName"]');
       const firstNameInput = form.querySelector('input[name="firstName"]');
@@ -1380,12 +1503,57 @@
         }
       }
 
+      // Academic Assignment (Grade & Class Section)
+      const gradeInput = form.querySelector('[name="grade"]');
+      const classInput = form.querySelector('[name="classSection"]');
+      const gradeVal = gradeInput?.value?.trim();
+      const classVal = classInput?.value?.trim();
+
+      if (!gradeVal || gradeVal === 'Select grade') {
+        const gradeTrigger = document.getElementById('j-student-grade')?.querySelector('button') || gradeInput;
+        return { isValid: false, error: 'Please select an Academic Grade for the student.', targetInput: gradeTrigger };
+      }
+
+      if (!classVal || classVal === 'Select class section') {
+        const classTrigger = document.getElementById('j-student-class')?.querySelector('button') || classInput;
+        return { isValid: false, error: 'Please select a Class / Section for the student.', targetInput: classTrigger };
+      }
+
+      // Gender Selection
+      const genderInput = form.querySelector('[name="gender"]');
+      const genderVal = genderInput?.value?.trim();
+      if (!genderVal || genderVal === 'Select gender') {
+        const genderTrigger = document.getElementById('j-student-gender')?.querySelector('button') || genderInput;
+        return { isValid: false, error: 'Please select a Gender for the student.', targetInput: genderTrigger };
+      }
+
+      // Optional Student NIC Checksum
+      const sNicInput = form.querySelector('input[name="nationalId"]');
+      if (sNicInput && sNicInput.value.trim()) {
+        const sNicRes = checkSriLankanNIC(sNicInput, 'Student NIC', genderVal, studentDobVal);
+        if (sNicRes && !sNicRes.isValid) return sNicRes;
+      }
+
+      // Student Birth Certificate Number Sanity Check
       if (!birthCertInput || !birthCertInput.value.trim()) {
         return { isValid: false, error: 'Please enter the student\'s Birth Certificate Number.', targetInput: birthCertInput };
       }
+      const bcVal = birthCertInput.value.trim();
+      if (!/^[a-zA-Z0-9\s\/\-]{3,25}$/.test(bcVal) || !/[a-zA-Z0-9]/.test(bcVal)) {
+        return { isValid: false, error: 'Please enter a valid Birth Certificate Number (3–25 characters, letters, numbers, hyphens, and slashes only, e.g. 12345 or BC-98765).', targetInput: birthCertInput };
+      }
+
+      // Student Residential Address Minimum Length
       if (!addressInput || !addressInput.value.trim()) {
         return { isValid: false, error: 'Please enter the student\'s Residential Address.', targetInput: addressInput };
       }
+      if (addressInput.value.trim().length < 6) {
+        return { isValid: false, error: 'Student Residential Address must be at least 6 characters long (e.g. No. 12, Street, Town).', targetInput: addressInput };
+      }
+
+      // Profile Photo Client-Side Validation
+      const photoErr = checkPhotoFile(form.querySelector('.j-photo-input'));
+      if (photoErr) return photoErr;
 
       // Guardian Validation
       const guardianMode = form.querySelector('input[name="guardianMode"]:checked')?.value || 'existing';
@@ -1508,12 +1676,14 @@
         }
 
         if (nicInput && nicInput.value.trim()) {
-          const nv = nicInput.value.trim();
-          const is12 = /^[0-9]{12}$/.test(nv);
-          const is9v = /^[0-9]{9}[vVxX]$/.test(nv);
-          if (!is12 && !is9v) {
-            return { isValid: false, error: `Entered NIC has ${nv.length} characters. A modern Sri Lankan NIC must have exactly 12 digits (e.g. 198012345678) or 9 digits followed by V/X (e.g. 801234567V).`, targetInput: nicInput };
-          }
+          const gNicRes = checkSriLankanNIC(nicInput, 'Guardian NIC', null, guardianDobVal);
+          if (gNicRes && !gNicRes.isValid) return gNicRes;
+        }
+
+        // Guardian Residential Address Minimum Length (if entered)
+        const gHomeAddressInput = form.querySelector('[name="guardian[homeAddress]"]');
+        if (gHomeAddressInput && gHomeAddressInput.value.trim().length > 0 && gHomeAddressInput.value.trim().length < 6) {
+          return { isValid: false, error: 'Guardian Residential Address must be at least 6 characters long.', targetInput: gHomeAddressInput };
         }
       }
 
@@ -1555,12 +1725,9 @@
         return { isValid: false, error: 'Please enter the teacher\'s National Identity Card (NIC) number.', targetInput: nicInput };
       }
 
-      const nicVal = nicInput.value.trim();
-      const is12 = /^[0-9]{12}$/.test(nicVal);
-      const is9v = /^[0-9]{9}[vVxX]$/.test(nicVal);
-      if (!is12 && !is9v) {
-        return { isValid: false, error: 'Please enter a valid Sri Lankan NIC (12 digits modern, or 9 digits followed by V/X).', targetInput: nicInput };
-      }
+      // Teacher NIC Deep Checksum & DOB match
+      const tNicRes = checkSriLankanNIC(nicInput, 'Teacher NIC', null, dobInput?.value?.trim());
+      if (tNicRes && !tNicRes.isValid) return tNicRes;
 
       if (!dobInput || !dobInput.value.trim()) {
         return { isValid: false, error: 'Please select the teacher\'s Date of Birth.', targetInput: dobInput };
@@ -1590,14 +1757,85 @@
       const tEmailErr = checkEmail(emailInput, 'Teacher Personal Email');
       if (tEmailErr) return tEmailErr;
 
+      // Email Uniqueness / Domain Check
+      if (emailInput.value.trim().toLowerCase().endsWith('@lecole.edu')) {
+        return { isValid: false, error: 'Personal Email must be an external email account (e.g. Gmail, Yahoo, Outlook) and cannot end with @lecole.edu.', targetInput: emailInput };
+      }
+
       if (!subjectsInput || !subjectsInput.value.trim()) {
         return { isValid: false, error: 'Please enter the subjects qualified to teach.', targetInput: subjectsInput };
       }
       if (!expInput || expInput.value === '') {
         return { isValid: false, error: 'Please enter years of experience.', targetInput: expInput };
       }
+
+      // Experience vs. Age Sanity Check
+      const expNum = parseInt(expInput.value, 10);
+      if (isNaN(expNum) || expNum < 0) {
+        return { isValid: false, error: 'Years of experience must be a non-negative number.', targetInput: expInput };
+      }
+      if (expNum > (age - 18)) {
+        return { isValid: false, error: `Years of experience (${expNum}) is invalid for a ${age}-year-old teacher. Maximum possible experience is ${age - 18} years.`, targetInput: expInput };
+      }
+
+      // Teacher Join Date Sanity Check
       if (!joinDateInput || !joinDateInput.value.trim()) {
         return { isValid: false, error: 'Please select the Join Date.', targetInput: joinDateInput };
+      }
+      const joinDate = new Date(joinDateInput.value.trim() + 'T00:00:00');
+      const maxFutureDate = new Date();
+      maxFutureDate.setDate(maxFutureDate.getDate() + 90);
+      const minPastDate = new Date('1970-01-01T00:00:00');
+
+      if (isNaN(joinDate.getTime())) {
+        return { isValid: false, error: 'Please enter a valid Join Date.', targetInput: joinDateInput };
+      }
+      if (joinDate > maxFutureDate) {
+        return { isValid: false, error: 'Join Date cannot be more than 3 months in the future.', targetInput: joinDateInput };
+      }
+      if (joinDate < minPastDate) {
+        return { isValid: false, error: 'Join Date cannot be before 1970.', targetInput: joinDateInput };
+      }
+      const minJoinDate = new Date(birthDate);
+      minJoinDate.setFullYear(minJoinDate.getFullYear() + 18);
+      if (joinDate < minJoinDate) {
+        return { isValid: false, error: 'Teacher Join Date cannot precede the teacher\'s 18th birthday.', targetInput: joinDateInput };
+      }
+
+      // Teacher Qualifications Row Validation
+      const qualRows = form.querySelectorAll('.j-qual-row');
+      const currentYear = new Date().getFullYear();
+      for (let i = 0; i < qualRows.length; i++) {
+        const row = qualRows[i];
+        const titleInput = row.querySelector('[name="qualTitle[]"]');
+        const instInput = row.querySelector('[name="qualInstitution[]"]');
+        const yearInput = row.querySelector('[name="qualYear[]"]');
+
+        const titleVal = titleInput?.value.trim() || '';
+        const instVal = instInput?.value.trim() || '';
+        const yearVal = yearInput?.value.trim() || '';
+
+        if (titleVal || instVal || yearVal) {
+          if (!titleVal) {
+            return { isValid: false, error: `Please enter the Title / Degree for qualification row #${i + 1} (or remove the row).`, targetInput: titleInput };
+          }
+          if (!instVal) {
+            return { isValid: false, error: `Please enter the Institution for qualification "${titleVal}".`, targetInput: instInput };
+          }
+          if (!yearVal) {
+            return { isValid: false, error: `Please enter the Graduation Year for qualification "${titleVal}".`, targetInput: yearInput };
+          }
+          if (!/^[12][0-9]{3}$/.test(yearVal)) {
+            return { isValid: false, error: `Graduation Year for "${titleVal}" must be a 4-digit year (e.g. 2018).`, targetInput: yearInput };
+          }
+          const qYear = parseInt(yearVal, 10);
+          if (qYear < 1970 || qYear > currentYear) {
+            return { isValid: false, error: `Graduation Year (${qYear}) for "${titleVal}" must be between 1970 and ${currentYear}.`, targetInput: yearInput };
+          }
+          if (qYear < birthDate.getFullYear() + 16) {
+            return { isValid: false, error: `Graduation Year (${qYear}) for "${titleVal}" cannot be before the teacher was 16 years old.`, targetInput: yearInput };
+          }
+        }
       }
       if (!emNameInput || !emNameInput.value.trim()) {
         return { isValid: false, error: 'Please enter an Emergency Contact Name.', targetInput: emNameInput };
@@ -1655,11 +1893,28 @@
         return { isValid: false, error: 'Please enter the National Identity Card (NIC) number.', targetInput: nicInput };
       }
 
-      const nicVal = nicInput.value.trim();
-      const is12 = /^[0-9]{12}$/.test(nicVal);
-      const is9v = /^[0-9]{9}[vVxX]$/.test(nicVal);
-      if (!is12 && !is9v) {
-        return { isValid: false, error: 'Please enter a valid Sri Lankan NIC (12 digits modern, or 9 digits followed by V/X).', targetInput: nicInput };
+      // Management NIC Deep Checksum & Age Derivation
+      const mNicRes = checkSriLankanNIC(nicInput, 'Staff NIC');
+      if (mNicRes && !mNicRes.isValid) return mNicRes;
+
+      let mgmtAge = null;
+      if (mNicRes && mNicRes.birthYear) {
+        const curYear = new Date().getFullYear();
+        mgmtAge = curYear - mNicRes.birthYear;
+        if (mgmtAge < 21) {
+          return {
+            isValid: false,
+            error: `Based on the entered NIC (birth year ${mNicRes.birthYear}), the staff member is ${mgmtAge} years old. Minimum age for management staff is 21 years.`,
+            targetInput: nicInput
+          };
+        }
+        if (mgmtAge > 70) {
+          return {
+            isValid: false,
+            error: `Based on the entered NIC (birth year ${mNicRes.birthYear}), the staff member is ${mgmtAge} years old. Maximum age for active staff employment is 70 years.`,
+            targetInput: nicInput
+          };
+        }
       }
 
       if (!phoneInput || !phoneInput.value.trim()) {
@@ -1674,8 +1929,38 @@
       const mEmailErr = checkEmail(emailInput, 'Personal Email');
       if (mEmailErr) return mEmailErr;
 
+      // Email Uniqueness / Domain Check
+      if (emailInput.value.trim().toLowerCase().endsWith('@lecole.edu')) {
+        return { isValid: false, error: 'Personal Email must be an external email account (e.g. Gmail, Yahoo, Outlook) and cannot end with @lecole.edu.', targetInput: emailInput };
+      }
+
+      // Management Join Date Sanity Check
       if (!joinDateInput || !joinDateInput.value.trim()) {
         return { isValid: false, error: 'Please select the Join Date.', targetInput: joinDateInput };
+      }
+      const mJoinDate = new Date(joinDateInput.value.trim() + 'T00:00:00');
+      const mMaxFutureDate = new Date();
+      mMaxFutureDate.setDate(mMaxFutureDate.getDate() + 90);
+      const mMinPastDate = new Date('1970-01-01T00:00:00');
+
+      if (isNaN(mJoinDate.getTime())) {
+        return { isValid: false, error: 'Please enter a valid Join Date.', targetInput: joinDateInput };
+      }
+      if (mJoinDate > mMaxFutureDate) {
+        return { isValid: false, error: 'Join Date cannot be more than 3 months in the future.', targetInput: joinDateInput };
+      }
+      if (mJoinDate < mMinPastDate) {
+        return { isValid: false, error: 'Join Date cannot be before 1970.', targetInput: joinDateInput };
+      }
+      if (mNicRes && mNicRes.birthYear) {
+        const minJoinYear = mNicRes.birthYear + 18;
+        if (mJoinDate.getFullYear() < minJoinYear) {
+          return {
+            isValid: false,
+            error: `Join Date (${mJoinDate.getFullYear()}) cannot precede the staff member's 18th birthday (${minJoinYear}) based on their NIC.`,
+            targetInput: joinDateInput
+          };
+        }
       }
       if (!emNameInput || !emNameInput.value.trim()) {
         return { isValid: false, error: 'Please enter an Emergency Contact Name.', targetInput: emNameInput };

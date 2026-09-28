@@ -81,12 +81,46 @@ class ManagementActions extends Model {
         if (strpos($personalEmail, '@') === false || !filter_var($personalEmail, FILTER_VALIDATE_EMAIL)) {
             throw new InvalidArgumentException('Personal email address must be a valid email containing "@".');
         }
+        if (str_ends_with(strtolower($personalEmail), '@lecole.edu')) {
+            throw new InvalidArgumentException('Personal email must be an external email account and cannot be an @lecole.edu address.');
+        }
 
         $is12 = preg_match('/^[0-9]{12}$/', $nic);
         $is9v = preg_match('/^[0-9]{9}[vVxX]$/', $nic);
         $isPassport = preg_match('/^[A-Z0-9]{6,12}$/i', $nic);
         if (!$is12 && !$is9v && !$isPassport) {
             throw new InvalidArgumentException('Invalid National ID format. Must be 12 digits or 9 digits with V/X.');
+        }
+
+        // NIC Day of Year Checksum & Age Derivation
+        $mgmtBirthYear = null;
+        if ($is12 || $is9v) {
+            $daysVal = $is12 ? (int)substr($nic, 4, 3) : (int)substr($nic, 2, 3);
+            if ($daysVal < 1 || ($daysVal > 366 && $daysVal < 501) || $daysVal > 866) {
+                throw new InvalidArgumentException("Invalid Sri Lankan NIC number. Day code ({$daysVal}) is out of range (001–366 for male, 501–866 for female).");
+            }
+            $mgmtBirthYear = $is12 ? (int)substr($nic, 0, 4) : (1900 + (int)substr($nic, 0, 2));
+            $currentYear = (int)date('Y');
+            $mgmtAge = $currentYear - $mgmtBirthYear;
+            if ($mgmtAge < 21) {
+                throw new InvalidArgumentException("Based on the entered NIC, staff member is {$mgmtAge} years old. Minimum age for management staff is 21 years.");
+            }
+            if ($mgmtAge > 70) {
+                throw new InvalidArgumentException("Based on the entered NIC, staff member is {$mgmtAge} years old. Maximum age for active staff employment is 70 years.");
+            }
+        }
+
+        // Join Date Sanity
+        if (!empty($joinDate)) {
+            $joinTime = strtotime($joinDate);
+            if (!$joinTime) throw new InvalidArgumentException('Invalid join date.');
+            $maxFuture = strtotime('+90 days');
+            if ($joinTime > $maxFuture) {
+                throw new InvalidArgumentException('Join date cannot be more than 3 months in the future.');
+            }
+            if ($mgmtBirthYear !== null && (int)date('Y', $joinTime) < ($mgmtBirthYear + 18)) {
+                throw new InvalidArgumentException('Staff join date cannot precede their 18th birthday based on their NIC.');
+            }
         }
 
         $cleanPhone = preg_replace('/[^0-9+]/', '', $phone);

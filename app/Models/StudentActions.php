@@ -122,6 +122,30 @@ class StudentActions {
             throw new InvalidArgumentException("Select a valid gender.");
         }
 
+        // Birth Certificate format sanity
+        if (!preg_match('/^[A-Za-z0-9\s\/\-]{3,25}$/', $student['birthCertificateNumber']) || !preg_match('/[A-Za-z0-9]/', $student['birthCertificateNumber'])) {
+            throw new InvalidArgumentException("Please enter a valid Birth Certificate Number (3–25 alphanumeric characters).");
+        }
+
+        // Residential address length
+        if (mb_strlen(trim($student['homeAddress'])) < 6) {
+            throw new InvalidArgumentException("Student residential address must be at least 6 characters long.");
+        }
+
+        // Student NIC Checksum (if provided)
+        if (!empty($student['nationalId'])) {
+            $sNic = strtoupper(trim($student['nationalId']));
+            $is12 = preg_match('/^[0-9]{12}$/', $sNic);
+            $is9v = preg_match('/^[0-9]{9}[vVxX]$/', $sNic);
+            if (!$is12 && !$is9v) {
+                throw new InvalidArgumentException("Student NIC must be 12 digits or 9 digits with V/X.");
+            }
+            $daysVal = $is12 ? (int)substr($sNic, 4, 3) : (int)substr($sNic, 2, 3);
+            if ($daysVal < 1 || ($daysVal > 366 && $daysVal < 501) || $daysVal > 866) {
+                throw new InvalidArgumentException("Invalid Student NIC number. Day code ({$daysVal}) is out of range.");
+            }
+        }
+
         // Duplicate Birth Certificate check
         $db = Database::getConnection();
         $bcStmt = $db->prepare("SELECT id FROM students WHERE birth_certificate_number = ? LIMIT 1");
