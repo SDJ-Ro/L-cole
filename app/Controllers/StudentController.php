@@ -331,21 +331,8 @@ class StudentController extends Controller {
             ],
         ];
 
-        // Unread Notices
-        $notices = [
-            [
-                'title' => 'Final Exam Schedule',
-                'desc'  => 'The schedule for the final term examination is now available on the portal.',
-            ],
-            [
-                'title' => 'Library Books Return',
-                'desc'  => 'All issued library books must be returned to the main library by Friday, June 26.',
-            ],
-            [
-                'title' => 'Inter-House Sports Meet',
-                'desc'  => 'Rehearsals commence Monday at 3:30 PM on the college main ground.',
-            ],
-        ];
+        // Unread Notices (live from NoticeModel)
+        $notices = NoticeModel::getForRole('student');
 
         $this->view('student/dashboard', [
             'currentRole'    => 'student',

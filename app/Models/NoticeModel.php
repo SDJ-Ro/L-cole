@@ -66,7 +66,7 @@ class NoticeModel {
     /**
      * Retrieve all active notices (Admin & Management overview).
      */
-    public static function getAll(?string $category = null, ?string $audience = null, ?string $search = null): array {
+    public static function getAll(?string $category = null, ?string $audience = null, ?string $search = null, ?string $includeAuthorRole = null): array {
         try {
             $db = Database::getConnection();
             $sql = "SELECT * FROM notices 
@@ -81,8 +81,14 @@ class NoticeModel {
             }
 
             if ($audience && $audience !== 'All') {
-                $sql .= " AND (JSON_CONTAINS(audience, '\"All\"') OR JSON_CONTAINS(audience, ?))";
-                $params[] = json_encode($audience);
+                if ($includeAuthorRole) {
+                    $sql .= " AND (JSON_CONTAINS(audience, '\"All\"') OR JSON_CONTAINS(audience, ?) OR author_role = ?)";
+                    $params[] = json_encode($audience);
+                    $params[] = $includeAuthorRole;
+                } else {
+                    $sql .= " AND (JSON_CONTAINS(audience, '\"All\"') OR JSON_CONTAINS(audience, ?))";
+                    $params[] = json_encode($audience);
+                }
             }
 
             if ($search && trim($search) !== '') {
@@ -117,10 +123,13 @@ class NoticeModel {
             return self::getAll($category, null, $search);
         }
 
+        if ($role === 'teacher') {
+            return self::getAll($category, 'Teachers', $search, 'teacher');
+        }
+
         $targetAudience = match($role) {
             'student' => 'Students',
             'parent'  => 'Parents',
-            'teacher' => 'Teachers',
             default   => 'All'
         };
 
@@ -153,6 +162,7 @@ class NoticeModel {
             'category'          => htmlspecialchars($r['category'] ?? 'General'),
             'audience'          => $audienceList,
             'body'              => htmlspecialchars($r['body'] ?? ''),
+            'desc'              => htmlspecialchars($r['body'] ?? ''),
             'author'            => htmlspecialchars($r['author_name'] ?? 'Admin Office'),
             'author_name'       => htmlspecialchars($r['author_name'] ?? 'Admin Office'),
             'author_role'       => strtolower($r['author_role'] ?? 'admin'),

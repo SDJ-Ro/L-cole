@@ -413,6 +413,10 @@ class AcademicModel extends Model {
         return AcademicActions::deleteCurriculumGroup($rangeLabel, $actorId, $actorIdentifier);
     }
 
+    public static function removeGradeFromCurriculumGroup(string $rangeLabel, int $gradeNumber, ?int $actorId = null, ?string $actorIdentifier = null): array {
+        return AcademicActions::removeGradeFromCurriculumGroup($rangeLabel, $gradeNumber, $actorId, $actorIdentifier);
+    }
+
 
     // =========================================================================
     // HELPER METHODS
