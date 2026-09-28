@@ -273,13 +273,13 @@
 
       <!-- 12. Office Phone & Address -->
       <div class="c-form-field">
-        <label class="c-form-field-label">Office Phone <em class="c-field-helper">optional</em></label>
-        <input type="tel" class="c-form-input" name="guardian[officePhone]" id="guardian-officePhone" placeholder="e.g. 011 234 5678" maxlength="30" />
+        <label class="c-form-field-label">Office Phone <em class="c-field-helper">optional (10 digits)</em></label>
+        <input type="tel" class="c-form-input j-landline-input" name="guardian[officePhone]" id="guardian-officePhone" placeholder="e.g. 011 234 5678" maxlength="10" />
       </div>
 
       <div class="c-form-field">
-        <label class="c-form-field-label">Home Landline <em class="c-field-helper">optional</em></label>
-        <input type="tel" class="c-form-input" name="guardian[homePhone]" id="guardian-homePhone" placeholder="e.g. 011 289 0123" maxlength="30" />
+        <label class="c-form-field-label">Home Landline <em class="c-field-helper">optional (10 digits)</em></label>
+        <input type="tel" class="c-form-input j-landline-input" name="guardian[homePhone]" id="guardian-homePhone" placeholder="e.g. 011 289 0123" maxlength="10" />
       </div>
 
       <!-- 13. Office Address -->

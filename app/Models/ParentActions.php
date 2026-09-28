@@ -189,9 +189,17 @@ class ParentActions {
         $data['mobile'] = self::normalizePhone($data['mobile'], $countryCode);
 
         if ($data['homePhone'] !== '') {
+            $cleanHome = preg_replace('/\D/', '', $data['homePhone']);
+            if (strlen($cleanHome) !== 10) {
+                throw new InvalidArgumentException("Guardian home landline must be exactly 10 digits (e.g. 011 289 0123).");
+            }
             $data['homePhone'] = self::normalizePhone($data['homePhone'], $countryCode);
         }
         if ($data['officePhone'] !== '') {
+            $cleanOffice = preg_replace('/\D/', '', $data['officePhone']);
+            if (strlen($cleanOffice) !== 10) {
+                throw new InvalidArgumentException("Guardian office phone must be exactly 10 digits (e.g. 011 234 5678).");
+            }
             $data['officePhone'] = self::normalizePhone($data['officePhone'], $countryCode);
         }
 
