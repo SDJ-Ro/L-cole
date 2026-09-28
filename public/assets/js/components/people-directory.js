@@ -1289,29 +1289,36 @@
     }
 
     if (targetInput) {
-      const formGroup = targetInput.closest('.c-form-group') || targetInput.parentElement;
-      if (formGroup) {
-        const oldInline = formGroup.querySelector('.c-field-inline-error');
+      const fieldContainer = targetInput.closest('.c-form-field') || targetInput.closest('.c-form-group') || targetInput.parentElement;
+      if (fieldContainer) {
+        const oldInline = fieldContainer.querySelector('.c-field-inline-error');
         if (oldInline) oldInline.remove();
       }
 
-      if (type === 'error' && formGroup) {
+      if (type === 'error' && fieldContainer) {
         const badge = document.createElement('div');
         badge.className = 'c-field-inline-error';
         badge.innerHTML = `
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
           <span>${escapeHtml(message)}</span>
         `;
-        const insertRef = targetInput.closest('.c-input-wrap') || targetInput.closest('.c-select') || targetInput;
+        const insertRef = targetInput.closest('.c-phone-input-group') ||
+                          targetInput.closest('.c-photo-field') ||
+                          targetInput.closest('.c-datepicker') ||
+                          targetInput.closest('.c-select') ||
+                          targetInput.closest('.c-input-wrap') ||
+                          targetInput;
         if (insertRef && insertRef.parentNode) {
           insertRef.parentNode.insertBefore(badge, insertRef.nextSibling);
         } else {
-          formGroup.appendChild(badge);
+          fieldContainer.appendChild(badge);
         }
 
+        const visualInput = fieldContainer.querySelector('.c-select__trigger, .c-datepicker-trigger, .c-form-input, .c-form-textarea');
         const clearHandler = () => {
           badge.remove();
           targetInput.classList.remove('c-input-invalid');
+          if (visualInput) visualInput.classList.remove('c-input-invalid');
           targetInput.removeEventListener('input', clearHandler);
           targetInput.removeEventListener('change', clearHandler);
         };
@@ -1321,7 +1328,9 @@
 
       targetInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
       targetInput.classList.add('c-input-invalid');
-      targetInput.focus();
+      const visualInput = fieldContainer?.querySelector('.c-select__trigger, .c-datepicker-trigger, .c-form-input, .c-form-textarea');
+      if (visualInput) visualInput.classList.add('c-input-invalid');
+      if (typeof targetInput.focus === 'function') targetInput.focus();
     } else if (type === 'error' && noticeEl) {
       noticeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
