@@ -7,6 +7,10 @@ class AuthController extends Controller {
     // Access selector page: http://localhost:8040/auth
     public function index() {
         if ($this->isAuthenticated()) {
+            if (isset($_GET['switch']) || isset($_GET['select']) || isset($_GET['logout'])) {
+                $this->logout();
+                return;
+            }
             $user = $this->getUser();
             $role = strtolower($user['role'] ?? '');
             if ($role) {
