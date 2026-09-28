@@ -144,6 +144,22 @@ $parentRelationOptions = [
     ['value' => 'Mother', 'label' => 'Mother'],
     ['value' => 'Guardian', 'label' => 'Guardian']
 ];
+
+$countryCodeOptions = [
+    ['value' => '+94',  'label' => '🇱🇰 +94 (LK)'],
+    ['value' => '+44',  'label' => '🇬🇧 +44 (UK)'],
+    ['value' => '+1',   'label' => '🇺🇸 +1 (US)'],
+    ['value' => '+61',  'label' => '🇦🇺 +61 (AU)'],
+    ['value' => '+971', 'label' => '🇦🇪 +971 (AE)'],
+    ['value' => '+65',  'label' => '🇸🇬 +65 (SG)'],
+    ['value' => '+91',  'label' => '🇮🇳 +91 (IN)'],
+    ['value' => '+60',  'label' => '🇲🇾 +60 (MY)'],
+    ['value' => '+974', 'label' => '🇶🇦 +974 (QA)'],
+    ['value' => '+966', 'label' => '🇸🇦 +966 (SA)'],
+    ['value' => '+64',  'label' => '🇳🇿 +64 (NZ)'],
+    ['value' => '+81',  'label' => '🇯🇵 +81 (JP)'],
+    ['value' => '+49',  'label' => '🇩🇪 +49 (DE)']
+];
 ?>
 
 <section id="<?= htmlspecialchars($cfg['pageId']) ?>" class="c-add-person-section j-page-add-person" style="display: none;">
@@ -215,19 +231,19 @@ $parentRelationOptions = [
             <!-- 1. Full Name -->
             <div class="c-form-field">
               <label class="c-form-field-label">Full Name (with initials) <span class="c-required-mark" style="color:var(--skyblue, #7FC7CC);">*</span></label>
-              <input type="text" class="c-form-input j-enrollment-input j-full-name-input" name="fullName" placeholder="e.g. M. A. Jayarathne" required />
+              <input type="text" class="c-form-input j-enrollment-input j-full-name-input j-name-letters" name="fullName" placeholder="e.g. M. A. Jayarathne" required />
             </div>
 
             <!-- 2. First Name -->
             <div class="c-form-field">
               <label class="c-form-field-label">First Name <span class="c-required-mark" style="color:var(--skyblue, #7FC7CC);">*</span></label>
-              <input type="text" class="c-form-input j-enrollment-input j-first-name-input" name="firstName" placeholder="e.g. Malsha" required />
+              <input type="text" class="c-form-input j-enrollment-input j-first-name-input j-name-letters" name="firstName" placeholder="e.g. Malsha" required />
             </div>
 
             <!-- 3. Last Name -->
             <div class="c-form-field">
               <label class="c-form-field-label">Last Name <span class="c-required-mark" style="color:var(--skyblue, #7FC7CC);">*</span></label>
-              <input type="text" class="c-form-input j-enrollment-input j-last-name-input" name="lastName" placeholder="e.g. Jayarathne" required />
+              <input type="text" class="c-form-input j-enrollment-input j-last-name-input j-name-letters" name="lastName" placeholder="e.g. Jayarathne" required />
             </div>
 
             <!-- 4. Date of Birth -->
@@ -466,19 +482,19 @@ $parentRelationOptions = [
             <!-- Full Name (span 2) -->
             <div class="c-form-field c-span-2">
               <label class="c-form-field-label">Full Name <span class="c-required-mark" style="color:var(--sunshine, #EA8913);">*</span></label>
-              <input type="text" class="c-form-input j-form-input j-autofill-full" name="fullName" placeholder="e.g. Sarah Peiris" required />
+              <input type="text" class="c-form-input j-form-input j-autofill-full j-name-letters" name="fullName" placeholder="e.g. Sarah Peiris" required />
             </div>
 
             <!-- First Name -->
             <div class="c-form-field">
               <label class="c-form-field-label">First Name <span class="c-required-mark" style="color:var(--sunshine, #EA8913);">*</span></label>
-              <input type="text" class="c-form-input j-form-input j-autofill-first" name="firstName" placeholder="e.g. Sarah" required />
+              <input type="text" class="c-form-input j-form-input j-autofill-first j-name-letters" name="firstName" placeholder="e.g. Sarah" required />
             </div>
 
             <!-- Last Name -->
             <div class="c-form-field">
               <label class="c-form-field-label">Last Name <span class="c-required-mark" style="color:var(--sunshine, #EA8913);">*</span></label>
-              <input type="text" class="c-form-input j-form-input j-autofill-last" name="lastName" placeholder="e.g. Peiris" required />
+              <input type="text" class="c-form-input j-form-input j-autofill-last j-name-letters" name="lastName" placeholder="e.g. Peiris" required />
               <p class="c-form-note">Used to create the institutional address.</p>
             </div>
 
@@ -511,7 +527,20 @@ $parentRelationOptions = [
             <!-- Mobile number -->
             <div class="c-form-field">
               <label class="c-form-field-label">Mobile number <span class="c-required-mark" style="color:var(--sunshine, #EA8913);">*</span></label>
-              <input type="tel" class="c-form-input j-form-input" name="phone" placeholder="e.g. +94 70 456 7890" required />
+              <div class="c-phone-input-group">
+                <?php
+                $dropdownId    = 'j-teacher-country-code';
+                $name          = 'teacherCountryCode';
+                $options       = $countryCodeOptions;
+                $selectedValue = '+94';
+                $placeholder   = 'Code';
+                $dropdownLabel = 'Country Code';
+                $dropdownClass = 'c-select-sunshine c-phone-code-dropdown';
+                require __DIR__ . '/_dropdown.php';
+                ?>
+                <input type="tel" class="c-form-input j-form-input j-phone-digits" id="j-teacher-phone-input" name="phoneNumber" placeholder="70 456 7890" maxlength="9" required />
+                <input type="hidden" name="phone" id="j-teacher-phone-full" />
+              </div>
             </div>
 
             <!-- Personal Email -->
@@ -583,11 +612,24 @@ $parentRelationOptions = [
             <div class="c-form-grid">
               <div class="c-form-field">
                 <label class="c-form-field-label">Contact Name <span class="c-required-mark" style="color:var(--sunshine, #EA8913);">*</span></label>
-                <input type="text" class="c-form-input j-form-input" name="emergencyName" placeholder="e.g. John Doe" required />
+                <input type="text" class="c-form-input j-form-input j-name-letters" name="emergencyName" placeholder="e.g. John Doe" required />
               </div>
               <div class="c-form-field">
                 <label class="c-form-field-label">Contact mobile number <span class="c-required-mark" style="color:var(--sunshine, #EA8913);">*</span></label>
-                <input type="tel" class="c-form-input j-form-input" name="emergencyPhone" placeholder="e.g. +94 77 123 4567" required />
+                <div class="c-phone-input-group">
+                  <?php
+                  $dropdownId    = 'j-teacher-em-country-code';
+                  $name          = 'teacherEmergencyCountryCode';
+                  $options       = $countryCodeOptions;
+                  $selectedValue = '+94';
+                  $placeholder   = 'Code';
+                  $dropdownLabel = 'Country Code';
+                  $dropdownClass = 'c-select-sunshine c-phone-code-dropdown';
+                  require __DIR__ . '/_dropdown.php';
+                  ?>
+                  <input type="tel" class="c-form-input j-form-input j-phone-digits" id="j-teacher-emphone-input" name="emergencyPhoneNumber" placeholder="77 123 4567" maxlength="9" required />
+                  <input type="hidden" name="emergencyPhone" id="j-teacher-emphone-full" />
+                </div>
               </div>
             </div>
           </section>
@@ -644,19 +686,19 @@ $parentRelationOptions = [
             <!-- Full Name (span 2) -->
             <div class="c-form-field c-span-2">
               <label class="c-form-field-label">Full Name <span class="c-required-mark" style="color:var(--maroon, #7F0303);">*</span></label>
-              <input type="text" class="c-form-input j-form-input j-autofill-full" name="fullName" placeholder="e.g. Alex Thompson" required />
+              <input type="text" class="c-form-input j-form-input j-autofill-full j-name-letters" name="fullName" placeholder="e.g. Alex Thompson" required />
             </div>
 
             <!-- First Name -->
             <div class="c-form-field">
               <label class="c-form-field-label">First Name <span class="c-required-mark" style="color:var(--maroon, #7F0303);">*</span></label>
-              <input type="text" class="c-form-input j-form-input j-autofill-first" name="firstName" placeholder="e.g. Alex" required />
+              <input type="text" class="c-form-input j-form-input j-autofill-first j-name-letters" name="firstName" placeholder="e.g. Alex" required />
             </div>
 
             <!-- Last Name -->
             <div class="c-form-field">
               <label class="c-form-field-label">Last Name <span class="c-required-mark" style="color:var(--maroon, #7F0303);">*</span></label>
-              <input type="text" class="c-form-input j-form-input j-autofill-last" name="lastName" placeholder="e.g. Thompson" required />
+              <input type="text" class="c-form-input j-form-input j-autofill-last j-name-letters" name="lastName" placeholder="e.g. Thompson" required />
             </div>
 
             <!-- NIC -->
@@ -668,7 +710,20 @@ $parentRelationOptions = [
             <!-- Contact Number -->
             <div class="c-form-field">
               <label class="c-form-field-label">Contact Number <span class="c-required-mark" style="color:var(--maroon, #7F0303);">*</span></label>
-              <input type="tel" class="c-form-input j-form-input" name="phone" placeholder="e.g. +94 77 123 4567" required />
+              <div class="c-phone-input-group">
+                <?php
+                $dropdownId    = 'j-mgmt-country-code';
+                $name          = 'mgmtCountryCode';
+                $options       = $countryCodeOptions;
+                $selectedValue = '+94';
+                $placeholder   = 'Code';
+                $dropdownLabel = 'Country Code';
+                $dropdownClass = 'c-select-maroon c-phone-code-dropdown';
+                require __DIR__ . '/_dropdown.php';
+                ?>
+                <input type="tel" class="c-form-input j-form-input j-phone-digits" id="j-mgmt-phone-input" name="phoneNumber" placeholder="77 123 4567" maxlength="9" required />
+                <input type="hidden" name="phone" id="j-mgmt-phone-full" />
+              </div>
             </div>
 
             <!-- Personal Email -->
@@ -709,11 +764,24 @@ $parentRelationOptions = [
             <div class="c-form-grid">
               <div class="c-form-field">
                 <label class="c-form-field-label">Contact Name <span class="c-required-mark" style="color:var(--maroon, #7F0303);">*</span></label>
-                <input type="text" class="c-form-input j-form-input" name="emergencyName" placeholder="e.g. Jane Doe" required />
+                <input type="text" class="c-form-input j-form-input j-name-letters" name="emergencyName" placeholder="e.g. Jane Doe" required />
               </div>
               <div class="c-form-field">
                 <label class="c-form-field-label">Contact Number <span class="c-required-mark" style="color:var(--maroon, #7F0303);">*</span></label>
-                <input type="tel" class="c-form-input j-form-input" name="emergencyPhone" placeholder="e.g. +94 77 123 4567" required />
+                <div class="c-phone-input-group">
+                  <?php
+                  $dropdownId    = 'j-mgmt-em-country-code';
+                  $name          = 'mgmtEmergencyCountryCode';
+                  $options       = $countryCodeOptions;
+                  $selectedValue = '+94';
+                  $placeholder   = 'Code';
+                  $dropdownLabel = 'Country Code';
+                  $dropdownClass = 'c-select-maroon c-phone-code-dropdown';
+                  require __DIR__ . '/_dropdown.php';
+                  ?>
+                  <input type="tel" class="c-form-input j-form-input j-phone-digits" id="j-mgmt-emphone-input" name="emergencyPhoneNumber" placeholder="77 123 4567" maxlength="9" required />
+                  <input type="hidden" name="emergencyPhone" id="j-mgmt-emphone-full" />
+                </div>
               </div>
             </div>
           </section>

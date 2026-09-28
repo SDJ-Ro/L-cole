@@ -36,3 +36,10 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem(storageKey, willCollapse);
   });
 });
+
+// Prevent viewing cached authenticated pages after logout (BFCache back/forward)
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    window.location.reload();
+  }
+});

@@ -212,6 +212,12 @@ class Controller {
         }
         $this->checkSessionTimeout();
 
+        if (!headers_sent()) {
+            header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+            header("Pragma: no-cache");
+            header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
+        }
+
         $allowed = is_array($allowedRoles) ? $allowedRoles : [$allowedRoles];
         $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') 
                || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
