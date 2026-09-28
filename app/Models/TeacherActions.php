@@ -78,6 +78,9 @@ class TeacherActions extends Model {
         if (strpos($personalEmail, '@') === false || !filter_var($personalEmail, FILTER_VALIDATE_EMAIL)) {
             throw new InvalidArgumentException('Personal email address must be a valid email containing "@".');
         }
+        if (str_ends_with(strtolower($personalEmail), '@lecole.edu')) {
+            throw new InvalidArgumentException('Personal email must be an external email account and cannot be an @lecole.edu address.');
+        }
 
         // NIC Validation: 12 digits or 9 digits + V/X
         $is12 = preg_match('/^[0-9]{12}$/', $nic);
@@ -85,6 +88,14 @@ class TeacherActions extends Model {
         $isPassport = preg_match('/^[A-Z0-9]{6,12}$/i', $nic);
         if (!$is12 && !$is9v && !$isPassport) {
             throw new InvalidArgumentException('Invalid National ID format. Must be 12 digits or 9 digits with V/X.');
+        }
+
+        // NIC Day of Year Checksum
+        if ($is12 || $is9v) {
+            $daysVal = $is12 ? (int)substr($nic, 4, 3) : (int)substr($nic, 2, 3);
+            if ($daysVal < 1 || ($daysVal > 366 && $daysVal < 501) || $daysVal > 866) {
+                throw new InvalidArgumentException("Invalid Sri Lankan NIC number. Day code ({$daysVal}) is out of range (001–366 for male, 501–866 for female).");
+            }
         }
 
         // Phone Validation (Sri Lankan standard format)
@@ -117,8 +128,21 @@ class TeacherActions extends Model {
         }
 
         // Experience Check
-        if ($experience < 0 || $experience > ($age - 20)) {
-            throw new InvalidArgumentException("Years of experience ({$experience}) is invalid for a {$age}-year-old teacher.");
+        if ($experience < 0 || $experience > ($age - 18)) {
+            throw new InvalidArgumentException("Years of experience ({$experience}) is invalid for a {$age}-year-old teacher. Maximum possible is " . ($age - 18) . " years.");
+        }
+
+        // Join Date Sanity
+        if (!empty($joinDate)) {
+            $joinTime = strtotime($joinDate);
+            if (!$joinTime) throw new InvalidArgumentException('Invalid join date.');
+            $maxFuture = strtotime('+90 days');
+            if ($joinTime > $maxFuture) {
+                throw new InvalidArgumentException('Join date cannot be more than 3 months in the future.');
+            }
+            if ($dobTime && $joinTime < strtotime('+18 years', $dobTime)) {
+                throw new InvalidArgumentException('Teacher join date cannot precede their 18th birthday.');
+            }
         }
 
         // 4. Duplicate Collisions Check

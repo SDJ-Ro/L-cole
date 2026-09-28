@@ -159,9 +159,20 @@ class ParentActions {
                     $len = strlen($idValue);
                     throw new InvalidArgumentException("Entered NIC has {$len} characters. A modern Sri Lankan NIC must have exactly 12 digits (e.g. 198012345678) or 9 digits followed by V/X (e.g. 801234567V).");
                 }
-                $data['nic'] = strtoupper($idValue);
+                $cleanNic = strtoupper($idValue);
+                $is12 = preg_match('/^[0-9]{12}$/', $cleanNic);
+                $daysVal = $is12 ? (int)substr($cleanNic, 4, 3) : (int)substr($cleanNic, 2, 3);
+                if ($daysVal < 1 || ($daysVal > 366 && $daysVal < 501) || $daysVal > 866) {
+                    throw new InvalidArgumentException("Invalid Sri Lankan NIC number. Day code ({$daysVal}) is out of range (001–366 for male, 501–866 for female).");
+                }
+                $data['nic'] = $cleanNic;
                 $data['passport'] = null;
             }
+        }
+
+        // Residential Address min length (if provided)
+        if ($data['homeAddress'] !== '' && mb_strlen(trim($data['homeAddress'])) < 6) {
+            throw new InvalidArgumentException("Guardian residential address must be at least 6 characters long.");
         }
 
         // Date of Birth & Age validation
