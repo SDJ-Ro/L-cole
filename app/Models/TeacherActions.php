@@ -36,12 +36,23 @@ class TeacherActions extends Model {
         $dateOfBirth = trim($data['dateOfBirth'] ?? ($data['dob'] ?? ''));
         $officeAddress = trim($data['officeAddress'] ?? '');
         $phone = trim($data['phone'] ?? ($data['mobileNumber'] ?? ''));
+        if (empty($phone) && !empty(trim($data['phoneNumber'] ?? ''))) {
+            $cCode = trim($data['teacherCountryCode'] ?? '+94');
+            $mNum  = ltrim(trim($data['phoneNumber']), '0');
+            $phone = $cCode . $mNum;
+        }
+
         $personalEmail = strtolower(trim($data['personalEmail'] ?? ($data['email'] ?? '')));
         $subjects = trim($data['subjects'] ?? '');
         $experience = isset($data['experience']) ? (int)$data['experience'] : 0;
         $joinDate = trim($data['joinDate'] ?? date('Y-m-d'));
         $emergencyName = trim($data['emergencyName'] ?? '');
         $emergencyPhone = trim($data['emergencyPhone'] ?? '');
+        if (empty($emergencyPhone) && !empty(trim($data['emergencyPhoneNumber'] ?? ''))) {
+            $cCode = trim($data['teacherEmergencyCountryCode'] ?? '+94');
+            $mNum  = ltrim(trim($data['emergencyPhoneNumber']), '0');
+            $emergencyPhone = $cCode . $mNum;
+        }
 
         // 2. Validate Required Fields
         if (empty($fullName)) throw new InvalidArgumentException('Teacher full name is required.');
@@ -55,9 +66,17 @@ class TeacherActions extends Model {
         if (empty($emergencyName)) throw new InvalidArgumentException('Emergency contact name is required.');
         if (empty($emergencyPhone)) throw new InvalidArgumentException('Emergency contact phone is required.');
 
+        // Name Validation: Strictly no digits
+        if (preg_match('/[0-9]/', $fullName) || preg_match('/[0-9]/', $firstName) || preg_match('/[0-9]/', $lastName)) {
+            throw new InvalidArgumentException('Teacher names cannot contain numbers. Only letters, spaces, hyphens, and dots are permitted.');
+        }
+        if (preg_match('/[0-9]/', $emergencyName)) {
+            throw new InvalidArgumentException('Emergency contact name cannot contain numbers.');
+        }
+
         // 3. Format Validations
-        if (!filter_var($personalEmail, FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidArgumentException('Personal email address is invalid.');
+        if (strpos($personalEmail, '@') === false || !filter_var($personalEmail, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException('Personal email address must be a valid email containing "@".');
         }
 
         // NIC Validation: 12 digits or 9 digits + V/X
@@ -72,6 +91,10 @@ class TeacherActions extends Model {
         $cleanPhone = preg_replace('/[^0-9+]/', '', $phone);
         if (strlen(preg_replace('/[^0-9]/', '', $cleanPhone)) < 9) {
             throw new InvalidArgumentException('Mobile number must contain at least 9 digits.');
+        }
+        $cleanEmPhone = preg_replace('/[^0-9+]/', '', $emergencyPhone);
+        if (strlen(preg_replace('/[^0-9]/', '', $cleanEmPhone)) < 9) {
+            throw new InvalidArgumentException('Emergency contact phone must contain at least 9 digits.');
         }
 
         // Emergency Contact Anti-Self-Reference Guard

@@ -738,13 +738,57 @@
       });
     }
 
-    // Phone Country Code Formatting
-    const guardianCountryCodeEl = document.getElementById('j-guardian-country-code');
-    const mobileInput = document.getElementById('guardian-mobile');
-    if (mobileInput) mobileInput.addEventListener('input', syncPhone);
-    if (guardianCountryCodeEl) {
-      guardianCountryCodeEl.addEventListener('dropdown:change', syncPhone);
+    // 12. Real-time Name Validation: Block numbers from name inputs
+    document.addEventListener('input', function (e) {
+      if (e.target.matches('.j-name-letters, input[name="fullName"], input[name="firstName"], input[name="lastName"], input[name="emergencyName"], input[name="guardian[fullName]"], input[name="guardian[firstName]"], input[name="guardian[lastName]"], input[name="guardian[emergencyName]"]')) {
+        if (/[0-9]/.test(e.target.value)) {
+          e.target.value = e.target.value.replace(/[0-9]/g, '');
+        }
+      }
+    });
+
+    // Real-time Phone Syncing & Digit-Only Filtering for all country-code groups
+    function syncPhoneGroup(group) {
+      if (!group) return;
+      const hiddenCode = group.querySelector('input[type="hidden"][name*="CountryCode"], input[type="hidden"][name*="countryCode"]') ||
+                         group.querySelector('.c-select input[type="hidden"]');
+      const numInput = group.querySelector('input[type="tel"]');
+      const fullHidden = group.querySelector('input[type="hidden"]:not([name*="CountryCode"]):not([name*="countryCode"]):not(.c-select input)');
+      if (!numInput) return;
+      const code = hiddenCode?.value || '+94';
+      let clean = numInput.value.replace(/\D/g, '');
+      if (code === '+94' && clean.startsWith('0')) {
+        clean = clean.replace(/^0+/, '');
+      }
+      if (code === '+94' && clean.length > 9) {
+        clean = clean.slice(0, 9);
+      } else if (clean.length > 12) {
+        clean = clean.slice(0, 12);
+      }
+      if (numInput.value !== clean) {
+        numInput.value = clean;
+      }
+      if (fullHidden) {
+        fullHidden.value = clean ? `${code}${clean}` : '';
+      }
     }
+
+    function syncAllPhoneGroups(scope = document) {
+      scope.querySelectorAll('.c-phone-input-group').forEach(syncPhoneGroup);
+    }
+
+    document.addEventListener('input', function (e) {
+      const group = e.target.closest('.c-phone-input-group');
+      if (group) syncPhoneGroup(group);
+    });
+
+    document.addEventListener('dropdown:change', function (e) {
+      const group = e.target.closest('.c-phone-input-group');
+      if (group) syncPhoneGroup(group);
+    });
+
+    // Initial sync
+    syncAllPhoneGroups();
 
     // Inline Existing Parent Picker in Student Admission
     initInlineParentPicker();
@@ -1225,10 +1269,58 @@
   function validatePersonForm(form, role) {
     if (!form) return { isValid: false, error: 'Form element not found.' };
     clearAllFieldErrors(form);
+    syncAllPhoneGroups(form);
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+
+    function checkName(input, label) {
+      if (!input) return null;
+      const val = input.value.trim();
+      if (!val) return null;
+      if (/[0-9]/.test(val)) {
+        return { isValid: false, error: `${label} cannot contain numbers. Only letters, spaces, hyphens, and dots are permitted.`, targetInput: input };
+      }
+      return null;
+    }
+
+    function checkEmail(input, label) {
+      if (!input) return null;
+      const val = input.value.trim();
+      if (!val) return null;
+      if (!val.includes('@')) {
+        return { isValid: false, error: `${label} must contain an '@' character.`, targetInput: input };
+      }
+      if (!emailRegex.test(val)) {
+        return { isValid: false, error: `Please enter a valid ${label} (e.g. name@example.com).`, targetInput: input };
+      }
+      return null;
+    }
+
+    function checkPhone(input, label) {
+      if (!input) return null;
+      const val = input.value.trim();
+      if (!val) return null;
+      if (/[a-zA-Z]/.test(val)) {
+        return { isValid: false, error: `${label} cannot contain letters. Only numbers are allowed.`, targetInput: input };
+      }
+      const group = input.closest('.c-phone-input-group');
+      const hiddenCode = group ? (group.querySelector('input[type="hidden"][name*="CountryCode"], input[type="hidden"][name*="countryCode"]') ||
+                         group.querySelector('.c-select input[type="hidden"]')) : null;
+      const code = hiddenCode?.value || '+94';
+      const clean = val.replace(/\D/g, '');
+      if (code === '+94') {
+        if (clean.length !== 9) {
+          return { isValid: false, error: `${label} must be exactly 9 digits for Sri Lanka (+94), excluding the leading 0 (e.g. 77 123 4567).`, targetInput: input };
+        }
+      } else {
+        if (clean.length < 7 || clean.length > 12) {
+          return { isValid: false, error: `${label} must be between 7 and 12 digits.`, targetInput: input };
+        }
+      }
+      return null;
+    }
 
     if (role === 'student' || form.id === 'j-enrollment-form') {
-      syncPhone();
-
       const fullNameInput = form.querySelector('input[name="fullName"]');
       const firstNameInput = form.querySelector('input[name="firstName"]');
       const lastNameInput = form.querySelector('input[name="lastName"]');
@@ -1239,6 +1331,11 @@
       if (!fullNameInput || !fullNameInput.value.trim()) {
         return { isValid: false, error: 'Please enter the student\'s Full Name (with initials).', targetInput: fullNameInput };
       }
+      const studentNameErr = checkName(fullNameInput, 'Student Full Name') ||
+                             checkName(firstNameInput, 'Student First Name') ||
+                             checkName(lastNameInput, 'Student Last Name');
+      if (studentNameErr) return studentNameErr;
+
       if (!firstNameInput || !firstNameInput.value.trim()) {
         return { isValid: false, error: 'Please enter the student\'s First Name.', targetInput: firstNameInput };
       }
@@ -1300,6 +1397,14 @@
           }
         }
 
+        const gFullNameInput = form.querySelector('[name="guardian[fullName]"]');
+        const gFirstNameInput = form.querySelector('[name="guardian[firstName]"]');
+        const gLastNameInput = form.querySelector('[name="guardian[lastName]"]');
+        const gEmNameInput = form.querySelector('[name="guardian[emergencyName]"]');
+        const gEmailInput = form.querySelector('[name="guardian[email]"]');
+        const gMobileInput = form.querySelector('[name="guardian[mobileNumber]"]') || document.getElementById('guardian-mobile');
+        const gEmPhoneInput = form.querySelector('[name="guardian[emergencyNumber]"]') || form.querySelector('[name="guardian[emergencyContact]"]');
+
         const requiredNew = [
           { name: 'guardian[fullName]', label: 'Guardian Full Name' },
           { name: 'guardian[firstName]', label: 'Guardian First Name' },
@@ -1308,8 +1413,7 @@
           { name: 'guardian[occupation]', label: 'Guardian Occupation' },
           { name: 'guardian[mobileNumber]', label: 'Guardian Mobile Number' },
           { name: 'guardian[email]', label: 'Guardian Email' },
-          { name: 'guardian[emergencyName]', label: 'Secondary Emergency Contact Name' },
-          { name: 'guardian[emergencyContact]', label: 'Secondary Emergency Contact Phone' }
+          { name: 'guardian[emergencyName]', label: 'Secondary Emergency Contact Name' }
         ];
 
         for (const item of requiredNew) {
@@ -1319,17 +1423,39 @@
           }
         }
 
+        if (!gEmPhoneInput || !gEmPhoneInput.value.trim()) {
+          return { isValid: false, error: 'Please enter Secondary Emergency Contact Phone (*).', targetInput: gEmPhoneInput };
+        }
+
+        // Check Names (No numbers)
+        const gNameErr = checkName(gFullNameInput, 'Guardian Full Name') ||
+                         checkName(gFirstNameInput, 'Guardian First Name') ||
+                         checkName(gLastNameInput, 'Guardian Last Name') ||
+                         checkName(gEmNameInput, 'Secondary Emergency Contact Name');
+        if (gNameErr) return gNameErr;
+
+        // Check Email
+        const gEmailErr = checkEmail(gEmailInput, 'Guardian Personal Email');
+        if (gEmailErr) return gEmailErr;
+
+        // Check Phones (Digits only, 9 digits for +94)
+        const gPhoneErr = checkPhone(gMobileInput, 'Guardian Mobile Number');
+        if (gPhoneErr) return gPhoneErr;
+
+        const gEmPhoneErr = checkPhone(gEmPhoneInput, 'Secondary Emergency Contact Phone');
+        if (gEmPhoneErr) return gEmPhoneErr;
+
         // Secondary emergency contact cannot be the parent/guardian
-        const pName = form.querySelector('[name="guardian[fullName]"]')?.value.trim().toLowerCase();
-        const emName = form.querySelector('[name="guardian[emergencyName]"]')?.value.trim().toLowerCase();
-        const pPhone = (form.querySelector('[name="guardian[mobileNumber]"]')?.value || '').replace(/\D/g, '').slice(-7);
-        const emPhone = (form.querySelector('[name="guardian[emergencyContact]"]')?.value || '').replace(/\D/g, '').slice(-7);
+        const pName = gFullNameInput?.value.trim().toLowerCase();
+        const emName = gEmNameInput?.value.trim().toLowerCase();
+        const pPhone = (gMobileInput?.value || '').replace(/\D/g, '').slice(-7);
+        const emPhone = (gEmPhoneInput?.value || '').replace(/\D/g, '').slice(-7);
 
         if (emName && pName && emName === pName) {
-          return { isValid: false, error: 'Secondary emergency contact cannot have the same name as the parent/guardian.', targetInput: form.querySelector('[name="guardian[emergencyName]"]') };
+          return { isValid: false, error: 'Secondary emergency contact cannot have the same name as the parent/guardian.', targetInput: gEmNameInput };
         }
         if (emPhone && pPhone && emPhone === pPhone) {
-          return { isValid: false, error: 'Secondary emergency contact phone cannot be the same as the parent\'s contact number.', targetInput: form.querySelector('[name="guardian[emergencyContact]"]') };
+          return { isValid: false, error: 'Secondary emergency contact phone cannot be the same as the parent\'s contact number.', targetInput: gEmPhoneInput };
         }
 
         // Check NIC or Passport
@@ -1358,13 +1484,13 @@
       const lastNameInput = form.querySelector('input[name="lastName"]');
       const nicInput = form.querySelector('input[name="nic"]');
       const dobInput = form.querySelector('input[name="dateOfBirth"]');
-      const phoneInput = form.querySelector('input[name="phone"]');
+      const phoneInput = form.querySelector('input[name="phoneNumber"]') || form.querySelector('input[name="phone"]');
       const emailInput = form.querySelector('input[name="personalEmail"]');
       const subjectsInput = form.querySelector('input[name="subjects"]');
       const expInput = form.querySelector('input[name="experience"]');
       const joinDateInput = form.querySelector('input[name="joinDate"]');
       const emNameInput = form.querySelector('input[name="emergencyName"]');
-      const emPhoneInput = form.querySelector('input[name="emergencyPhone"]');
+      const emPhoneInput = form.querySelector('input[name="emergencyPhoneNumber"]') || form.querySelector('input[name="emergencyPhone"]');
 
       if (!fullNameInput || !fullNameInput.value.trim()) {
         return { isValid: false, error: 'Please enter the teacher\'s Full Name.', targetInput: fullNameInput };
@@ -1375,6 +1501,14 @@
       if (!lastNameInput || !lastNameInput.value.trim()) {
         return { isValid: false, error: 'Please enter the teacher\'s Last Name.', targetInput: lastNameInput };
       }
+
+      // Check Names (No numbers)
+      const tNameErr = checkName(fullNameInput, 'Teacher Full Name') ||
+                       checkName(firstNameInput, 'Teacher First Name') ||
+                       checkName(lastNameInput, 'Teacher Last Name') ||
+                       checkName(emNameInput, 'Emergency Contact Name');
+      if (tNameErr) return tNameErr;
+
       if (!nicInput || !nicInput.value.trim()) {
         return { isValid: false, error: 'Please enter the teacher\'s National Identity Card (NIC) number.', targetInput: nicInput };
       }
@@ -1405,9 +1539,15 @@
       if (!phoneInput || !phoneInput.value.trim()) {
         return { isValid: false, error: 'Please enter the teacher\'s Mobile Number.', targetInput: phoneInput };
       }
+      const tPhoneErr = checkPhone(phoneInput, 'Teacher Mobile Number');
+      if (tPhoneErr) return tPhoneErr;
+
       if (!emailInput || !emailInput.value.trim()) {
         return { isValid: false, error: 'Please enter the teacher\'s Personal Email.', targetInput: emailInput };
       }
+      const tEmailErr = checkEmail(emailInput, 'Teacher Personal Email');
+      if (tEmailErr) return tEmailErr;
+
       if (!subjectsInput || !subjectsInput.value.trim()) {
         return { isValid: false, error: 'Please enter the subjects qualified to teach.', targetInput: subjectsInput };
       }
@@ -1423,6 +1563,8 @@
       if (!emPhoneInput || !emPhoneInput.value.trim()) {
         return { isValid: false, error: 'Please enter an Emergency Contact Number.', targetInput: emPhoneInput };
       }
+      const tEmPhoneErr = checkPhone(emPhoneInput, 'Emergency Contact Number');
+      if (tEmPhoneErr) return tEmPhoneErr;
 
       // Anti-self-reference validation
       const tName = fullNameInput.value.trim().toLowerCase();
@@ -1444,11 +1586,11 @@
       const firstNameInput = form.querySelector('input[name="firstName"]');
       const lastNameInput = form.querySelector('input[name="lastName"]');
       const nicInput = form.querySelector('input[name="nic"]');
-      const phoneInput = form.querySelector('input[name="phone"]');
+      const phoneInput = form.querySelector('input[name="phoneNumber"]') || form.querySelector('input[name="phone"]');
       const emailInput = form.querySelector('input[name="personalEmail"]');
       const joinDateInput = form.querySelector('input[name="joinDate"]');
       const emNameInput = form.querySelector('input[name="emergencyName"]');
-      const emPhoneInput = form.querySelector('input[name="emergencyPhone"]');
+      const emPhoneInput = form.querySelector('input[name="emergencyPhoneNumber"]') || form.querySelector('input[name="emergencyPhone"]');
 
       if (!fullNameInput || !fullNameInput.value.trim()) {
         return { isValid: false, error: 'Please enter the staff member\'s Full Name.', targetInput: fullNameInput };
@@ -1459,6 +1601,14 @@
       if (!lastNameInput || !lastNameInput.value.trim()) {
         return { isValid: false, error: 'Please enter the staff member\'s Last Name.', targetInput: lastNameInput };
       }
+
+      // Check Names (No numbers)
+      const mNameErr = checkName(fullNameInput, 'Staff Member Full Name') ||
+                       checkName(firstNameInput, 'Staff Member First Name') ||
+                       checkName(lastNameInput, 'Staff Member Last Name') ||
+                       checkName(emNameInput, 'Emergency Contact Name');
+      if (mNameErr) return mNameErr;
+
       if (!nicInput || !nicInput.value.trim()) {
         return { isValid: false, error: 'Please enter the National Identity Card (NIC) number.', targetInput: nicInput };
       }
@@ -1473,9 +1623,15 @@
       if (!phoneInput || !phoneInput.value.trim()) {
         return { isValid: false, error: 'Please enter the Contact Number.', targetInput: phoneInput };
       }
+      const mPhoneErr = checkPhone(phoneInput, 'Contact Number');
+      if (mPhoneErr) return mPhoneErr;
+
       if (!emailInput || !emailInput.value.trim()) {
         return { isValid: false, error: 'Please enter the Personal Email.', targetInput: emailInput };
       }
+      const mEmailErr = checkEmail(emailInput, 'Personal Email');
+      if (mEmailErr) return mEmailErr;
+
       if (!joinDateInput || !joinDateInput.value.trim()) {
         return { isValid: false, error: 'Please select the Join Date.', targetInput: joinDateInput };
       }
@@ -1485,6 +1641,8 @@
       if (!emPhoneInput || !emPhoneInput.value.trim()) {
         return { isValid: false, error: 'Please enter an Emergency Contact Number.', targetInput: emPhoneInput };
       }
+      const mEmPhoneErr = checkPhone(emPhoneInput, 'Emergency Contact Number');
+      if (mEmPhoneErr) return mEmPhoneErr;
 
       // Anti-self-reference validation
       const mName = fullNameInput.value.trim().toLowerCase();
@@ -1873,6 +2031,17 @@
       }
     }
 
+    // 4. Restore country codes and resync phone groups
+    ['guardianCountryCode', 'guardianEmergencyCountryCode', 'teacherCountryCode', 'teacherEmergencyCountryCode', 'mgmtCountryCode', 'mgmtEmergencyCountryCode'].forEach(ccKey => {
+      if (fields[ccKey] && typeof window.setDropdownValue === 'function') {
+        const dd = form.querySelector(`input[name="${ccKey}"]`)?.closest('.c-select');
+        if (dd && dd.id) {
+          window.setDropdownValue(dd.id, fields[ccKey]);
+        }
+      }
+    });
+    syncAllPhoneGroups(form);
+
     // Close open draft dropdown
     const wrap = form.querySelector('.j-saved-drafts-wrap') || document.querySelector(`.j-saved-drafts-wrap[data-role="${role}"]`);
     if (wrap) {
@@ -2207,13 +2376,7 @@
   }
 
   function syncPhone() {
-    const mobileInput = document.getElementById('guardian-mobile');
-    const fullMobileHidden = document.getElementById('j-guardian-mobile-full');
-    if (!mobileInput || !fullMobileHidden) return;
-    const codeInput = document.querySelector('input[name="guardianCountryCode"]');
-    const code = codeInput ? codeInput.value : '+94';
-    const num = mobileInput.value.trim().replace(/^0+/, '');
-    fullMobileHidden.value = num ? `${code}${num}` : '';
+    syncAllPhoneGroups();
   }
 
   function showToast(message, type = 'success') {

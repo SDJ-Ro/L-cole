@@ -6,6 +6,13 @@ class AuthController extends Controller {
 
     // Access selector page: http://localhost:8040/auth
     public function index() {
+        if ($this->isAuthenticated()) {
+            $user = $this->getUser();
+            $role = strtolower($user['role'] ?? '');
+            if ($role) {
+                $this->redirect('/' . $role);
+            }
+        }
         $this->view('sign-in-up_page/access');
     }
 
