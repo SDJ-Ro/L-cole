@@ -1157,6 +1157,39 @@ select.c-field-input {
   border-color: var(--midnight, #0F414A);
 }
 
+.c-drum-subtab--invalid {
+  border-color: #dc2626 !important;
+  color: #dc2626 !important;
+  background: rgba(220, 38, 38, 0.08) !important;
+}
+
+.c-drum-subtab--invalid.is-active {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border-color: #dc2626 !important;
+}
+
+.c-drum-trigger--invalid {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2) !important;
+}
+
+.c-drum-range-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.5rem 0 0.25rem 0;
+  padding: 0.35rem 0.65rem;
+  background: rgba(220, 38, 38, 0.08);
+  border-left: 3px solid #dc2626;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #b91c1c;
+  line-height: 1.35;
+  animation: c-drum-expand 200ms ease;
+}
+
 .c-drum-subtab-arrow {
   color: rgba(15, 65, 74, 0.4);
   font-size: 0.75rem;

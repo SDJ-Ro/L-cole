@@ -308,6 +308,12 @@ $scopeStructure = $calendarConfig['scopeStructure'] ?? ($canAddEvent ? CalendarE
                 </div>
               </div>
 
+              <!-- Range Validation Warning Banner -->
+              <div class="c-drum-range-warning" id="j-drum-range-warning" style="display: none;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span id="j-drum-range-warning-text">End time must be later than start time (check AM / PM).</span>
+              </div>
+
               <!-- Drum Cylinder Stage with Fixed Selection Lens -->
               <div class="c-drum-stage">
                 <!-- Center Fixed Selection Lens Band -->
