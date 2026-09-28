@@ -748,34 +748,6 @@
     });
 
     // Real-time Phone Syncing & Digit-Only Filtering for all country-code groups
-    function syncPhoneGroup(group) {
-      if (!group) return;
-      const hiddenCode = group.querySelector('input[type="hidden"][name*="CountryCode"], input[type="hidden"][name*="countryCode"]') ||
-                         group.querySelector('.c-select input[type="hidden"]');
-      const numInput = group.querySelector('input[type="tel"]');
-      const fullHidden = group.querySelector('input[type="hidden"]:not([name*="CountryCode"]):not([name*="countryCode"]):not(.c-select input)');
-      if (!numInput) return;
-      const code = hiddenCode?.value || '+94';
-      let clean = numInput.value.replace(/\D/g, '');
-      if (code === '+94' && clean.startsWith('0')) {
-        clean = clean.replace(/^0+/, '');
-      }
-      if (code === '+94' && clean.length > 9) {
-        clean = clean.slice(0, 9);
-      } else if (clean.length > 12) {
-        clean = clean.slice(0, 12);
-      }
-      if (numInput.value !== clean) {
-        numInput.value = clean;
-      }
-      if (fullHidden) {
-        fullHidden.value = clean ? `${code}${clean}` : '';
-      }
-    }
-
-    function syncAllPhoneGroups(scope = document) {
-      scope.querySelectorAll('.c-phone-input-group').forEach(syncPhoneGroup);
-    }
 
     document.addEventListener('input', function (e) {
       const group = e.target.closest('.c-phone-input-group');
@@ -1139,6 +1111,37 @@
   window.openAddPersonForm = openAddPersonForm;
   window.closeAddPersonForm = closeAddPersonForm;
 
+  // Real-time Phone Syncing & Digit-Only Filtering for all country-code groups
+  function syncPhoneGroup(group) {
+    if (!group) return;
+    const hiddenCode = group.querySelector('input[type="hidden"][name*="CountryCode"], input[type="hidden"][name*="countryCode"]') ||
+                       group.querySelector('.c-select input[type="hidden"]');
+    const numInput = group.querySelector('input[type="tel"]');
+    const fullHidden = group.querySelector('input[type="hidden"]:not([name*="CountryCode"]):not([name*="countryCode"]):not(.c-select input)');
+    if (!numInput) return;
+    const code = hiddenCode?.value || '+94';
+    let clean = numInput.value.replace(/\D/g, '');
+    if (code === '+94' && clean.startsWith('0')) {
+      clean = clean.replace(/^0+/, '');
+    }
+    if (code === '+94' && clean.length > 9) {
+      clean = clean.slice(0, 9);
+    } else if (clean.length > 12) {
+      clean = clean.slice(0, 12);
+    }
+    if (numInput.value !== clean) {
+      numInput.value = clean;
+    }
+    if (fullHidden) {
+      fullHidden.value = clean ? `${code}${clean}` : '';
+    }
+  }
+
+  function syncAllPhoneGroups(scope = document) {
+    if (!scope) return;
+    scope.querySelectorAll('.c-phone-input-group').forEach(syncPhoneGroup);
+  }
+
   function clearAllFieldErrors(form) {
     if (!form) return;
     form.querySelectorAll('.c-field-inline-error').forEach(el => el.remove());
@@ -1198,7 +1201,7 @@
   function showFormNotice(form, message, type, targetInput = null) {
     if (!form) return;
     const noticeEl = form.querySelector('.j-form-notice');
-    const footerNoticeEl = form.querySelector('#j-enrollment-footer-notice');
+    const footerNoticeEl = form.querySelector('#j-enrollment-footer-notice, .j-form-footer-notice');
 
     const updateEl = (el) => {
       if (!el) return;
