@@ -12,14 +12,14 @@
 
 <?php require_once __DIR__ . '/../components/_icon_logos.php'; ?>
 
-<a class="gw-back-btn" href="/auth"><svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-arrowLeft"/></svg>Who's signing in</a>
+<a class="gw-back-btn" href="/auth?switch=1"><svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-arrowLeft"/></svg>Who's signing in</a>
 
 <div class="auth-shell">
   <aside class="auth-visual">
     <img src="<?= htmlspecialchars($image ?? '/assets/images/schoolyard.jpg') ?>" alt="<?= htmlspecialchars($imageAlt ?? "L'École Campus") ?>" />
     <div class="auth-visual-scrim"></div>
     <div class="auth-visual-inner">
-      <a class="auth-back-link" href="/auth">
+      <a class="auth-back-link" href="/auth?switch=1">
         <svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-arrowLeft"/></svg> 
         Who's signing in
       </a>
@@ -37,14 +37,14 @@
   <section class="auth-form-section">
     <div class="auth-form-col">
       <div class="auth-mobile-top">
-        <a class="auth-mobile-brand" href="/auth">
+        <a class="auth-mobile-brand" href="/auth?switch=1">
           <span class="auth-mobile-brand-badge" style="background: transparent !important; box-shadow: none !important;"><img src="/assets/images/logo.png" alt="L'École Crest" style="width: 100%; height: 100%; object-fit: contain;" /></span>
           L'École
         </a>
-        <a class="auth-mobile-home" href="/auth">Roles</a>
+        <a class="auth-mobile-home" href="/auth?switch=1">Roles</a>
       </div>
 
-      <a href="/auth" class="auth-role-switch-btn">
+      <a href="/auth?switch=1" class="auth-role-switch-btn">
         <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-arrowLeft"/></svg>
         Choose a different role
       </a>
