@@ -1051,26 +1051,76 @@
         return;
       }
 
-      // 2. Delete curriculum group
+      // 2. Delete curriculum group (with smart duplicate detection and grade carving/splitting)
       const delCurrBtn = e.target.closest('.j-delete-curriculum-btn');
       if (delCurrBtn) {
         const currCard = delCurrBtn.closest('.c-curriculum-card');
         const range    = delCurrBtn.dataset.range || currCard?.dataset?.range || '';
-        const orphanGrades = getOrphanGradesForCurriculum(range);
+        const analysis = analyzeCurriculumStage(range);
 
-        const doDelete = async () => {
-          const res = await apiPost('deleteCurriculumGroup', { range_label: range });
-          if (!res.success) {
-            showToast(res.error || 'Cannot delete curriculum stage.', 'error');
-          } else {
-            currCard?.remove();
-            showToast(`Curriculum stage ${range} deleted.`);
-            updateCurriculumCardDeleteTooltips();
+        // Case A: Single-grade stage (e.g. Year 8)
+        if (analysis.allYears.length <= 1) {
+          if (!analysis.canDeleteEntireStage) {
+            if (typeof window.openUniversalDeleteModal === 'function') {
+              window.openUniversalDeleteModal({
+                title: `Delete ${range} Curriculum Stage Blocked`,
+                description: `This curriculum stage cannot be deleted because active grades depend solely on it.`,
+                buttonText: 'Deletion Blocked',
+                customSlotRenderer: (slotEl, btnEl) => {
+                  slotEl.innerHTML = `
+                    <div class="c-curriculum-warning-banner c-curriculum-warning-banner--error">
+                      <svg class="c-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
+                      <div class="c-curriculum-warning-banner__content">
+                        <div class="c-curriculum-warning-banner__title">Deletion Blocked by Academic Policy</div>
+                        <div>Active grade <strong>Grade ${analysis.allYears[0]}</strong> depends solely on <strong>${escapeHtml(range)}</strong>. Every active grade must belong to an academic curriculum stage.</div>
+                        <div style="margin-top: 0.35rem; font-size: 0.75rem; opacity: 0.88;">To delete this stage, you must first assign this grade to another curriculum stage or delete the grade first.</div>
+                      </div>
+                    </div>
+                  `;
+                  btnEl.disabled = true;
+                  btnEl.title = `Deletion is blocked: Grade ${analysis.allYears[0]} depends solely on this stage`;
+                },
+                onConfirm: () => {}
+              });
+            } else {
+              showToast(`Cannot delete ${range}. Active grade (${analysis.allYears[0]}) depends solely on it.`, 'error');
+            }
+            return;
           }
-        };
 
-        if (typeof window.openUniversalDeleteModal === 'function') {
-          if (orphanGrades.length > 0) {
+          // Single-grade stage that IS covered elsewhere or unused: Allowed
+          const altStages = analysis.coveredOtherMap[analysis.allYears[0]] || [];
+          const altHint = altStages.length > 0 ? `Active classes in Grade ${analysis.allYears[0]} will safely remain covered by ${altStages.join(', ')}.` : '';
+          const doDeleteSingle = async () => {
+            const res = await apiPost('deleteCurriculumGroup', { range_label: range });
+            if (!res.success) {
+              showToast(res.error || 'Cannot delete curriculum stage.', 'error');
+            } else {
+              currCard?.remove();
+              showToast(`Curriculum stage ${range} deleted.`);
+              updateCurriculumCardDeleteTooltips();
+            }
+          };
+
+          if (typeof window.openUniversalDeleteModal === 'function') {
+            window.openUniversalDeleteModal({
+              title: `Delete ${range} Curriculum Stage?`,
+              description: `Are you sure you want to permanently delete the ${range} curriculum stage? ${altHint}`,
+              buttonText: 'Delete Stage',
+              onConfirm: doDeleteSingle
+            });
+          } else if (confirm(`Delete ${range} curriculum stage? ${altHint}`)) {
+            doDeleteSingle();
+          }
+          return;
+        }
+
+        // Case B: Multi-grade stage with NO repeating grades and grades would be orphaned: Hard blocked
+        if (!analysis.canDeleteEntireStage && analysis.repeatingYears.length === 0) {
+          const orphanList = analysis.orphanYears.map(y => `Grade ${y}`).join(', ');
+          if (typeof window.openUniversalDeleteModal === 'function') {
             window.openUniversalDeleteModal({
               title: `Delete ${range} Curriculum Stage Blocked`,
               description: `This curriculum stage cannot be deleted because active grades depend solely on it.`,
@@ -1083,28 +1133,281 @@
                     </svg>
                     <div class="c-curriculum-warning-banner__content">
                       <div class="c-curriculum-warning-banner__title">Deletion Blocked by Academic Policy</div>
-                      <div>Active grade(s) <strong>${escapeHtml(orphanGrades.join(', '))}</strong> depend solely on <strong>${escapeHtml(range)}</strong>. Every active grade must belong to an academic curriculum stage.</div>
+                      <div>Active grade(s) <strong>${escapeHtml(orphanList)}</strong> depend solely on <strong>${escapeHtml(range)}</strong>. Every active grade must belong to an academic curriculum stage.</div>
                       <div style="margin-top: 0.35rem; font-size: 0.75rem; opacity: 0.88;">To delete this stage, you must first assign those grades to another curriculum stage or delete the grades first.</div>
                     </div>
                   </div>
                 `;
                 btnEl.disabled = true;
-                btnEl.title = `Deletion is blocked: active grades (${orphanGrades.join(', ')}) depend on this stage`;
+                btnEl.title = `Deletion is blocked: active grades (${orphanList}) depend on this stage`;
               },
               onConfirm: () => {}
             });
           } else {
-            window.openUniversalDeleteModal({
-              title: `Delete ${range} Curriculum Stage?`,
-              description: `Are you sure you want to permanently delete the ${range} curriculum stage? Any active grades covered by another curriculum will remain safely active.`,
-              buttonText: 'Delete Stage',
-              onConfirm: doDelete
-            });
+            showToast(`Cannot delete ${range}. Active grades (${orphanList}) depend solely on it.`, 'error');
           }
-        } else if (orphanGrades.length > 0) {
-          showToast(`Cannot delete ${range}. Active grades (${orphanGrades.join(', ')}) depend solely on it.`, 'error');
+          return;
+        }
+
+        // Case C: Multi-grade stage with repeating grades OR completely safe to delete
+        let chosenMode = analysis.canDeleteEntireStage ? 'entire' : 'grade';
+        let chosenGrade = (analysis.repeatingYears.length > 0) ? analysis.repeatingYears[0] : null;
+
+        if (typeof window.openUniversalDeleteModal === 'function') {
+          window.openUniversalDeleteModal({
+            title: `Manage / Delete Curriculum: ${range}`,
+            description: analysis.canDeleteEntireStage
+              ? `Choose whether to delete this entire stage or remove an individual repeating grade.`
+              : `Active grades depend solely on this stage, so the entire stage cannot be deleted. However, you can remove repeating grade(s) covered by other curriculums.`,
+            buttonText: 'Confirm',
+            customSlotRenderer: (slotEl, btnEl) => {
+              const orphanList = analysis.orphanYears.map(y => `Grade ${y}`).join(', ');
+
+              slotEl.innerHTML = `
+                <div class="c-curr-del-wrap j-curr-del-wrap">
+                  <!-- Option 1: Delete Entire Stage -->
+                  <div class="c-curr-del-option j-curr-del-opt-entire ${analysis.canDeleteEntireStage ? (chosenMode === 'entire' ? 'c-is-active' : '') : 'c-curr-del-option--disabled'}">
+                    <div class="c-curr-del-option__header">
+                      <input type="radio" name="curr_del_mode" value="entire" class="c-curr-del-option__radio j-curr-del-radio-entire" ${chosenMode === 'entire' ? 'checked' : ''} ${analysis.canDeleteEntireStage ? '' : 'disabled'} />
+                      <div class="c-curr-del-option__label-wrap">
+                        <span class="c-curr-del-option__title">Delete Entire Stage (${escapeHtml(range)})</span>
+                        <span class="c-curr-del-option__desc">
+                          ${analysis.canDeleteEntireStage
+                            ? 'Permanently delete this curriculum stage. Active grades covered by another curriculum will remain safely active.'
+                            : `Blocked by Academic Policy: Active grades (${escapeHtml(orphanList)}) depend solely on this stage.`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Option 2: Remove a Specific Grade -->
+                  <div class="c-curr-del-option j-curr-del-opt-grade ${chosenMode === 'grade' ? 'c-is-active' : ''}">
+                    <div class="c-curr-del-option__header">
+                      <input type="radio" name="curr_del_mode" value="grade" class="c-curr-del-option__radio j-curr-del-radio-grade" ${chosenMode === 'grade' ? 'checked' : ''} />
+                      <div class="c-curr-del-option__label-wrap">
+                        <span class="c-curr-del-option__title">Remove a Repeating Grade from this Stage</span>
+                        <span class="c-curr-del-option__desc">Select a repeating grade to unlink from this stage. The stage will automatically shrink or split, keeping all other grades and subjects intact.</span>
+                      </div>
+                    </div>
+
+                    <div class="c-curr-del-grades-container">
+                      <div class="c-curr-del-grades-label">
+                        <svg class="c-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        Select Grade to Remove
+                      </div>
+                      <div class="c-curr-del-grades-grid j-curr-del-grades-grid">
+                        ${analysis.allYears.map(y => {
+                          const isRepeating = analysis.repeatingYears.includes(y);
+                          const isSelected = (chosenMode === 'grade' && chosenGrade === y);
+                          const altCover = (analysis.coveredOtherMap[y] || []).join(', ');
+                          const isLocked = !isRepeating && analysis.activeGradeYears.has(y);
+                          return `
+                            <button type="button" 
+                                    class="c-curr-del-grade-pill j-curr-del-grade-pill ${isRepeating ? 'c-is-repeating' : ''} ${isSelected ? 'c-is-selected' : ''} ${isLocked ? 'c-is-locked' : ''}" 
+                                    data-year="${y}" 
+                                    ${isLocked ? 'disabled title="Cannot remove: Grade ' + y + ' has no other curriculum."' : `title="Covered by: ${escapeHtml(altCover || 'Other curriculum')}"`}>
+                              <span>Grade ${y}</span>
+                              ${isRepeating 
+                                ? '<span class="c-curr-del-grade-pill__badge">Repeating</span>' 
+                                : (isLocked ? '<span class="c-curr-del-grade-pill__badge">Unique</span>' : '<span class="c-curr-del-grade-pill__badge">Inactive</span>')}
+                            </button>
+                          `;
+                        }).join('')}
+                      </div>
+
+                      <div class="c-curr-del-split-preview j-curr-del-preview" style="${chosenMode === 'grade' && chosenGrade ? '' : 'display:none;'}">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `;
+
+              const updateModalState = () => {
+                const optEntire = slotEl.querySelector('.j-curr-del-opt-entire');
+                const optGrade = slotEl.querySelector('.j-curr-del-opt-grade');
+                const previewEl = slotEl.querySelector('.j-curr-del-preview');
+                const pills = slotEl.querySelectorAll('.j-curr-del-grade-pill');
+
+                const rEntire = slotEl.querySelector('.j-curr-del-radio-entire');
+                const rGrade = slotEl.querySelector('.j-curr-del-radio-grade');
+                if (rEntire) rEntire.checked = (chosenMode === 'entire');
+                if (rGrade) rGrade.checked = (chosenMode === 'grade');
+
+                if (optEntire) {
+                  if (analysis.canDeleteEntireStage) {
+                    optEntire.classList.toggle('c-is-active', chosenMode === 'entire');
+                  }
+                }
+                if (optGrade) {
+                  optGrade.classList.toggle('c-is-active', chosenMode === 'grade');
+                }
+
+                pills.forEach(p => {
+                  const y = parseInt(p.dataset.year, 10);
+                  p.classList.toggle('c-is-selected', chosenMode === 'grade' && chosenGrade === y);
+                });
+
+                if (chosenMode === 'entire') {
+                  if (previewEl) previewEl.style.display = 'none';
+                  if (analysis.canDeleteEntireStage) {
+                    btnEl.disabled = false;
+                    btnEl.textContent = `Delete Entire Stage`;
+                    btnEl.title = `Delete ${range}`;
+                  } else {
+                    btnEl.disabled = true;
+                    btnEl.textContent = `Deletion Blocked`;
+                    btnEl.title = `Active grades depend solely on this stage`;
+                  }
+                } else {
+                  if (!chosenGrade) {
+                    if (previewEl) previewEl.style.display = 'none';
+                    btnEl.disabled = true;
+                    btnEl.textContent = `Select a Grade to Remove`;
+                    btnEl.title = `Please click one of the repeating grade pills above`;
+                  } else {
+                    btnEl.disabled = false;
+                    let actionType = 'shrink';
+                    let stage1 = '';
+                    let stage2 = '';
+                    let explanation = '';
+
+                    if (chosenGrade === analysis.start) {
+                      actionType = 'shrink';
+                      stage1 = computeCurriculumRangeLabel(analysis.start + 1, analysis.end);
+                      explanation = `Removing <strong>Grade ${chosenGrade}</strong> will shrink this stage to <span class="c-curr-del-split-preview__chip">${escapeHtml(stage1)}</span>. It will retain all existing subjects.`;
+                      btnEl.textContent = `Shrink Stage & Remove Grade ${chosenGrade}`;
+                    } else if (chosenGrade === analysis.end) {
+                      actionType = 'shrink';
+                      stage1 = computeCurriculumRangeLabel(analysis.start, analysis.end - 1);
+                      explanation = `Removing <strong>Grade ${chosenGrade}</strong> will shrink this stage to <span class="c-curr-del-split-preview__chip">${escapeHtml(stage1)}</span>. It will retain all existing subjects.`;
+                      btnEl.textContent = `Shrink Stage & Remove Grade ${chosenGrade}`;
+                    } else {
+                      actionType = 'split';
+                      stage1 = computeCurriculumRangeLabel(analysis.start, chosenGrade - 1);
+                      stage2 = computeCurriculumRangeLabel(chosenGrade + 1, analysis.end);
+                      explanation = `Removing <strong>Grade ${chosenGrade}</strong> will split this stage into:
+                        <div class="c-curr-del-split-preview__stages">
+                          <span class="c-curr-del-split-preview__chip">${escapeHtml(stage1)}</span>
+                          <span>and</span>
+                          <span class="c-curr-del-split-preview__chip">${escapeHtml(stage2)}</span>
+                        </div>
+                        Both new stages will retain all subjects. Grade ${chosenGrade} remains linked to its dedicated curriculum.`;
+                      btnEl.textContent = `Split Stage & Remove Grade ${chosenGrade}`;
+                    }
+
+                    if (previewEl) {
+                      previewEl.style.display = '';
+                      previewEl.innerHTML = `
+                        <div class="c-curr-del-split-preview__title">
+                          <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            ${actionType === 'split' 
+                              ? '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/>' 
+                              : '<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>'}
+                          </svg>
+                          <span>${actionType === 'split' ? 'Stage Split Preview' : 'Stage Shrink Preview'}</span>
+                        </div>
+                        <div>${explanation}</div>
+                      `;
+                    }
+                  }
+                }
+              };
+
+              slotEl.addEventListener('click', (ev) => {
+                const clickedOptEntire = ev.target.closest('.j-curr-del-opt-entire');
+                if (clickedOptEntire && analysis.canDeleteEntireStage) {
+                  chosenMode = 'entire';
+                  updateModalState();
+                  return;
+                }
+
+                if (ev.target.matches('.j-curr-del-radio-entire') && analysis.canDeleteEntireStage) {
+                  chosenMode = 'entire';
+                  updateModalState();
+                  return;
+                }
+
+                if (ev.target.matches('.j-curr-del-radio-grade')) {
+                  chosenMode = 'grade';
+                  if (!chosenGrade && analysis.repeatingYears.length > 0) {
+                    chosenGrade = analysis.repeatingYears[0];
+                  }
+                  updateModalState();
+                  return;
+                }
+
+                const pill = ev.target.closest('.j-curr-del-grade-pill');
+                if (pill && !pill.disabled) {
+                  const y = parseInt(pill.dataset.year, 10);
+                  chosenMode = 'grade';
+                  chosenGrade = y;
+                  updateModalState();
+                  return;
+                }
+              });
+
+              updateModalState();
+            },
+            onConfirm: async () => {
+              if (chosenMode === 'entire') {
+                const res = await apiPost('deleteCurriculumGroup', { range_label: range });
+                if (!res.success) {
+                  showToast(res.error || 'Cannot delete curriculum stage.', 'error');
+                } else {
+                  currCard?.remove();
+                  showToast(`Curriculum stage ${range} deleted.`);
+                  updateCurriculumCardDeleteTooltips();
+                }
+              } else if (chosenMode === 'grade' && chosenGrade) {
+                const res = await apiPost('removeGradeFromCurriculumGroup', {
+                  range_label: range,
+                  grade_number: chosenGrade
+                });
+
+                if (!res.success) {
+                  showToast(res.error || 'Failed to remove grade from curriculum stage.', 'error');
+                  return;
+                }
+
+                const cardDesc = currCard?.querySelector('.c-curriculum-card__desc')?.textContent?.trim() || '';
+
+                if (res.action === 'deleted') {
+                  currCard?.remove();
+                  showToast(`Grade ${chosenGrade} removed. Stage ${range} deleted.`);
+                } else if (res.action === 'shrink' && res.stages && res.stages[0]) {
+                  const newStage = res.stages[0];
+                  const newCardHtml = buildCurriculumCardHtml(newStage.range, newStage.description || cardDesc, newStage.subjects);
+                  currCard?.insertAdjacentHTML('beforebegin', newCardHtml);
+                  currCard?.remove();
+                  syncCurriculumToGradeCards(newStage.range, newStage.subjects);
+                  showToast(`Grade ${chosenGrade} removed! Stage updated to ${newStage.range}.`);
+                } else if (res.action === 'split' && res.stages && res.stages.length >= 2) {
+                  const s1 = res.stages[0];
+                  const s2 = res.stages[1];
+                  const s1Html = buildCurriculumCardHtml(s1.range, s1.description || cardDesc, s1.subjects);
+                  const s2Html = buildCurriculumCardHtml(s2.range, s2.description || cardDesc, s2.subjects);
+                  currCard?.insertAdjacentHTML('beforebegin', s1Html + s2Html);
+                  currCard?.remove();
+                  syncCurriculumToGradeCards(s1.range, s1.subjects);
+                  syncCurriculumToGradeCards(s2.range, s2.subjects);
+                  showToast(`Grade ${chosenGrade} removed! Split into ${s1.range} and ${s2.range}.`);
+                }
+
+                updateCurriculumCardDeleteTooltips();
+              }
+            }
+          });
         } else if (confirm(`Delete ${range} curriculum stage?`)) {
-          doDelete();
+          (async () => {
+            const res = await apiPost('deleteCurriculumGroup', { range_label: range });
+            if (res.success) {
+              currCard?.remove();
+              showToast(`Curriculum stage ${range} deleted.`);
+              updateCurriculumCardDeleteTooltips();
+            } else {
+              showToast(res.error || 'Cannot delete curriculum stage.', 'error');
+            }
+          })();
         }
         return;
       }
@@ -1240,6 +1543,95 @@
       hasOverlap: overlappingYears.size > 0,
       overlappingYears: Array.from(overlappingYears).sort((a, b) => a - b),
       overlappingNames
+    };
+  }
+
+  // Build HTML for a permanent curriculum card
+  function buildCurriculumCardHtml(range, desc, subjects) {
+    const chips = Array.isArray(subjects) ? subjects : [];
+    return `
+      <article class="c-curriculum-card j-curriculum-card" data-range="${escapeHtml(range)}">
+        <div class="c-curriculum-card__top">
+          <div>
+            <h3 class="c-curriculum-card__range">${escapeHtml(range)}</h3>
+            ${desc ? `<p class="c-curriculum-card__desc">${escapeHtml(desc)}</p>` : ''}
+          </div>
+          <div class="c-curriculum-card__badges">
+            <span class="c-curriculum-card__count">${chips.length} Subjects</span>
+            <button type="button" class="c-curriculum-card__edit-btn j-edit-curriculum-btn" data-range="${escapeHtml(range)}" aria-label="Edit ${escapeHtml(range)} subjects">
+              <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-edit"/></svg>
+            </button>
+            <button type="button" class="c-curriculum-card__edit-btn j-delete-curriculum-btn" data-range="${escapeHtml(range)}" aria-label="Delete ${escapeHtml(range)}">
+              <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-trash"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="c-curriculum-card__subjects j-curriculum-subjects">
+          ${chips.length > 0
+            ? chips.map((s, i) => `<span class="c-subject-chip c-subject-tone-${i % 5}">${escapeHtml(s)}</span>`).join('')
+            : '<span class="c-curr-empty-badge" style="font-size:11px;color:rgba(15,65,74,0.5);font-style:italic;">No subjects assigned yet</span>'}
+        </div>
+      </article>`;
+  }
+
+  // Comprehensive analysis of a curriculum stage (active grades, repeating grades, orphans)
+  function analyzeCurriculumStage(range) {
+    const bounds = parseRangeToYears(range);
+    const start = Math.min(bounds.start, bounds.end);
+    const end = Math.max(bounds.start, bounds.end);
+    const allYears = [];
+    for (let y = start; y <= end; y++) {
+      allYears.push(y);
+    }
+
+    const otherBounds = [];
+    document.querySelectorAll('.c-curriculum-card:not(.j-new-curriculum-card)').forEach(card => {
+      const r = card.dataset.range || card.querySelector('.c-curriculum-card__range')?.textContent.trim() || '';
+      if (r && r.trim().toLowerCase() !== range.trim().toLowerCase()) {
+        const b = parseRangeToYears(r);
+        if (b && b.start && b.end) {
+          otherBounds.push({
+            start: Math.min(b.start, b.end),
+            end: Math.max(b.start, b.end),
+            range: r
+          });
+        }
+      }
+    });
+
+    const activeGradeYears = new Set();
+    document.querySelectorAll('.c-grade-card').forEach(gCard => {
+      const name = gCard.dataset.gradeName || gCard.querySelector('.c-grade-card__name')?.textContent?.trim() || '';
+      const num = parseInt(name.replace(/\D/g, '') || gCard.dataset.gradeId?.replace(/\D/g, ''), 10);
+      if (!isNaN(num)) activeGradeYears.add(num);
+    });
+
+    const repeatingYears = [];
+    const orphanYears = [];
+    const coveredOtherMap = {};
+
+    allYears.forEach(y => {
+      const coveringStages = otherBounds.filter(b => y >= b.start && y <= b.end);
+      if (coveringStages.length > 0) {
+        repeatingYears.push(y);
+        coveredOtherMap[y] = coveringStages.map(s => s.range);
+      } else if (activeGradeYears.has(y)) {
+        orphanYears.push(y);
+      }
+    });
+
+    const canDeleteEntireStage = (orphanYears.length === 0);
+
+    return {
+      bounds,
+      start,
+      end,
+      allYears,
+      activeGradeYears,
+      repeatingYears,
+      orphanYears,
+      coveredOtherMap,
+      canDeleteEntireStage
     };
   }
 
@@ -1389,12 +1781,16 @@
     document.querySelectorAll('.c-curriculum-card:not(.j-new-curriculum-card)').forEach(card => {
       const range = card.dataset.range;
       if (!range) return;
-      const orphans = getOrphanGradesForCurriculum(range);
+      const analysis = analyzeCurriculumStage(range);
       const delBtn = card.querySelector('.j-delete-curriculum-btn');
       if (delBtn) {
-        if (orphans.length > 0) {
-          delBtn.title = `Deletion blocked: active grade(s) (${orphans.join(', ')}) depend on this stage`;
-          delBtn.setAttribute('aria-label', `Deletion blocked: active grade(s) (${orphans.join(', ')}) depend on this stage`);
+        if (!analysis.canDeleteEntireStage && analysis.repeatingYears.length > 0) {
+          delBtn.title = `Manage curriculum: repeating grade(s) (${analysis.repeatingYears.map(y => 'Grade ' + y).join(', ')}) can be removed or split`;
+          delBtn.setAttribute('aria-label', `Manage curriculum: repeating grade(s) can be removed or split`);
+        } else if (!analysis.canDeleteEntireStage) {
+          const orphanList = analysis.orphanYears.map(y => 'Grade ' + y).join(', ');
+          delBtn.title = `Deletion blocked: active grade(s) (${orphanList}) depend on this stage`;
+          delBtn.setAttribute('aria-label', `Deletion blocked: active grade(s) depend on this stage`);
         } else {
           delBtn.title = `Delete ${range} curriculum stage`;
           delBtn.setAttribute('aria-label', `Delete ${range} curriculum stage`);
@@ -1569,29 +1965,7 @@
 
         const finalRange = res.group?.range || range;
 
-        const permanentCard = `
-          <article class="c-curriculum-card j-curriculum-card" data-range="${escapeHtml(finalRange)}">
-            <div class="c-curriculum-card__top">
-              <div>
-                <h3 class="c-curriculum-card__range">${escapeHtml(finalRange)}</h3>
-                ${desc ? `<p class="c-curriculum-card__desc">${escapeHtml(desc)}</p>` : ''}
-              </div>
-              <div class="c-curriculum-card__badges">
-                <span class="c-curriculum-card__count">${chips.length} Subjects</span>
-                <button type="button" class="c-curriculum-card__edit-btn j-edit-curriculum-btn" data-range="${escapeHtml(finalRange)}" aria-label="Edit ${escapeHtml(finalRange)} subjects">
-                  <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-edit"/></svg>
-                </button>
-                <button type="button" class="c-curriculum-card__edit-btn j-delete-curriculum-btn" data-range="${escapeHtml(finalRange)}" aria-label="Delete ${escapeHtml(finalRange)}">
-                  <svg class="c-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-trash"/></svg>
-                </button>
-              </div>
-            </div>
-            <div class="c-curriculum-card__subjects j-curriculum-subjects">
-              ${chips.length > 0
-                ? chips.map((s, i) => `<span class="c-subject-chip c-subject-tone-${i % 5}">${escapeHtml(s)}</span>`).join('')
-                : '<span class="c-curr-empty-badge" style="font-size:11px;color:rgba(15,65,74,0.5);font-style:italic;">No subjects assigned yet</span>'}
-            </div>
-          </article>`;
+        const permanentCard = buildCurriculumCardHtml(finalRange, desc, chips);
         card.insertAdjacentHTML('beforebegin', permanentCard);
         card.remove();
 

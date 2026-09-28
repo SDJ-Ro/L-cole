@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="/assets/css/components/datepicker.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/form-card.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/delete-modal.css?v=<?= time() ?>" />
+  <link rel="stylesheet" href="/assets/css/components/feedback-banner.css?v=<?= time() ?>" />
 </head>
 <body>
 

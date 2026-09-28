@@ -37,11 +37,67 @@
     const menu = root.querySelector('.c-select__menu, .c-dropdown__menu');
     if (!menu || !trigger) return;
 
+    // Reset any previously applied fixed styles
+    menu.style.position = '';
     menu.style.left = '';
     menu.style.right = '';
     menu.style.top = '';
     menu.style.bottom = '';
+    menu.style.width = '';
+    menu.style.minWidth = '';
 
+    const isInsideTable = Boolean(root.closest('td, th'));
+
+    if (isInsideTable) {
+      // ── Fixed-position mode: escape the table stacking context ──
+      const triggerRect = trigger.getBoundingClientRect();
+      const bounds = getSafeViewportBounds();
+
+      // Tag first so our CSS `width:auto` override is active during measurement
+      menu.dataset.fixedDropdown = '1';
+
+      // Probe the menu's intrinsic size: fixed at off-screen position, width forced
+      // to max-content so the base CSS `width:100%` rule cannot inflate it.
+      menu.style.position   = 'fixed';
+      menu.style.visibility = 'hidden';
+      menu.style.top        = '-9999px';
+      menu.style.left       = '-9999px';
+      menu.style.width      = 'max-content';
+
+      const menuNaturalHeight = menu.scrollHeight || 120;
+      const menuNaturalWidth  = menu.scrollWidth  || 144; // 9rem fallback
+
+      // Clear the probe styles — CSS + [data-fixed-dropdown] takes over sizing
+      menu.style.width      = '';
+      menu.style.visibility = '';
+
+      // Horizontal placement: prefer aligning to trigger left, flip right if clipped
+      let leftPx = triggerRect.left;
+      if (leftPx + menuNaturalWidth > bounds.maxRight) {
+        leftPx = triggerRect.right - menuNaturalWidth;
+      }
+      leftPx = Math.max(bounds.minLeft, leftPx);
+
+      // Vertical placement: open downward by default, flip upward if clipped
+      const spaceBelow = bounds.maxBottom - triggerRect.bottom - 4;
+      const spaceAbove = triggerRect.top - bounds.minTop - 4;
+
+      if (spaceBelow >= menuNaturalHeight || spaceBelow >= spaceAbove) {
+        // Open downward — align top edge just below the trigger
+        menu.style.top    = `${triggerRect.bottom + 4}px`;
+        menu.style.bottom = 'auto';
+      } else {
+        // Flip upward — align bottom edge just above the trigger
+        menu.style.top    = `${triggerRect.top - menuNaturalHeight - 4}px`;
+        menu.style.bottom = 'auto';
+      }
+
+      menu.style.left  = `${leftPx}px`;
+      menu.style.right = 'auto';
+      return;
+    }
+
+    // ── Normal relative/absolute mode (non-table contexts) ──
     const bounds = getSafeViewportBounds();
     const menuRect = menu.getBoundingClientRect();
     const triggerRect = trigger.getBoundingClientRect();
@@ -83,10 +139,15 @@
       if (trigger) trigger.setAttribute('aria-expanded', 'false');
       const menu = el.querySelector('.c-select__menu, .c-dropdown__menu');
       if (menu) {
+        // Clean up both fixed and relative positioning
+        menu.style.position = '';
         menu.style.left = '';
         menu.style.right = '';
         menu.style.top = '';
         menu.style.bottom = '';
+        menu.style.width = '';
+        menu.style.minWidth = '';
+        delete menu.dataset.fixedDropdown;
       }
     });
     document.querySelectorAll('.c-has-open-dropdown').forEach((el) => {

@@ -226,6 +226,25 @@ trait AcademicCrudTrait {
     }
 
     /**
+     * POST /admin/removeGradeFromCurriculumGroup or /management/removeGradeFromCurriculumGroup
+     */
+    public function removeGradeFromCurriculumGroup(): void {
+        $data = $this->getRequestPayload();
+        $token = $data['_csrf_token'] ?? ($_POST['_csrf_token'] ?? null);
+        if (!$this->validateCsrfToken($token)) {
+            $this->sendJson(['success' => false, 'error' => 'Invalid or expired security token.'], 403);
+            return;
+        }
+
+        $rangeLabel  = $data['range_label'] ?? ($data['range'] ?? '');
+        $gradeNumber = (int)($data['grade_number'] ?? ($data['grade'] ?? 0));
+        $actor       = $this->getActorDetails();
+
+        $result = AcademicActions::removeGradeFromCurriculumGroup($rangeLabel, $gradeNumber, $actor['id'], $actor['identifier']);
+        $this->sendJson($result, $result['success'] ? 200 : 400);
+    }
+
+    /**
      * Shared mock dashboard data (calendar events, donut analytics, upcoming events)
      * utilized across admin and management dashboard views.
      */
