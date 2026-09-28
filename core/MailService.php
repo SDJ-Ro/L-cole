@@ -278,15 +278,15 @@ class MailService {
         $body = '
           <h2 style="margin-top:0;color:#0f414a;font-size:20px;">Official Faculty Appointment Confirmed</h2>
           <p>Dear ' . htmlspecialchars($name) . ',</p>
-          <p>We are pleased to inform you that your teacher profile and academic information have been <strong>successfully added to the L\'École School Database</strong>. Below are your official staff credentials and portal activation instructions.</p>
+          <p>We are pleased to inform you that your teacher profile and academic information have been <strong>successfully registered in the L\'École School Database</strong>. Below are your official faculty credentials, assigned school email, and portal activation instructions.</p>
 
           <!-- Teacher Credentials Card -->
           <div style="background:#eef6f6;padding:20px;border-radius:12px;margin:20px 0;border-left:4px solid #207c82;">
             <h3 style="margin:0 0 12px 0;color:#0f414a;font-size:14px;text-transform:uppercase;letter-spacing:0.06em;">Official Faculty Credentials</h3>
             <table class="meta-table" style="margin:0;width:100%;">
-              <tr><td class="label" style="width:160px;font-weight:600;color:#0f414a;padding:5px 0;">Teacher Full Name:</td><td style="padding:5px 0;"><strong>' . htmlspecialchars($name) . '</strong></td></tr>
+              <tr><td class="label" style="width:160px;font-weight:600;color:#0f414a;padding:5px 0;">Teacher Full Name:</td><td style="padding:5px 0;"><strong style="font-size:15px;color:#0f414a;">' . htmlspecialchars($name) . '</strong> <span style="font-size:11px;color:#207c82;">(As registered with school)</span></td></tr>
               <tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">Staff Index Number:</td><td style="padding:5px 0;"><strong style="font-size:15px;color:#0f414a;letter-spacing:0.04em;background:#e0f0f1;padding:2px 8px;border-radius:4px;">' . htmlspecialchars($staffId) . '</strong></td></tr>
-              <tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">Institutional Email:</td><td style="padding:5px 0;"><code>' . htmlspecialchars($instEmail) . '</code></td></tr>
+              <tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">School Email:</td><td style="padding:5px 0;"><code style="font-size:14px;font-weight:700;color:#207c82;">' . htmlspecialchars($instEmail) . '</code> <span style="font-size:11px;color:rgba(15,65,74,0.65);">(Institutional Login)</span></td></tr>
               ' . (!empty($subjects) ? '<tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">Assigned Subjects:</td><td style="padding:5px 0;">' . htmlspecialchars($subjects) . '</td></tr>' : '') . '
               <tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">Personal Email:</td><td style="padding:5px 0;">' . htmlspecialchars($toPersonalEmail) . '</td></tr>
             </table>
@@ -295,10 +295,15 @@ class MailService {
           <!-- Sign-Up Instructions -->
           <div style="background:#fdfaf6;padding:18px 20px;border-radius:12px;margin:20px 0;border:1px solid rgba(15,65,74,0.12);">
             <h4 style="margin:0 0 8px 0;color:#0f414a;font-size:14px;">Next Steps — Account Activation &amp; Password Setup</h4>
-            <p style="margin:0 0 14px 0;font-size:13.5px;color:#233438;line-height:1.55;">
-              To activate your Teacher Workspace, please click the button below to set your permanent password. You may identify yourself using either your <strong>Institutional Email (' . htmlspecialchars($instEmail) . ')</strong> or your <strong>Staff Index Number (' . htmlspecialchars($staffId) . ')</strong>.
+            <p style="margin:0 0 10px 0;font-size:13.5px;color:#233438;line-height:1.55;">
+              To activate your Teacher Workspace, please click the button below to set your permanent password.
             </p>
-            <div style="text-align:center;margin:16px 0;">
+            <div style="background:#ffffff;border:1px solid rgba(32,124,130,0.25);border-radius:8px;padding:12px 14px;margin:12px 0;font-size:13px;line-height:1.5;color:#0f414a;">
+              <strong>Important Registration Details to enter on the signup page:</strong><br>
+              &bull; <strong>Full Name:</strong> ' . htmlspecialchars($name) . '<br>
+              &bull; <strong>School Email:</strong> ' . htmlspecialchars($instEmail) . ' <em>(or Staff ID: ' . htmlspecialchars($staffId) . ')</em>
+            </div>
+            <div style="text-align:center;margin:18px 0 12px 0;">
               <a href="' . htmlspecialchars($signupUrl) . '" class="btn-primary" style="background:#0f414a;color:#ffffff;display:inline-block;padding:12px 26px;border-radius:8px;font-weight:700;text-decoration:none;">
                 Set Password &amp; Activate Teacher Account &rarr;
               </a>
@@ -338,16 +343,16 @@ class MailService {
         $body = '
           <h2 style="margin-top:0;color:#0f414a;font-size:20px;">Official Management Appointment Confirmed</h2>
           <p>Dear ' . htmlspecialchars($name) . ',</p>
-          <p>We are pleased to inform you that your executive leadership profile and administrative credentials have been <strong>successfully added to the L\'École School Database</strong>. Below are your official staff credentials and portal activation instructions.</p>
+          <p>We are pleased to inform you that your executive leadership profile and administrative credentials have been <strong>successfully registered in the L\'École School Database</strong>. Below are your official staff credentials, institutional school email, and portal activation instructions.</p>
 
           <!-- Management Credentials Card -->
           <div style="background:#f4ece1;padding:20px;border-radius:12px;margin:20px 0;border-left:4px solid #af5031;">
             <h3 style="margin:0 0 12px 0;color:#af5031;font-size:14px;text-transform:uppercase;letter-spacing:0.06em;">Official Leadership Credentials</h3>
             <table class="meta-table" style="margin:0;width:100%;">
-              <tr><td class="label" style="width:160px;font-weight:600;color:#0f414a;padding:5px 0;">Official Name:</td><td style="padding:5px 0;"><strong>' . htmlspecialchars($name) . '</strong></td></tr>
+              <tr><td class="label" style="width:160px;font-weight:600;color:#0f414a;padding:5px 0;">Official Full Name:</td><td style="padding:5px 0;"><strong style="font-size:15px;color:#0f414a;">' . htmlspecialchars($name) . '</strong> <span style="font-size:11px;color:#af5031;">(As registered with school)</span></td></tr>
               <tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">Staff Index Number:</td><td style="padding:5px 0;"><strong style="font-size:15px;color:#af5031;letter-spacing:0.04em;background:#f8ede7;padding:2px 8px;border-radius:4px;">' . htmlspecialchars($staffId) . '</strong></td></tr>
               <tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">Executive Designation:</td><td style="padding:5px 0;"><strong>' . htmlspecialchars($title) . '</strong></td></tr>
-              <tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">Institutional Email:</td><td style="padding:5px 0;"><code>' . htmlspecialchars($instEmail) . '</code></td></tr>
+              <tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">School Email:</td><td style="padding:5px 0;"><code style="font-size:14px;font-weight:700;color:#af5031;">' . htmlspecialchars($instEmail) . '</code> <span style="font-size:11px;color:rgba(15,65,74,0.65);">(Institutional Login)</span></td></tr>
               <tr><td class="label" style="font-weight:600;color:#0f414a;padding:5px 0;">Personal Email:</td><td style="padding:5px 0;">' . htmlspecialchars($toPersonalEmail) . '</td></tr>
             </table>
           </div>
@@ -355,10 +360,15 @@ class MailService {
           <!-- Sign-Up Instructions -->
           <div style="background:#fdfaf6;padding:18px 20px;border-radius:12px;margin:20px 0;border:1px solid rgba(15,65,74,0.12);">
             <h4 style="margin:0 0 8px 0;color:#0f414a;font-size:14px;">Next Steps — Account Activation &amp; Password Setup</h4>
-            <p style="margin:0 0 14px 0;font-size:13.5px;color:#233438;line-height:1.55;">
-              To activate your Management Workspace, click the button below to configure your permanent password. You may identify yourself using either your <strong>Institutional Email (' . htmlspecialchars($instEmail) . ')</strong> or your <strong>Staff Index Number (' . htmlspecialchars($staffId) . ')</strong>.
+            <p style="margin:0 0 10px 0;font-size:13.5px;color:#233438;line-height:1.55;">
+              To activate your Management Workspace, click the button below to configure your permanent password.
             </p>
-            <div style="text-align:center;margin:16px 0;">
+            <div style="background:#ffffff;border:1px solid rgba(175,80,49,0.25);border-radius:8px;padding:12px 14px;margin:12px 0;font-size:13px;line-height:1.5;color:#0f414a;">
+              <strong>Important Registration Details to enter on the signup page:</strong><br>
+              &bull; <strong>Full Name:</strong> ' . htmlspecialchars($name) . '<br>
+              &bull; <strong>School Email:</strong> ' . htmlspecialchars($instEmail) . ' <em>(or Staff ID: ' . htmlspecialchars($staffId) . ')</em>
+            </div>
+            <div style="text-align:center;margin:18px 0 12px 0;">
               <a href="' . htmlspecialchars($signupUrl) . '" class="btn-primary" style="background:#af5031;color:#ffffff;display:inline-block;padding:12px 26px;border-radius:8px;font-weight:700;text-decoration:none;">
                 Set Password &amp; Activate Management Account &rarr;
               </a>
@@ -399,17 +409,22 @@ class MailService {
         $body = '
           <h2 style="margin-top:0;color:#0f414a;font-size:20px;">Welcome to L\'École International School</h2>
           <p>Dear ' . htmlspecialchars($parentName) . ',</p>
-          <p>Congratulations! Information for your child <strong>' . htmlspecialchars($studentData['name']) . '</strong> has been <strong>successfully registered into the L\'École School Database with official Index Number ' . htmlspecialchars($studentData['index']) . '</strong>. Below are the official portal credentials and onboarding instructions for both your parent workspace and your child\'s student workspace.</p>
+          <p>Congratulations! Information for your child <strong>' . htmlspecialchars($studentData['name']) . '</strong> has been <strong>successfully registered in the L\'École School Database with official Index Number ' . htmlspecialchars($studentData['index']) . '</strong>. Below are the registered details and portal activation instructions for both your parent workspace and your child\'s student workspace.</p>
           
           <!-- Parent Credentials Section -->
           <div style="background:#f4ece1;padding:18px 20px;border-radius:12px;margin:20px 0;border-left:4px solid #af5031;">
             <h3 style="margin:0 0 10px 0;color:#af5031;font-size:14px;text-transform:uppercase;letter-spacing:0.05em;">Parent / Guardian Portal Account</h3>
             <table class="meta-table" style="margin:0;">
-              <tr><td class="label" style="width:140px;">Parent Username:</td><td><strong>' . htmlspecialchars($parentEmail) . '</strong> <span style="font-size:11px;color:#7a6b5e;">(Your personal email)</span></td></tr>
-              <tr><td class="label">Portal Access:</td><td><a href="http://localhost:8040/auth/parent" style="color:#0f414a;font-weight:600;">http://localhost:8040/auth/parent</a></td></tr>
-              <tr><td class="label">Initial Setup:</td><td>Please activate your parent account and set your secure password.</td></tr>
+              <tr><td class="label" style="width:160px;font-weight:600;color:#0f414a;">Parent Full Name:</td><td><strong style="font-size:14.5px;color:#0f414a;">' . htmlspecialchars($parentName) . '</strong> <span style="font-size:11px;color:#af5031;">(As registered with school)</span></td></tr>
+              <tr><td class="label" style="font-weight:600;color:#0f414a;">Parent Login Email:</td><td><code style="font-size:13.5px;font-weight:700;color:#af5031;">' . htmlspecialchars($parentEmail) . '</code></td></tr>
+              <tr><td class="label" style="font-weight:600;color:#0f414a;">Portal Access:</td><td><a href="http://localhost:8040/auth/parent" style="color:#0f414a;font-weight:600;">http://localhost:8040/auth/parent</a></td></tr>
             </table>
-            <div style="margin-top:14px;">
+            <div style="background:#ffffff;border:1px solid rgba(175,80,49,0.25);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:12.5px;line-height:1.5;color:#0f414a;">
+              <strong>When activating your Parent account, enter:</strong><br>
+              &bull; <strong>Full Name:</strong> ' . htmlspecialchars($parentName) . '<br>
+              &bull; <strong>Email Address:</strong> ' . htmlspecialchars($parentEmail) . '
+            </div>
+            <div style="margin-top:12px;">
               <a href="' . htmlspecialchars($parentSignupUrl) . '" class="btn-primary" style="background:#af5031;color:#ffffff;display:inline-block;padding:10px 20px;border-radius:6px;font-size:13px;font-weight:700;text-decoration:none;">
                 Set Parent Password & Activate &rarr;
               </a>
@@ -420,14 +435,21 @@ class MailService {
           <div style="background:#e8f4f5;padding:18px 20px;border-radius:12px;margin:20px 0;border-left:4px solid #207c82;">
             <h3 style="margin:0 0 10px 0;color:#0f414a;font-size:14px;text-transform:uppercase;letter-spacing:0.05em;">Enrolled Student Account</h3>
             <table class="meta-table" style="margin:0;">
-              <tr><td class="label" style="width:140px;">Student Name:</td><td><strong>' . htmlspecialchars($studentData['name']) . '</strong></td></tr>
-              <tr><td class="label">Student Username:</td><td><strong style="font-size:15px;color:#0f414a;letter-spacing:0.04em;">' . htmlspecialchars($studentData['index']) . '</strong> <span style="font-size:11px;color:#207c82;">(Registration / Index No.)</span></td></tr>
-              <tr><td class="label">Cohort Placement:</td><td>' . htmlspecialchars($studentData['grade']) . ' &bull; Class ' . htmlspecialchars($studentData['classSection']) . '</td></tr>
-              <tr><td class="label">Student Portal:</td><td><a href="http://localhost:8040/auth/student" style="color:#0f414a;font-weight:600;">http://localhost:8040/auth/student</a></td></tr>
+              <tr><td class="label" style="width:160px;font-weight:600;color:#0f414a;">Student Full Name:</td><td><strong style="font-size:14.5px;color:#0f414a;">' . htmlspecialchars($studentData['name']) . '</strong> <span style="font-size:11px;color:#207c82;">(As registered with school)</span></td></tr>
+              <tr><td class="label" style="font-weight:600;color:#0f414a;">Student Index / Reg No:</td><td><strong style="font-size:15px;color:#0f414a;letter-spacing:0.04em;background:#d7edef;padding:2px 8px;border-radius:4px;">' . htmlspecialchars($studentData['index']) . '</strong> <span style="font-size:11px;color:#207c82;">(Student Username)</span></td></tr>
+              <tr><td class="label" style="font-weight:600;color:#0f414a;">Cohort Placement:</td><td>' . htmlspecialchars($studentData['grade']) . ' &bull; Class ' . htmlspecialchars($studentData['classSection']) . '</td></tr>
+              <tr><td class="label" style="font-weight:600;color:#0f414a;">Student Portal:</td><td><a href="http://localhost:8040/auth/student" style="color:#0f414a;font-weight:600;">http://localhost:8040/auth/student</a></td></tr>
             </table>
-            <p style="font-size:12.5px;color:#0f414a;margin:12px 0 0 0;">
-              Your child signs into the Student Workspace using their <strong>Registration Number (' . htmlspecialchars($studentData['index']) . ')</strong>. For first-time login and password configuration, visit <a href="' . htmlspecialchars($studentSignupUrl) . '" style="color:#207c82;font-weight:600;">Student Portal Activation</a>.
-            </p>
+            <div style="background:#ffffff;border:1px solid rgba(32,124,130,0.25);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:12.5px;line-height:1.5;color:#0f414a;">
+              <strong>When activating your child\'s Student account, enter:</strong><br>
+              &bull; <strong>Full Name:</strong> ' . htmlspecialchars($studentData['name']) . '<br>
+              &bull; <strong>Index Number:</strong> ' . htmlspecialchars($studentData['index']) . '
+            </div>
+            <div style="margin-top:12px;">
+              <a href="' . htmlspecialchars($studentSignupUrl) . '" class="btn-primary" style="background:#207c82;color:#ffffff;display:inline-block;padding:10px 20px;border-radius:6px;font-size:13px;font-weight:700;text-decoration:none;">
+                Set Student Password & Activate &rarr;
+              </a>
+            </div>
           </div>
 
           <p style="font-size:13px;color:rgba(15,65,74,0.75);margin-top:20px;">
@@ -459,26 +481,34 @@ class MailService {
         $body = '
           <h2 style="margin-top:0;color:#0f414a;font-size:20px;">New Student Enrolled — Sibling Linkage Confirmed</h2>
           <p>Dear ' . htmlspecialchars($parentName) . ',</p>
-          <p>We are delighted to confirm that information for <strong>' . htmlspecialchars($studentData['name']) . '</strong> has been <strong>successfully registered into the L\'École School Database with official Index Number ' . htmlspecialchars($studentData['index']) . '</strong> and linked to your existing parent profile.</p>
+          <p>We are delighted to confirm that information for <strong>' . htmlspecialchars($studentData['name']) . '</strong> has been <strong>successfully registered in the L\'École School Database with official Index Number ' . htmlspecialchars($studentData['index']) . '</strong> and linked to your existing parent profile.</p>
 
           <!-- New Sibling Details Card -->
           <div style="background:#e8f4f5;padding:18px 20px;border-radius:12px;margin:20px 0;border-left:4px solid #207c82;">
             <h3 style="margin:0 0 10px 0;color:#0f414a;font-size:14px;text-transform:uppercase;letter-spacing:0.05em;">New Student Information</h3>
             <table class="meta-table" style="margin:0;">
-              <tr><td class="label" style="width:150px;">Student Name:</td><td><strong>' . htmlspecialchars($studentData['name']) . '</strong></td></tr>
-              <tr><td class="label">Student Username:</td><td><strong style="font-size:15px;color:#0f414a;letter-spacing:0.04em;">' . htmlspecialchars($studentData['index']) . '</strong> <span style="font-size:11px;color:#207c82;">(Registration / Index No.)</span></td></tr>
-              <tr><td class="label">Class Section:</td><td>' . htmlspecialchars($studentData['grade']) . ' &bull; Class ' . htmlspecialchars($studentData['classSection']) . '</td></tr>
-              <tr><td class="label">Student Portal:</td><td><a href="http://localhost:8040/auth/student" style="color:#0f414a;font-weight:600;">http://localhost:8040/auth/student</a></td></tr>
+              <tr><td class="label" style="width:160px;font-weight:600;color:#0f414a;">Student Full Name:</td><td><strong style="font-size:14.5px;color:#0f414a;">' . htmlspecialchars($studentData['name']) . '</strong> <span style="font-size:11px;color:#207c82;">(As registered with school)</span></td></tr>
+              <tr><td class="label" style="font-weight:600;color:#0f414a;">Student Index / Reg No:</td><td><strong style="font-size:15px;color:#0f414a;letter-spacing:0.04em;background:#d7edef;padding:2px 8px;border-radius:4px;">' . htmlspecialchars($studentData['index']) . '</strong> <span style="font-size:11px;color:#207c82;">(Student Username)</span></td></tr>
+              <tr><td class="label" style="font-weight:600;color:#0f414a;">Class Section:</td><td>' . htmlspecialchars($studentData['grade']) . ' &bull; Class ' . htmlspecialchars($studentData['classSection']) . '</td></tr>
+              <tr><td class="label" style="font-weight:600;color:#0f414a;">Student Portal:</td><td><a href="http://localhost:8040/auth/student" style="color:#0f414a;font-weight:600;">http://localhost:8040/auth/student</a></td></tr>
             </table>
-            <p style="font-size:12.5px;color:#0f414a;margin:12px 0 0 0;">
-              Your child will log in using their Registration Number <strong>' . htmlspecialchars($studentData['index']) . '</strong>. Initial password setup can be completed at <a href="' . htmlspecialchars($studentSignupUrl) . '" style="color:#207c82;font-weight:600;">Student Portal Activation</a>.
-            </p>
+            <div style="background:#ffffff;border:1px solid rgba(32,124,130,0.25);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:12.5px;line-height:1.5;color:#0f414a;">
+              <strong>When activating your child\'s Student account, enter:</strong><br>
+              &bull; <strong>Full Name:</strong> ' . htmlspecialchars($studentData['name']) . '<br>
+              &bull; <strong>Index Number:</strong> ' . htmlspecialchars($studentData['index']) . '
+            </div>
+            <div style="margin-top:12px;">
+              <a href="' . htmlspecialchars($studentSignupUrl) . '" class="btn-primary" style="background:#207c82;color:#ffffff;display:inline-block;padding:10px 20px;border-radius:6px;font-size:13px;font-weight:700;text-decoration:none;">
+                Set Student Password & Activate &rarr;
+              </a>
+            </div>
           </div>
 
           <!-- Existing Parent Account Note -->
           <div style="background:#fdfaf6;padding:16px 20px;border-radius:12px;margin:20px 0;border:1px solid rgba(15,65,74,0.12);">
             <h4 style="margin:0 0 8px 0;color:#0f414a;font-size:14px;">Your Existing Parent Portal Account</h4>
             <p style="margin:0;font-size:13.5px;color:#233438;line-height:1.5;">
+              Registered Parent Name: <strong>' . htmlspecialchars($parentName) . '</strong><br>
               Your parent username remains <strong>' . htmlspecialchars($parentEmail) . '</strong> and your existing password is unchanged. When you log into your <a href="http://localhost:8040/auth/parent" style="color:#af5031;font-weight:600;">Parent Portal</a>, your new child will automatically be visible alongside their siblings in your family dashboard!
             </p>
           </div>
