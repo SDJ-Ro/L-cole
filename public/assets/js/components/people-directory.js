@@ -752,6 +752,14 @@
     document.addEventListener('input', function (e) {
       const group = e.target.closest('.c-phone-input-group');
       if (group) syncPhoneGroup(group);
+
+      if (e.target.matches('.j-landline-input, input[name="guardian[officePhone]"], input[name="guardian[homePhone]"]')) {
+        let clean = e.target.value.replace(/\D/g, '');
+        if (clean.length > 10) clean = clean.slice(0, 10);
+        if (e.target.value !== clean) {
+          e.target.value = clean;
+        }
+      }
     });
 
     document.addEventListener('dropdown:change', function (e) {
@@ -1168,6 +1176,12 @@
     if (m.includes('birth certificate') || m.includes('birth cert')) {
       return form.querySelector('[name="birthCertificateNumber"]');
     }
+    if (m.includes('office phone') || m.includes('office contact')) {
+      return form.querySelector('[name="guardian[officePhone]"]');
+    }
+    if (m.includes('home landline') || m.includes('landline') || m.includes('home phone')) {
+      return form.querySelector('[name="guardian[homePhone]"]');
+    }
     if (m.includes('emergency contact') || m.includes('emergency')) {
       return form.querySelector('[name="guardian[emergencyContact]"]') || form.querySelector('[name="emergencyPhone"]') || form.querySelector('[name="guardian[emergencyName]"]') || form.querySelector('[name="emergencyName"]');
     }
@@ -1459,6 +1473,31 @@
         }
         if (emPhone && pPhone && emPhone === pPhone) {
           return { isValid: false, error: 'Secondary emergency contact phone cannot be the same as the parent\'s contact number.', targetInput: gEmPhoneInput };
+        }
+
+        // Check optional Landlines (Office Phone & Home Landline: exactly 10 digits if entered)
+        const gOfficePhoneInput = form.querySelector('[name="guardian[officePhone]"]');
+        if (gOfficePhoneInput && gOfficePhoneInput.value.trim()) {
+          const val = gOfficePhoneInput.value.trim();
+          if (/[a-zA-Z]/.test(val)) {
+            return { isValid: false, error: 'Guardian Office Phone cannot contain letters. Only numbers are allowed.', targetInput: gOfficePhoneInput };
+          }
+          const clean = val.replace(/\D/g, '');
+          if (clean.length !== 10) {
+            return { isValid: false, error: `Guardian Office Phone must be exactly 10 digits (e.g. 011 234 5678). Entered ${clean.length} digits.`, targetInput: gOfficePhoneInput };
+          }
+        }
+
+        const gHomePhoneInput = form.querySelector('[name="guardian[homePhone]"]');
+        if (gHomePhoneInput && gHomePhoneInput.value.trim()) {
+          const val = gHomePhoneInput.value.trim();
+          if (/[a-zA-Z]/.test(val)) {
+            return { isValid: false, error: 'Guardian Home Landline cannot contain letters. Only numbers are allowed.', targetInput: gHomePhoneInput };
+          }
+          const clean = val.replace(/\D/g, '');
+          if (clean.length !== 10) {
+            return { isValid: false, error: `Guardian Home Landline must be exactly 10 digits (e.g. 011 289 0123). Entered ${clean.length} digits.`, targetInput: gHomePhoneInput };
+          }
         }
 
         // Check NIC or Passport
