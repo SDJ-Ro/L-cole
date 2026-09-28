@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="/assets/css/components/grade-card.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/curriculum-card.css?v=<?= time() ?>" />
   <link rel="stylesheet" href="/assets/css/components/delete-modal.css?v=<?= time() ?>" />
+  <link rel="stylesheet" href="/assets/css/components/feedback-banners.css?v=<?= time() ?>" />
 </head>
 <body>
 
@@ -163,6 +164,7 @@
 <script src="/assets/js/components/dropdown.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/bar-chart.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/calendar.js?v=<?= time() ?>"></script>
+<script src="/assets/js/components/feedback-banners.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/teacher-hover.js?v=<?= time() ?>"></script>
 <script src="/assets/js/components/grade-card.js?v=<?= time() ?>"></script>
 </body>
