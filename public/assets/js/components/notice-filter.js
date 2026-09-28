@@ -21,9 +21,9 @@
 
     const currentRole = (noticeGrid.getAttribute('data-current-role') || 'management').toLowerCase();
 
-    // Default to active tab in DOM (or 'all' for admin, 'my-notices' for others)
+    // Default to active tab in DOM (or 'all' for roles without tabs: admin, student, parent)
     const activeTabBtn = document.querySelector('.j-notice-scope-tab.is-active-tab');
-    let selectedTabMode = activeTabBtn ? (activeTabBtn.getAttribute('data-filter') || 'my-notices') : (currentRole === 'admin' ? 'all' : 'my-notices');
+    let selectedTabMode = activeTabBtn ? (activeTabBtn.getAttribute('data-filter') || 'my-notices') : (['admin', 'student', 'parent'].includes(currentRole) ? 'all' : 'my-notices');
     let selectedAudience = 'all';
     let selectedCategory = 'all';
     let searchQuery = '';
@@ -31,7 +31,7 @@
     // Synchronize audience dropdown visibility based on active tab
     function syncAudienceVisibility() {
       if (!audienceWrapper) return;
-      if (currentRole === 'admin') {
+      if (currentRole === 'admin' || currentRole === 'student' || currentRole === 'parent') {
         audienceWrapper.style.display = '';
         return;
       }
@@ -68,15 +68,18 @@
         let matchesAudience = true;
 
         if (selectedTabMode === 'my-notices') {
-          // "My Notices" (Inbox): Notices sent to current role by above roles or school-wide
+          // "My Notices" (Inbox): Notices sent to current role or official directives
           if (currentRole === 'management') {
             const isToManagement = cardAudiences.some((a) => a.includes('management') || a === 'all' || a === 'all users');
-            const isByAboveRole = (cardAuthorRole === 'admin' || cardAuthorRole !== 'management');
-            matchesTab = isToManagement && isByAboveRole;
+            matchesTab = isToManagement || cardAuthorRole === 'admin';
           } else if (currentRole === 'teacher') {
             const isToTeachers = cardAudiences.some((a) => a.includes('teacher') || a === 'all' || a === 'all users');
             const isByAboveRole = (cardAuthorRole === 'admin' || cardAuthorRole === 'management');
             matchesTab = isToTeachers && isByAboveRole;
+          } else if (currentRole === 'student') {
+            matchesTab = cardAudiences.some((a) => a.includes('student') || a === 'all' || a === 'all users');
+          } else if (currentRole === 'parent') {
+            matchesTab = cardAudiences.some((a) => a.includes('parent') || a === 'all' || a === 'all users');
           } else if (currentRole === 'admin') {
             // Admin sees all incoming institutional directives / department notices
             matchesTab = true;

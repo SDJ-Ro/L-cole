@@ -50,7 +50,7 @@ $action     = $formAction ?? '';
         <!-- Notice Title (Spans 2 cols) -->
         <div class="c-form-field" style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 0.375rem;">
           <label class="c-form-field__label" for="j-post-title" style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(15, 65, 74, 0.75);">Notice Title <span style="color: #7FC7CC;">*</span></label>
-          <input type="text" id="j-post-title" name="title" class="c-text-input" placeholder="e.g. End of Term Examinations Schedule" required style="width: 100%; border-radius: var(--radius-lg, 0.5rem); border: 1px solid rgba(127, 199, 204, 0.4); background: #fff; padding: 0.75rem 1rem; font-size: 0.875rem; color: #0F414A; outline: none; box-sizing: border-box;" />
+          <input type="text" id="j-post-title" name="title" class="c-text-input" placeholder="e.g. End of Term Examinations Schedule" required minlength="3" maxlength="200" style="width: 100%; border-radius: var(--radius-lg, 0.5rem); border: 1px solid rgba(127, 199, 204, 0.4); background: #fff; padding: 0.75rem 1rem; font-size: 0.875rem; color: #0F414A; outline: none; box-sizing: border-box;" />
         </div>
 
         <!-- Category Dropdown -->
@@ -153,7 +153,7 @@ $action     = $formAction ?? '';
         <!-- Message Body (Spans 2 cols) -->
         <div class="c-form-field" style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 0.375rem;">
           <label class="c-form-field__label" for="j-post-body" style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(15, 65, 74, 0.75);">Message Body <span style="color: #7FC7CC;">*</span></label>
-          <textarea id="j-post-body" name="body" class="c-textarea" rows="6" placeholder="Write your announcement details here..." required style="width: 100%; min-height: 9rem; border-radius: var(--radius-lg, 0.5rem); border: 1px solid rgba(127, 199, 204, 0.4); background: #fff; padding: 0.75rem 1rem; font-size: 0.875rem; color: #0F414A; outline: none; resize: vertical; box-sizing: border-box; font-family: inherit;"></textarea>
+          <textarea id="j-post-body" name="body" class="c-textarea" rows="6" placeholder="Write your announcement details here (minimum 10 characters)..." required minlength="10" maxlength="5000" style="width: 100%; min-height: 9rem; border-radius: var(--radius-lg, 0.5rem); border: 1px solid rgba(127, 199, 204, 0.4); background: #fff; padding: 0.75rem 1rem; font-size: 0.875rem; color: #0F414A; outline: none; resize: vertical; box-sizing: border-box; font-family: inherit;"></textarea>
         </div>
 
         <!-- File Upload Dropzone (Spans 2 cols) with Complete Inline Paperclip SVG -->

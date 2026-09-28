@@ -165,21 +165,8 @@ class ParentController extends Controller {
             ],
         ];
 
-        // Unread Notices
-        $notices = [
-            [
-                'title' => 'Final Exam Schedule',
-                'desc'  => 'The schedule for the final term examination is now available on the portal.',
-            ],
-            [
-                'title' => 'Parent-Teacher Conference',
-                'desc'  => 'Individual progress consultation slots with subject masters are now open for reservation.',
-            ],
-            [
-                'title' => 'Term 3 Tuition Due Date',
-                'desc'  => 'School fees payment deadline for the upcoming third term is Friday, July 10.',
-            ],
-        ];
+        // Unread Notices (live from NoticeModel)
+        $notices = NoticeModel::getForRole('parent');
 
         $this->view('parent/dashboard', [
             'currentRole'    => 'parent',

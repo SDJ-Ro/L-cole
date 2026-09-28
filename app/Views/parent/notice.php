@@ -58,7 +58,7 @@
       </section>
 
       <!-- Notice Cards Grid (Read-only: Zero action buttons) -->
-      <div class="c-notice-grid" id="j-notice-grid">
+      <div class="c-notice-grid" id="j-notice-grid" data-current-role="parent">
         <?php if (!empty($notices)): ?>
           <?php foreach ($notices as $idx => $notice): ?>
             <?php 
