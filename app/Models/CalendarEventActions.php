@@ -197,6 +197,9 @@ class CalendarEventActions extends Model {
         $rawTime    = trim($payload['start_time'] ?? ($payload['time'] ?? '09:00'));
         [$startTime, $endTime] = self::parseTimeRange($rawTime);
         if (!$startTime) $startTime = '09:00:00';
+        if ($endTime !== null && strtotime($endTime) <= strtotime($startTime)) {
+            return ['success' => false, 'error' => 'End time must be later than start time. Please verify AM/PM settings.', 'http_status' => 400];
+        }
 
         $category   = trim($payload['category'] ?? 'Academic');
         $details    = trim($payload['details'] ?? '');
@@ -343,6 +346,9 @@ class CalendarEventActions extends Model {
         $title    = trim($payload['title'] ?? '');
         $rawTime  = trim($payload['start_time'] ?? ($payload['time'] ?? ''));
         [$startTime, $endTime] = self::parseTimeRange($rawTime);
+        if ($startTime !== null && $endTime !== null && strtotime($endTime) <= strtotime($startTime)) {
+            return ['success' => false, 'error' => 'End time must be later than start time. Please verify AM/PM settings.', 'http_status' => 400];
+        }
         $category = trim($payload['category'] ?? 'Academic');
         $details  = trim($payload['details'] ?? '');
         $date     = trim($payload['date'] ?? ($payload['event_date'] ?? ''));
